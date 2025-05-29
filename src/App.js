@@ -1,12 +1,12 @@
 import './App.css';
 import React from "react";
-import { BrowserRouter, Route, Switch } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 
 function App() {
   return (
     <div className="App">
       <BrowserRouter>
-        <Switch>
+        <Routes>
           <Route path="/home">
           
           </Route>
@@ -22,7 +22,7 @@ function App() {
           <Route path='/login'>
 
           </Route>
-        </Switch>
+        </Routes>
       </BrowserRouter>
     </div>
   );
