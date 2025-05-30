@@ -1,5 +1,6 @@
 import './App.css';
 import React from "react";
+import MapPage from './Components/Pages/map';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 
 function App() {
@@ -10,8 +11,8 @@ function App() {
           <Route path="/home">
           
           </Route>
-          <Route path='/map'>
-          
+          <Route path='/map' element={<MapPage/>}>
+            
           </Route>
           <Route path='/input'>
 
