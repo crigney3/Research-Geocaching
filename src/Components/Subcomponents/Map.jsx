@@ -1,4 +1,4 @@
-import { GoogleMap, useJsApiLoader } from '@react-google-maps/api'
+import { GoogleMap, useJsApiLoader, MarkerF, OverlayViewF, MARKER_LAYER } from '@react-google-maps/api'
 import { GOOGLE_API_KEY } from "../../secrets";
 import { useState, useCallback } from 'react';
 
@@ -41,7 +41,7 @@ const Map = ({
          onLoad={onLoad}
          onUnmount={onUnmount}
         >
-        {/* Child components, such as markers, info windows, etc. */}
+            <MarkerF position={center} label="test" clickable={true}/>
         <></>
         </GoogleMap>
     ) : (
