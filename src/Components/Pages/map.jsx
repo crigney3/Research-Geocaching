@@ -1,11 +1,11 @@
 import React from 'react';
-import Map from '../Subcomponents/Map';
+import CoreMap from '../Subcomponents/CoreMap';
 
 const MapPage = ({
 
 }) => {
     return (
-        <Map/>
+        <CoreMap/>
     )
 }
 

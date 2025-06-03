@@ -1,3 +1,15 @@
 .App {
   text-align: center;
 }
+
+:root {
+  --purple-main: #4C2683;
+  --white: #FFFFFF;
+  --orange-main: #F68B1F;
+  --orange-accent: #F2C75C;
+  --red-accent: #E04E39;
+  --light-blue-accent: #298FC2;
+  --blue-accent: #34657F;
+  --green-accent: #91D6AC;
+  --slate-accent: #7A99AC;
+}
