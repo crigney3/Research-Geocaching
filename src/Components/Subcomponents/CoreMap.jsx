@@ -1,5 +1,5 @@
 import { APIProvider, Map } from '@vis.gl/react-google-maps';
-import { GOOGLE_API_KEY, MAP_ID } from "../../secrets";
+import { GOOGLE_API_KEY, MAP_ID, BACKEND_URL } from "../../secrets";
 import { useState, useCallback } from 'react';
 import MapMarker from './MapMarker';
 
@@ -16,6 +16,31 @@ const containerStyle = {
 const CoreMap = ({
 
 }) => {
+    const [allFacts, setAllFacts] = useState([]);
+    const [currentCategoryFacts, setCurrentCategoryFacts] = useState([]);
+    const [currentCategory, setCurrentCategory] = useState([]);
+
+    const FetchAllFacts = () => {
+        fetch(BACKEND_URL + "/get_all_facts", {
+            method: 'GET',
+            headers: {
+             'Content-Type': 'application/json;charset=utf-8'
+            }
+        }).then(response => {
+            setAllFacts(response.data);
+        });
+    }
+
+    const FetchAllFactsOfCategory = (category) => {
+        fetch(BACKEND_URL + "/get_all_facts_of_category", {
+            method: 'GET',
+            headers: {
+             'Content-Type': 'application/json;charset=utf-8'
+            }
+        }).then(response => {
+            setCurrentCategoryFacts(response.data);
+        });
+    }
 
     return (
         <APIProvider apiKey={GOOGLE_API_KEY}>

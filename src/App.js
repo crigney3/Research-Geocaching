@@ -1,10 +1,10 @@
 import './App.css';
 import React from "react";
-import MapPage from '../app/map';
-import InputPage from '../app/input';
-import ProfilePage from '../app/profile';
-import LoginPage from '../app/login';
-import HomePage from '../app/home';
+import MapPage from './Components/Pages/map';
+import InputPage from './Components/Pages/input';
+import ProfilePage from './Components/Pages/profile';
+import LoginPage from './Components/Pages/login';
+import HomePage from './Components/Pages/home';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 
 function App() {

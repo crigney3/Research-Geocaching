@@ -2,6 +2,7 @@
   "name": "research-geocaching",
   "version": "0.1.0",
   "private": true,
+  "proxy": "http://localhost:3330",
   "dependencies": {
     "@react-google-maps/api": "^2.20.6",
     "@testing-library/dom": "^10.4.0",
