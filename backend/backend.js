@@ -2,19 +2,24 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const secrets = require('../src/secrets');
 const { v4: uuidv4 } = require('uuid');
-const { Pool } = require('pg');
+const sql = require('mysql');
 
 const appPort = 3330;
 const app = express();
 app.use(bodyParser.json());
 
-const pool = new Pool({
-        host: secrets.DB_HOST,
-        user: secrets.DB_USER,
-        password: secrets.DB_PASSWORD,
-        port: secrets.DB_PORT,
-        database: secrets.DB_NAME
-    });
+const pool = sql.createConnection({
+    host: secrets.DB_HOST,
+    user: secrets.DB_USER,
+    password: secrets.DB_PASSWORD,
+    port: secrets.DB_PORT,
+    database: secrets.DB_NAME
+    // pool: {
+    //     max: 30,
+    //     min: 0,
+    //     idleTimeoutMillis: 30000
+    // }
+});
 
 //#region additions
 app.post('/add_fact', async (req, res) => {
@@ -310,7 +315,11 @@ app.listen(appPort, () => {
     console.log('Testing DB connection...\n');
 
     try {
-        console.log(pool.query('SELECT NOW()'));
+        pool.connect((err) => {
+            pool.query('SELECT NOW()', (err, result) => {
+                console.log(result);
+            });
+        });
     } catch(err) {
         console.log(err);
     }
