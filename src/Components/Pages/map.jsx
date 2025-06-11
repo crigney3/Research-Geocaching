@@ -1,5 +1,5 @@
 import React from 'react';
-import CoreMap from '../src/Components/Subcomponents/CoreMap';
+import CoreMap from '../Subcomponents/CoreMap';
 
 const MapPage = ({
 

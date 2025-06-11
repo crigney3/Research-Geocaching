@@ -3,12 +3,25 @@ const bodyParser = require('body-parser');
 const secrets = require('../src/secrets');
 const { v4: uuidv4 } = require('uuid');
 const sql = require('mysql');
+const cors = require("cors");
 
 const appPort = 3330;
 const app = express();
 app.use(bodyParser.json());
 
-const pool = sql.createConnection({
+const corsOptions = {
+  origin: (origin, callback) => {
+    callback(null, true);
+  },
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+  allowedHeaders: ["Access-Control-Allow-Origin", "Origin", "X-Requested-With", "Content-Type", "Accept", "Authorization"],
+  credentials: true
+};
+
+app.options('*', cors(corsOptions));
+app.use(cors(corsOptions));
+
+const pool = sql.createPool({
     host: secrets.DB_HOST,
     user: secrets.DB_USER,
     password: secrets.DB_PASSWORD,
@@ -23,7 +36,11 @@ const pool = sql.createConnection({
 
 //#region additions
 app.post('/add_fact', async (req, res) => {
-    let { inTitle, inDescription, inLat, inLng, inCategory } = req.body;
+    let inTitle = req.body.title;
+    let inDescription = req.body.description;
+    let inLat = req.body.lat;
+    let inLng = req.body.lng;
+    let inCategory = req.body.category;
 
     if (!inTitle) {
         return res.status(400).json('Title cannot be blank');
@@ -57,9 +74,7 @@ app.post('/add_fact', async (req, res) => {
         category: inCategory
     }
 
-    const client = await pool.connect();
-
-    const query = await client.query("INSERT INTO facts set ? ", data, 
+    await pool.query("INSERT INTO facts set ? ", data, 
         function(err, rows) {
             if (err) {
                 res.status(400).json('Error inserting into facts, see backend console for details');
@@ -69,12 +84,10 @@ app.post('/add_fact', async (req, res) => {
             }
         }
     );
-
-    client.release();
 });
 
 app.post('/add_category', async (req, res) => {
-    let { categoryTitle } = req.body;
+    let categoryTitle = req.body.title;
 
     if (!categoryTitle) {
         return res.status(400).json('Title cannot be blank');
@@ -88,9 +101,7 @@ app.post('/add_category', async (req, res) => {
         title: categoryTitle
     }
 
-    const client = await pool.connect();
-
-    const query = await client.query("INSERT INTO categories set ? ", data, 
+    await pool.query("INSERT INTO categories set ? ", data, 
         function(err, rows) {
             if (err) {
                 res.status(400).json('Error inserting into categories, see backend console for details');
@@ -100,14 +111,12 @@ app.post('/add_category', async (req, res) => {
             }
         }
     );
-
-    client.release();
 });
 //#endregion
 
 //#region deletions
 app.post('/remove_fact_by_id', async (req, res) => {
-    let { inID } = req.body;
+    let inID = req.body.id;
 
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid deletion');
@@ -117,9 +126,7 @@ app.post('/remove_fact_by_id', async (req, res) => {
         id: inID
     }
 
-    const client = await pool.connect();
-
-    const query = await client.query("DELETE FROM facts WHERE id=? ", data, 
+    await pool.query("DELETE FROM facts WHERE id=? ", data, 
         function(err, rows) {
             if (err) {
                 res.status(400).json('Error removing fact, see backend console for details');
@@ -129,12 +136,10 @@ app.post('/remove_fact_by_id', async (req, res) => {
             }
         }
     );
-
-    client.release();
 });
 
 app.post('/remove_category_by_id', async (req, res) => {
-    let { inID } = req.body;
+    let inID = req.body.id;
 
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid deletion');
@@ -144,9 +149,7 @@ app.post('/remove_category_by_id', async (req, res) => {
         id: inID
     }
 
-    const client = await pool.connect();
-
-    const query = await client.query("DELETE FROM categories WHERE id=? ", data, 
+    await pool.query("DELETE FROM categories WHERE id=? ", data, 
         function(err, rows) {
             if (err) {
                 res.status(400).json('Error removing category, see backend console for details');
@@ -156,12 +159,10 @@ app.post('/remove_category_by_id', async (req, res) => {
             }
         }
     );
-
-    client.release();
 });
 
 app.post('/remove_all_facts_in_category', async (req, res) => {
-    let { inCategory } = req.body;
+    let inCategory = req.body.category;
 
     if (!inCategory) {
         return res.status(400).json('Must submit a category for valid deletion');
@@ -171,9 +172,7 @@ app.post('/remove_all_facts_in_category', async (req, res) => {
         category: inCategory
     }
 
-    const client = await pool.connect();
-
-    const query = await client.query("DELETE FROM facts WHERE category=? ", data, 
+    await pool.query("DELETE FROM facts WHERE category=? ", data, 
         function(err, rows) {
             if (err) {
                 res.status(400).json('Error removing facts, see backend console for details');
@@ -183,16 +182,38 @@ app.post('/remove_all_facts_in_category', async (req, res) => {
             }
         }
     );
+});
 
-    client.release();
+app.post('/remove_all_categories', async (req, res) => {
+    await pool.query("DELETE * FROM categories", data, 
+        function(err, rows) {
+            if (err) {
+                res.status(400).json('Error removing category, see backend console for details');
+                console.log("Error removing category: %s", err);
+            } else {
+                res.status(200).json('Category successfully removed');
+            }
+        }
+    );
+});
+
+app.post('/remove_all_facts', async (req, res) => {
+    await pool.query("DELETE * FROM facts", data, 
+        function(err, rows) {
+            if (err) {
+                res.status(400).json('Error removing fact, see backend console for details');
+                console.log("Error removing fact: %s", err);
+            } else {
+                res.status(200).json('Fact successfully removed');
+            }
+        }
+    );
 });
 //#endregion
 
 //#region get-all
 app.get('/get_all_facts', async (req, res) => {
-    const client = await pool.connect();
-
-    const query = await client.query("SELECT * FROM facts", 
+    await pool.query("SELECT * FROM facts", 
         function(err, rows) {
             if (err) {
                 res.status(400).json('Error retrieving facts, see backend console for details');
@@ -202,14 +223,10 @@ app.get('/get_all_facts', async (req, res) => {
             }
         }
     );
-
-    client.release();
 });
 
 app.get('/get_all_categories', async (req, res) => {
-    const client = await pool.connect();
-
-    const query = await client.query("SELECT * FROM categories", 
+    await pool.query("SELECT * FROM categories", 
         function(err, rows) {
             if (err) {
                 res.status(400).json('Error retrieving categories, see backend console for details');
@@ -219,15 +236,13 @@ app.get('/get_all_categories', async (req, res) => {
             }
         }
     );
-
-    client.release();
 });
 //#endregion
 
 //#region get-specific
 
 app.get('/get_fact_by_id', async (req, res) => {
-    let { inID } = req.body;
+    let inID = req.body.id;
 
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid access');
@@ -249,12 +264,10 @@ app.get('/get_fact_by_id', async (req, res) => {
             }
         }
     );
-
-    client.release();
 });
 
 app.get('/get_category_by_id', async (req, res) => {
-    let { inID } = req.body;
+    let inID = req.body.id;
 
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid access');
@@ -276,12 +289,10 @@ app.get('/get_category_by_id', async (req, res) => {
             }
         }
     );
-
-    client.release();
 });
 
 app.get('/get_all_facts_of_category', async (req, res) => {
-    let { inCategory } = req.body;
+    let inCategory = req.body.category;
 
     if (!inCategory) {
         return res.status(400).json('Must submit an Category for valid access');
@@ -303,8 +314,6 @@ app.get('/get_all_facts_of_category', async (req, res) => {
             }
         }
     );
-
-    client.release();
 });
 
 //#endregion
@@ -315,10 +324,8 @@ app.listen(appPort, () => {
     console.log('Testing DB connection...\n');
 
     try {
-        pool.connect((err) => {
-            pool.query('SELECT NOW()', (err, result) => {
-                console.log(result);
-            });
+        pool.query('SELECT NOW()', (err, result) => {
+            console.log(result);
         });
     } catch(err) {
         console.log(err);

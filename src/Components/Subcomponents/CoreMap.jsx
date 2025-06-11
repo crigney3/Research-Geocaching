@@ -25,10 +25,12 @@ const CoreMap = ({
             method: 'GET',
             headers: {
              'Content-Type': 'application/json;charset=utf-8'
-            }
-        }).then(response => {
-            setAllFacts(response.data);
-        });
+            },
+            mode: 'cors'
+        }).then(response => response.json())
+          .then(data => {
+            setAllFacts(data);
+      });
     }
 
     const FetchAllFactsOfCategory = (category) => {
@@ -36,10 +38,13 @@ const CoreMap = ({
             method: 'GET',
             headers: {
              'Content-Type': 'application/json;charset=utf-8'
-            }
-        }).then(response => {
-            setCurrentCategoryFacts(response.data);
-        });
+            },
+            mode: 'cors',
+            body: JSON.stringify({category: 'TODO'})
+        }).then(response => response.json())
+          .then(data => {
+            setAllFacts(data);
+      });
     }
 
     return (
