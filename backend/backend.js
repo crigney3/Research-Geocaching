@@ -65,16 +65,7 @@ app.post('/add_fact', async (req, res) => {
     // Generate a uuid for this entry
     let newID = uuidv4();
 
-    var data = {
-        id: newID,
-        title: inTitle,
-        description: inDescription,
-        lat: inLat,
-        lng: inLng,
-        category: inCategory
-    }
-
-    await pool.query("INSERT INTO facts set ? ", data, 
+    await pool.query("INSERT INTO facts (id, title, description, lat, lng, category) VALUES(UNHEX(REPLACE(?, '-', '')),?,?,?,?,UNHEX(?))", [newID, inTitle, inDescription, inLat, inLng, inCategory], 
         function(err, rows) {
             if (err) {
                 res.status(400).json('Error inserting into facts, see backend console for details');
@@ -96,12 +87,7 @@ app.post('/add_category', async (req, res) => {
     // Generate a uuid for this category
     let newID = uuidv4();
 
-    var data = {
-        id: newID,
-        title: categoryTitle
-    }
-
-    await pool.query("INSERT INTO categories set ? ", data, 
+    await pool.query("INSERT INTO categories (id, title) VALUES(UNHEX(REPLACE(?, '-', '')),?)", [newID, categoryTitle], 
         function(err, rows) {
             if (err) {
                 res.status(400).json('Error inserting into categories, see backend console for details');
@@ -120,10 +106,6 @@ app.post('/remove_fact_by_id', async (req, res) => {
 
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid deletion');
-    }
-
-    var data = {
-        id: inID
     }
 
     await pool.query("DELETE FROM facts WHERE id=? ", data, 
@@ -145,11 +127,7 @@ app.post('/remove_category_by_id', async (req, res) => {
         return res.status(400).json('Must submit an ID for valid deletion');
     }
 
-    var data = {
-        id: inID
-    }
-
-    await pool.query("DELETE FROM categories WHERE id=? ", data, 
+    await pool.query("DELETE FROM categories WHERE id=UNHEX(?) ", inID, 
         function(err, rows) {
             if (err) {
                 res.status(400).json('Error removing category, see backend console for details');
@@ -162,17 +140,13 @@ app.post('/remove_category_by_id', async (req, res) => {
 });
 
 app.post('/remove_all_facts_in_category', async (req, res) => {
-    let inCategory = req.body.category;
+    let inID = req.body.id;
 
-    if (!inCategory) {
+    if (!inID) {
         return res.status(400).json('Must submit a category for valid deletion');
     }
 
-    var data = {
-        category: inCategory
-    }
-
-    await pool.query("DELETE FROM facts WHERE category=? ", data, 
+    await pool.query("DELETE FROM facts WHERE category=UNHEX(?) ", inID, 
         function(err, rows) {
             if (err) {
                 res.status(400).json('Error removing facts, see backend console for details');
@@ -185,7 +159,7 @@ app.post('/remove_all_facts_in_category', async (req, res) => {
 });
 
 app.post('/remove_all_categories', async (req, res) => {
-    await pool.query("DELETE * FROM categories", data, 
+    await pool.query("TRUNCATE TABLE categories", 
         function(err, rows) {
             if (err) {
                 res.status(400).json('Error removing category, see backend console for details');
@@ -198,7 +172,7 @@ app.post('/remove_all_categories', async (req, res) => {
 });
 
 app.post('/remove_all_facts', async (req, res) => {
-    await pool.query("DELETE * FROM facts", data, 
+    await pool.query("TRUNCATE TABLE facts",
         function(err, rows) {
             if (err) {
                 res.status(400).json('Error removing fact, see backend console for details');
@@ -213,7 +187,7 @@ app.post('/remove_all_facts', async (req, res) => {
 
 //#region get-all
 app.get('/get_all_facts', async (req, res) => {
-    await pool.query("SELECT * FROM facts", 
+    await pool.query("SELECT *, HEX(id) AS id, HEX(category) AS category FROM facts", 
         function(err, rows) {
             if (err) {
                 res.status(400).json('Error retrieving facts, see backend console for details');
@@ -226,7 +200,7 @@ app.get('/get_all_facts', async (req, res) => {
 });
 
 app.get('/get_all_categories', async (req, res) => {
-    await pool.query("SELECT * FROM categories", 
+    await pool.query("SELECT *, HEX(id) AS id FROM categories", 
         function(err, rows) {
             if (err) {
                 res.status(400).json('Error retrieving categories, see backend console for details');
@@ -247,14 +221,8 @@ app.get('/get_fact_by_id', async (req, res) => {
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid access');
     }
-
-    var data = {
-        id: inID
-    }
     
-    const client = await pool.connect();
-    
-    const query = await client.query("SELECT FROM facts WHERE id=?", data, 
+    await pool.query("SELECT FROM facts WHERE id=UNHEX(?)", inID, 
         function(err, rows) {
             if (err) {
                 res.status(400).json('Error retrieving fact, see backend console for details');
@@ -272,14 +240,8 @@ app.get('/get_category_by_id', async (req, res) => {
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid access');
     }
-
-    var data = {
-        id: inID
-    }
     
-    const client = await pool.connect();
-    
-    const query = await client.query("SELECT FROM categories WHERE id=?", data, 
+    await pool.query("SELECT FROM categories WHERE id=UNHEX(?)", inID, 
         function(err, rows) {
             if (err) {
                 res.status(400).json('Error retrieving category, see backend console for details');
@@ -292,19 +254,13 @@ app.get('/get_category_by_id', async (req, res) => {
 });
 
 app.get('/get_all_facts_of_category', async (req, res) => {
-    let inCategory = req.body.category;
+    let inID = req.body.category;
 
-    if (!inCategory) {
+    if (!inID) {
         return res.status(400).json('Must submit an Category for valid access');
     }
-
-    var data = {
-        category: inCategory
-    }
     
-    const client = await pool.connect();
-    
-    const query = await client.query("SELECT FROM facts WHERE category=?", data, 
+    await pool.query("SELECT FROM facts WHERE category=UNHEX(?)", inID, 
         function(err, rows) {
             if (err) {
                 res.status(400).json('Error retrieving facts, see backend console for details');

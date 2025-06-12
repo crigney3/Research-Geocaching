@@ -13,14 +13,12 @@ import { BACKEND_URL } from './secrets';
 function App() {
 
   const [allCategories, setAllCategories] = useState([]);
+  const [allFacts, setAllFacts] = useState([]);
 
   useEffect(() => {
     getAllCategories();
+    getAllFacts();
   }, []);
-
-  useEffect(() => {
-
-  }, [setAllCategories]);
 
   const getAllCategories = () => {
     fetch(BACKEND_URL + "/get_all_categories", {
@@ -35,23 +33,33 @@ function App() {
       });
   }
 
-  const createCategory = () => {
-    fetch(BACKEND_URL + "/add_category", {
-        method: 'POST',
+  const getAllFacts = () => {
+    fetch(BACKEND_URL + "/get_all_facts", {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json;charset=utf-8'
         },
-        mode: 'cors',
-        body: JSON.stringify({title: 'testCat'})
-    }).then(response => {
-        getAllCategories();
+        mode: 'cors'
+    }).then(response => response.json())
+      .then(data => {
+        setAllFacts(data);
     });
+  }
+
+  const getCategoryTitleFromID = (id) => {
+    allCategories.forEach((cat) => {
+      if (cat.id === id) {
+        return cat.title;
+      }
+    });
+
+    return "Unknown";
   }
 
   return (
     <div className="App">
       <BrowserRouter>
-      <ResearchContext value={{allCategories}}>
+      <ResearchContext value={{allCategories, allFacts, getCategoryTitleFromID}}>
         <Routes>
           <Route path="/" element={<HomePage/>}>
           

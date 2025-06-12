@@ -1,7 +1,8 @@
 import { APIProvider, Map } from '@vis.gl/react-google-maps';
 import { GOOGLE_API_KEY, MAP_ID, BACKEND_URL } from "../../secrets";
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useContext, useEffect } from 'react';
 import MapMarker from './MapMarker';
+import ResearchContext from '../ResearchContext';
 
 const center = {
     lat: 37.97336898429983,
@@ -16,21 +17,24 @@ const containerStyle = {
 const CoreMap = ({
 
 }) => {
-    const [allFacts, setAllFacts] = useState([]);
+    const allFacts = useContext(ResearchContext).allFacts;
     const [currentCategoryFacts, setCurrentCategoryFacts] = useState([]);
     const [currentCategory, setCurrentCategory] = useState([]);
 
-    const FetchAllFacts = () => {
-        fetch(BACKEND_URL + "/get_all_facts", {
-            method: 'GET',
-            headers: {
-             'Content-Type': 'application/json;charset=utf-8'
-            },
-            mode: 'cors'
-        }).then(response => response.json())
-          .then(data => {
-            setAllFacts(data);
-      });
+    const [mapMarkers, setMapMarkers] = useState([]);
+
+    useEffect(() => {
+        createMapMarkers();
+    }, [allFacts]);
+
+    const createMapMarkers = () => {
+        let tempMarkers = [];
+
+        allFacts.forEach((fact) => {
+            tempMarkers.push(<MapMarker key={fact.id} id={fact.id} title={fact.title} description={fact.description} lat={fact.lat} lng={fact.lng} category={fact.category}/>);
+        })
+
+        setMapMarkers(tempMarkers);
     }
 
     const FetchAllFactsOfCategory = (category) => {
@@ -43,7 +47,7 @@ const CoreMap = ({
             body: JSON.stringify({category: 'TODO'})
         }).then(response => response.json())
           .then(data => {
-            setAllFacts(data);
+            setCurrentCategoryFacts(data);
       });
     }
 
@@ -57,7 +61,8 @@ const CoreMap = ({
             disableDefaultUI={true}
             mapId={MAP_ID}
           >
-            <MapMarker/>
+            {mapMarkers}
+            {/* <MapMarker/> */}
           </Map>
         </APIProvider>
     )

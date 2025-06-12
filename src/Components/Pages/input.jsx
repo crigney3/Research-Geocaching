@@ -22,12 +22,15 @@ const InputPage = ({
 
         if (titleValue === "") {
             // Tell the user they need to add a title
+            console.log("Title needed");
             return;
         } else if (descValue === "") {
             // Tell the user they need to add a description
+            console.log("Description needed");
             return;
         } else if (!catValue) {
             // Tell the user to pick a category, or possibly send it to a default category if that's preferred
+            console.log("Category needed");
             return;
         }
 
