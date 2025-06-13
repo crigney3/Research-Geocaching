@@ -1,9 +1,9 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const secrets = require('../src/secrets');
-const { v4: uuidv4 } = require('uuid');
-const sql = require('mysql');
-const cors = require("cors");
+import { express } from "express";
+import { bodyParser } from "body-parser";
+import { secrets } from "../src/secrets";
+import { v4 as uuidv4 } from "uuid";
+import { sql } from "mysql";
+import { cors } from "cors";
 
 const appPort = 80;
 const app = express();
