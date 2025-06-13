@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "proxy": "http://localhost:3330",
+  "type": "module",
   "dependencies": {
     "@capacitor/android": "^7.3.0",
     "@capacitor/ios": "^7.3.0",
