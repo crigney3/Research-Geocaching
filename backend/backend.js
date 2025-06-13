@@ -5,7 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 const sql = require('mysql');
 const cors = require("cors");
 
-const appPort = 80;
+const appPort = 3330;
 const app = express();
 app.use(bodyParser.json());
 
