@@ -1,6 +1,6 @@
 import { express } from "express";
 import { bodyParser } from "body-parser";
-import { secrets } from "../src/secrets";
+import { secrets } from "./secrets.js";
 import { v4 as uuidv4 } from "uuid";
 import { sql } from "mysql";
 import { cors } from "cors";
