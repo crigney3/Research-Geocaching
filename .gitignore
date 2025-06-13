@@ -24,3 +24,7 @@ yarn-error.log*
 
 # Secrets
 src/secrets.js
+
+# App builds
+/android
+/ios

@@ -17,7 +17,7 @@ const InputPage = ({
         categoriesToOptions();
     }, [allCategories]);
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
 
         if (titleValue === "") {
@@ -34,16 +34,22 @@ const InputPage = ({
             return;
         }
 
-        fetch(BACKEND_URL + "/add_fact", {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json;charset=utf-8'
-            },
-            mode: 'cors',
-            body: JSON.stringify({title: titleValue, description: descValue, lat: 37.97336898429985, lng: -87.53240843750174, category: catValue.value})
-        }).then(response => {
-            
-        });
+        try {
+            fetch(BACKEND_URL + "/add_fact", {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json;charset=utf-8'
+                },
+                mode: 'cors',
+                body: JSON.stringify({title: titleValue, description: descValue, lat: 37.97336898429985, lng: -87.53240843750174, category: catValue.value})
+            }).then(response => {
+
+            });
+        } catch(err) {
+            console.log(err);
+        }
+
+
     }
 
     const handleCatChange = (option) => {

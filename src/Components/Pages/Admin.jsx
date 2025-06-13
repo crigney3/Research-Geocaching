@@ -35,28 +35,36 @@ const AdminPage = ({
         setCategoryOptions(tempCat);
     }
 
-    const handleAllFactRemoval = (event) => {
-        fetch(BACKEND_URL + "/remove_all_facts", {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json;charset=utf-8'
-            },
-            mode: 'cors'
-        }).then(response => {
-            
-        });
+    const handleAllFactRemoval = async (event) => {
+        try {
+            await fetch(BACKEND_URL + "/remove_all_facts", {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json;charset=utf-8'
+                },
+                mode: 'cors'
+            }).then(response => {
+
+            });
+        } catch (err) {
+            console.log(err);
+        }
     }
 
-    const handleAllCatRemoval = (event) => {
-        fetch(BACKEND_URL + "/remove_all_categories", {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json;charset=utf-8'
-            },
-            mode: 'cors'
-        }).then(response => {
-            
-        });
+    const handleAllCatRemoval = async (event) => {
+        try {
+            await fetch(BACKEND_URL + "/remove_all_categories", {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json;charset=utf-8'
+                },
+                mode: 'cors'
+            }).then(response => {
+
+            });
+        } catch (err) {
+            console.log(err);
+        }
     }
 
     const handleCatChange = (option) => {
@@ -67,34 +75,43 @@ const AdminPage = ({
         setNewCatName(event.target.value);
     }
 
-    const handleRemoveCat = (event) => {
+    const handleRemoveCat = async (event) => {
         let localCat = catValue;
         console.log(localCat);
 
-        fetch(BACKEND_URL + "/remove_category_by_id", {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json;charset=utf-8'
-            },
-            mode: 'cors',
-            body: JSON.stringify({id: localCat.value})
-        }).then(response => {
-            
-        });
+        try {
+            await fetch(BACKEND_URL + "/remove_category_by_id", {
+                method: 'POST',
+                headers: {
+                'Content-Type': 'application/json;charset=utf-8'
+                },
+                mode: 'cors',
+                body: JSON.stringify({id: localCat.value})
+            }).then(response => {
+                
+            });
 
-        fetch(BACKEND_URL + "/remove_all_facts_in_category", {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json;charset=utf-8'
-            },
-            mode: 'cors',
-            body: JSON.stringify({id: localCat.value})
-        }).then(response => {
+            await fetch(BACKEND_URL + "/remove_all_facts_in_category", {
+                method: 'POST',
+                headers: {
+                'Content-Type': 'application/json;charset=utf-8'
+                },
+                mode: 'cors',
+                body: JSON.stringify({id: localCat.value})
+            }).then(response => {
             
         });
+        } catch (err) {
+            console.log(err);
+        }
     }
 
-    const handleRemoveAllFactsOfCat = (event) => {
+    const handleRemoveAllFactsOfCat = async (event) => {
+        try {
+
+        } catch (err) {
+            console.log(err);
+        }
         fetch(BACKEND_URL + "/remove_all_facts_in_category", {
             method: 'POST',
             headers: {
@@ -107,22 +124,26 @@ const AdminPage = ({
         });
     }
 
-    const handleNewCategoryAdd = (event) => {
+    const handleNewCategoryAdd = async (event) => {
         if (newCatName === "") {
             // Title shouldn't be blank
             return;
         }
 
-        fetch(BACKEND_URL + "/add_category", {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json;charset=utf-8'
-            },
-            mode: 'cors',
-            body: JSON.stringify({title: newCatName})
-        }).then(response => {
-            
-        });
+        try {
+            await fetch(BACKEND_URL + "/add_category", {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json;charset=utf-8'
+                },
+                mode: 'cors',
+                body: JSON.stringify({title: newCatName})
+            }).then(response => {
+
+            });
+        } catch (err) {
+            console.log(err);
+        }
     }
 
     return (

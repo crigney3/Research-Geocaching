@@ -6,6 +6,7 @@ import ProfilePage from './Components/Pages/profile';
 import LoginPage from './Components/Pages/login';
 import HomePage from './Components/Pages/home';
 import AdminPage from './Components/Pages/Admin';
+import Navbar from './Components/Navbar';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import ResearchContext from './Components/ResearchContext';
 import { BACKEND_URL } from './secrets';
@@ -20,30 +21,38 @@ function App() {
     getAllFacts();
   }, []);
 
-  const getAllCategories = () => {
-    fetch(BACKEND_URL + "/get_all_categories", {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json;charset=utf-8'
-        },
-        mode: 'cors'
-    }).then(response => response.json())
-      .then(data => {
-        setAllCategories(data);
-      });
+  const getAllCategories = async () => {
+    try {
+      await fetch(BACKEND_URL + "/get_all_categories", {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json;charset=utf-8'
+          },
+          mode: 'cors'
+      }).then(response => response.json())
+        .then(data => {
+          setAllCategories(data);
+        });
+    } catch (err) {
+      console.log(err);
+    }
   }
 
-  const getAllFacts = () => {
-    fetch(BACKEND_URL + "/get_all_facts", {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json;charset=utf-8'
-        },
-        mode: 'cors'
-    }).then(response => response.json())
-      .then(data => {
-        setAllFacts(data);
-    });
+  const getAllFacts = async () => {
+    try {
+      await fetch(BACKEND_URL + "/get_all_facts", {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json;charset=utf-8'
+          },
+          mode: 'cors'
+      }).then(response => response.json())
+        .then(data => {
+          setAllFacts(data);
+      });
+    } catch (err) {
+      console.log(err);
+    }
   }
 
   const getCategoryTitleFromID = (id) => {
@@ -58,7 +67,9 @@ function App() {
 
   return (
     <div className="App">
+      
       <BrowserRouter>
+      <Navbar/>
       <ResearchContext value={{allCategories, allFacts, getCategoryTitleFromID}}>
         <Routes>
           <Route path="/" element={<HomePage/>}>
@@ -76,7 +87,7 @@ function App() {
           <Route path='/login' element={<LoginPage/>}>
 
           </Route>
-          <Route path='admin' element={<AdminPage/>}>
+          <Route path='/admin' element={<AdminPage/>}>
 
           </Route>
         </Routes>
