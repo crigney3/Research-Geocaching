@@ -1,10 +1,9 @@
-import { express } from "express";
-import pkg from "body-parser";
-const { bodyParser } = pkg;
-import { secrets } from "./secrets.js";
-import { v4 as uuidv4 } from "uuid";
-import { sql } from "mysql";
-import { cors } from "cors";
+const express = require('express');
+const bodyParser = require('body-parser');
+const secrets = require('./secrets');
+const { v4: uuidv4 } = require('uuid');
+const sql = require('mysql');
+const cors = require("cors");
 
 const appPort = 80;
 const app = express();
