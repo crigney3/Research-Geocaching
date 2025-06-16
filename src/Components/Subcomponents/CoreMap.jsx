@@ -23,8 +23,12 @@ const CoreMap = ({
 
     const [mapMarkers, setMapMarkers] = useState([]);
 
+    const userLoc = useContext(ResearchContext).currentLocation;
+
     useEffect(() => {
         createMapMarkers();
+        center.lat = userLoc?.coords.latitude;
+        center.lng = userLoc?.coords.longitude;
     }, [allFacts]);
 
     const createMapMarkers = () => {

@@ -12,6 +12,7 @@ const InputPage = ({
     const [categoryOptions, setCategoryOptions] = useState([]);
 
     const allCategories = useContext(ResearchContext).allCategories;
+    const userLoc = useContext(ResearchContext).currentLocation;
 
     useEffect(() => {
         categoriesToOptions();
@@ -41,7 +42,7 @@ const InputPage = ({
                   'Content-Type': 'application/json;charset=utf-8'
                 },
                 mode: 'cors',
-                body: JSON.stringify({title: titleValue, description: descValue, lat: 37.97336898429985, lng: -87.53240843750174, category: catValue.value})
+                body: JSON.stringify({title: titleValue, description: descValue, lat: userLoc?.coords.latitude, lng: userLoc?.coords.longitude, category: catValue.value})
             }).then(response => {
 
             });

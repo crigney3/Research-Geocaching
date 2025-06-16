@@ -1,5 +1,5 @@
 import './App.css';
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import MapPage from './Components/Pages/map';
 import InputPage from './Components/Pages/input';
 import ProfilePage from './Components/Pages/profile';
@@ -10,16 +10,28 @@ import Navbar from './Components/Navbar';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import ResearchContext from './Components/ResearchContext';
 import { BACKEND_URL } from './secrets';
+import { Geolocation } from '@capacitor/geolocation';
 
 function App() {
 
   const [allCategories, setAllCategories] = useState([]);
   const [allFacts, setAllFacts] = useState([]);
+  const [currentLocation, setCurrentLocation] = useState(null);
 
   useEffect(() => {
     getAllCategories();
     getAllFacts();
+    getCurrentLocation();
   }, []);
+
+  const getCurrentLocation = useCallback(async () => {
+    try {
+      const coords = await Geolocation.getCurrentPosition();
+      setCurrentLocation(coords);
+    } catch(err) {
+      console.log(err);
+    }
+  });
 
   const getAllCategories = async () => {
     try {
@@ -70,7 +82,7 @@ function App() {
       
       <BrowserRouter>
       <Navbar/>
-      <ResearchContext value={{allCategories, allFacts, getCategoryTitleFromID}}>
+      <ResearchContext value={{allCategories, allFacts, getCategoryTitleFromID, currentLocation}}>
         <Routes>
           <Route path="/" element={<HomePage/>}>
           
