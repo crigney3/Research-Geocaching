@@ -3,12 +3,18 @@ import ResearchContext from '../ResearchContext';
 import Select from 'react-select';
 import { BACKEND_URL } from '../../secrets';
 
+const UETestLoc = {
+    lat: 37.97336898429983,
+    lng: -87.53240843750176
+}
+
 const InputPage = ({
     
 }) => {
     const [titleValue, setTitleValue] = useState("");
     const [descValue, setDescValue] = useState("");
     const [catValue, setCatValue] = useState(0);
+    const [testChecked, setTestChecked] = useState(true);
     const [categoryOptions, setCategoryOptions] = useState([]);
 
     const allCategories = useContext(ResearchContext).allCategories;
@@ -36,13 +42,20 @@ const InputPage = ({
         }
 
         try {
+            let JSONString = "";
+            if (testChecked) {
+                JSONString = JSON.stringify({title: titleValue, description: descValue, lat: userLoc?.coords.latitude, lng: userLoc?.coords.longitude, category: catValue.value});
+            } else {
+                JSONString = JSON.stringify({title: titleValue, description: descValue, lat: UETestLoc.lat, lng: UETestLoc.lng, category: catValue.value});
+            }
+
             fetch(BACKEND_URL + "/add_fact", {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json;charset=utf-8'
                 },
                 mode: 'cors',
-                body: JSON.stringify({title: titleValue, description: descValue, lat: userLoc?.coords.latitude, lng: userLoc?.coords.longitude, category: catValue.value})
+                body: JSONString
             }).then(response => {
 
             });
@@ -63,6 +76,10 @@ const InputPage = ({
 
     const handleDescChange = (event) => {
         setDescValue(event.target.value);
+    }
+
+    const handleCheckedChange = (event) => {
+        setTestChecked(event.target.value);
     }
 
     const categoriesToOptions = () => {
@@ -89,6 +106,8 @@ const InputPage = ({
                 </label>
 
                 <Select name='catSelector' options={categoryOptions} onChange={handleCatChange}/>
+
+                <input type="checkbox" checked={testChecked} onChange={handleCheckedChange}/>
 
                 <input name='submitBtn' type='submit' value='Submit'/>
             </form>
