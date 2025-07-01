@@ -3,6 +3,7 @@ import { GOOGLE_API_KEY, MAP_ID, BACKEND_URL } from "../../secrets";
 import { useState, useCallback, useContext, useEffect } from 'react';
 import MapMarker from './MapMarker';
 import ResearchContext from '../ResearchContext';
+import './Map.css';
 
 const center = {
     lat: 37.97336898429983,
@@ -58,12 +59,20 @@ const CoreMap = ({
     return (
         <APIProvider apiKey={GOOGLE_API_KEY}>
           <Map
-            style={{width: '100vw', height: '100vh'}}
+            className='MainMap'
+            // style={{width: '100vw', height: '100vh'}}
             defaultCenter={center}
             defaultZoom={19}
             gestureHandling={'greedy'}
             disableDefaultUI={true}
             mapId={MAP_ID}
+            styles={[{
+              featureType: "poi",
+              elementType: "labels",
+              stylers: [
+                { visibility: "off" }
+              ]
+            }]}
           >
             {mapMarkers}
             {/* <MapMarker/> */}

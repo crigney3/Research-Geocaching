@@ -1,6 +1,7 @@
 import { AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
 import React from 'react';
-import { useState, useCallback } from 'react';
+import { useState, useRef } from 'react';
+import FactPopup from './FactPopup';
 
 const MapMarker = ({
     id,
@@ -10,10 +11,34 @@ const MapMarker = ({
     lng,
     category
 }) => {
+    
+    const [popupEnabled, setPopupEnabled] = useState(false);
+    const markerRef = useRef(null);
+    const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0});
+
+    const handleFactPopup = (event) => {
+        setPopupEnabled(!popupEnabled);
+
+        if (markerRef.current) {
+            const rect = markerRef.current.getBoundingClientRect();
+
+            setPopupPosition({top: rect.top, left: rect.left});
+        } else {
+            console.log("Can't get ref! Popup will display incorrectly");
+        }
+    }
+
+    const handleClose = (event) => {
+        setPopupEnabled(false);
+    }
+
     return (
-        <AdvancedMarker position={{lat, lng}} title={title}>
-            <Pin background='var(--purple-main)' borderColor='var(--orange-main)' glyphColor='var(--white)'/>
-        </AdvancedMarker>
+        <div className='Marker'>
+            <AdvancedMarker ref={markerRef} position={{lat, lng}} title={title} onClick={handleFactPopup}>
+                <Pin background='var(--purple-main)' borderColor='var(--orange-main)' glyphColor='var(--white)'/>
+            </AdvancedMarker>
+            {(popupEnabled) && <FactPopup title={title} description={description} handleClose={handleClose} inTop={popupPosition.top} inLeft={popupPosition.left}/>}
+        </div>
     )
 }
 
