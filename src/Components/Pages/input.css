@@ -1,0 +1,301 @@
+.InputPage {
+    min-height: 100vh;
+    background: linear-gradient(135deg, 
+        var(--orange-main) 0%, 
+        var(--purple-main) 100%);
+    background-attachment: fixed;
+    position: relative;
+    padding: 20px;
+    padding-bottom: 100px;
+    font-family: 'Arial', sans-serif;
+}
+
+.full-form {
+    position: relative;
+    z-index: 1;
+    max-width: 600px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.top-row {
+    display: flex;
+    gap: 15px;
+    width: 100%;
+}
+
+.top-row > div {
+    flex: 1;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-label {
+    color: var(--white);
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.form-input {
+    padding: 15px;
+    border: 2px solid var(--purple-main);
+    border-radius: 15px;
+    background: var(--white);
+    font-size: 1rem;
+    color: var(--purple-main);
+    outline: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.form-input:focus {
+    border-color: var(--orange-main);
+    box-shadow: 0 0 0 3px rgba(246, 139, 31, 0.2), 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+}
+
+.form-input::placeholder {
+    color: var(--slate-accent);
+}
+
+.title-input {
+    height: 50px;
+}
+
+.description-container {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.description-input {
+    min-height: 150px;
+    resize: vertical;
+    font-family: inherit;
+    line-height: 1.5;
+}
+
+.select-container {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    padding: 15px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    z-index: 10;
+}
+
+.title-container {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    padding: 15px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.floating-submit {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(135deg, var(--orange-main), var(--orange-accent));
+    border: none;
+    border-radius: 50%;
+    color: var(--white);
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(246, 139, 31, 0.4);
+    transition: all 0.3s ease;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.floating-submit:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 25px rgba(246, 139, 31, 0.5);
+}
+
+.floating-submit:active {
+    transform: scale(0.95);
+}
+
+.test-checkbox {
+    margin: 20px 0;
+}
+
+.section-title {
+    color: var(--purple-main);
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 15px;
+    text-align: center;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.modal-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-container {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 30px 25px;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    transform: scale(0.9) translateY(20px);
+    transition: all 0.3s ease;
+    border: 2px solid rgba(76, 38, 131, 0.1);
+    text-align: center;
+}
+
+.modal-overlay.show .modal-container {
+    transform: scale(1) translateY(0);
+}
+
+.modal-icon {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1.5rem;
+}
+
+.modal-icon.success {
+    background: linear-gradient(135deg, var(--green-accent), var(--light-blue-accent));
+}
+
+.modal-icon.error {
+    background: linear-gradient(135deg, var(--red-accent), var(--orange-main));
+}
+
+.modal-title {
+    color: var(--purple-main);
+    font-size: 1.4rem;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.modal-message {
+    color: var(--blue-accent);
+    font-size: 1rem;
+    line-height: 1.5;
+    margin-bottom: 25px;
+}
+
+.modal-button {
+    width: 100%;
+    padding: 15px 20px;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--white);
+}
+
+.modal-button.success {
+    background: linear-gradient(135deg, var(--green-accent), var(--light-blue-accent));
+}
+
+.modal-button.error {
+    background: linear-gradient(135deg, var(--red-accent), var(--orange-main));
+}
+
+.modal-button:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 768px) {
+    .top-row {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .input-page {
+        padding: 15px;
+        padding-bottom: 100px;
+    }
+
+    .description-container,
+    .select-container,
+    .title-container {
+        padding: 20px;
+    }
+
+    .floating-submit {
+        width: 60px;
+        height: 60px;
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .input-page {
+        padding: 10px;
+        padding-bottom: 90px;
+    }
+
+    .description-container,
+    .select-container,
+    .title-container {
+        padding: 15px;
+    }
+
+    .floating-submit {
+        bottom: 15px;
+        right: 15px;
+        width: 55px;
+        height: 55px;
+        font-size: 0.9rem;
+    }
+
+    .description-input {
+        min-height: 120px;
+    }
+
+    .modal-container {
+        padding: 25px 20px;
+        margin: 10px;
+    }
+}

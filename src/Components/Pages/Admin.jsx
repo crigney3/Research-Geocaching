@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from "react";
 import Select from "react-select";
 import ResearchContext from "../ResearchContext";
 import { BACKEND_URL } from "../../secrets";
+import './Admin.css';
 
 const AdminPage = ({
 
@@ -11,10 +12,68 @@ const AdminPage = ({
     const [categoryOptions, setCategoryOptions] = useState([]);
     const [newCatName, setNewCatName] = useState("");
     const [isLitterboxDirty, setIsLitterboxDirty] = useState(false);
+    const [showModal, setShowModal] = useState(false);
+    const [modalConfig, setModalConfig] = useState({ title: '', message: '', action: null });
 
     const allCategories = useContext(ResearchContext).allCategories;
     const allFacts = useContext(ResearchContext).allFacts;
     const getCatTitle = useContext(ResearchContext).getCategoryTitleFromID;
+
+    const customSelectStyles = {
+        control: (provided, state) => ({
+            ...provided,
+            border: '2px solid #4C2683',
+            borderRadius: '15px',
+            padding: '8px',
+            fontSize: '1rem',
+            boxShadow: state.isFocused ? '0 0 0 3px rgba(246, 139, 31, 0.2)' : 'none',
+            borderColor: state.isFocused ? '#F68B1F' : '#4C2683',
+            background: 'white',
+            '&:hover': {
+                borderColor: '#4C2683'
+            }
+        }),
+        valueContainer: (provided) => ({
+            ...provided,
+            padding: '0 8px'
+        }),
+        singleValue: (provided) => ({
+            ...provided,
+            color: '#4C2683',
+            fontWeight: '500'
+        }),
+        placeholder: (provided) => ({
+            ...provided,
+            color: '#7A99AC'
+        }),
+        indicatorSeparator: (provided) => ({
+            ...provided,
+            backgroundColor: '#4C2683'
+        }),
+        dropdownIndicator: (provided) => ({
+            ...provided,
+            color: '#4C2683'
+        }),
+        menu: (provided) => ({
+            ...provided,
+            borderRadius: '12px',
+            overflow: 'hidden',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
+            border: '1px solid rgba(76, 38, 131, 0.2)'
+        }),
+        option: (provided, state) => ({
+            ...provided,
+            color: '#4C2683',
+            backgroundColor: state.isSelected ? '#F68B1F' : 
+                           state.isFocused ? 'rgba(76, 38, 131, 0.1)' : 'white',
+            padding: '12px 16px',
+            cursor: 'pointer',
+            '&:hover': {
+                backgroundColor: 'rgba(246, 139, 31, 0.1)',
+                color: '#4C2683'
+            }
+        })
+    };
 
     useEffect(() => {
         categoriesToOptions();
@@ -35,7 +94,7 @@ const AdminPage = ({
         setCategoryOptions(tempCat);
     }
 
-    const handleAllFactRemoval = async (event) => {
+    const removeAllFacts = async () => {
         try {
             await fetch(BACKEND_URL + "/remove_all_facts", {
                 method: 'POST',
@@ -51,7 +110,19 @@ const AdminPage = ({
         }
     }
 
-    const handleAllCatRemoval = async (event) => {
+    const handleAllFactRemoval = async (event) => {
+        setModalConfig({
+            title: 'Remove All Facts',
+            message: 'Are you sure you want to remove all facts? This action cannot be undone.',
+            action: () => {
+                removeAllFacts();
+                setShowModal(false);
+            }
+        });
+        setShowModal(true);
+    }
+
+    const removeAllCategories = async () => {
         try {
             await fetch(BACKEND_URL + "/remove_all_categories", {
                 method: 'POST',
@@ -65,6 +136,18 @@ const AdminPage = ({
         } catch (err) {
             console.log(err);
         }
+    }
+
+    const handleAllCatRemoval = async (event) => {
+        setModalConfig({
+            title: 'Remove All Categories',
+            message: 'Are you sure you want to remove all categories? This will also remove all associated facts and cannot be undone.',
+            action: () => {
+                removeAllCategories();
+                setShowModal(false);
+            }
+        });
+        setShowModal(true);
     }
 
     const handleCatChange = (option) => {
@@ -146,26 +229,120 @@ const AdminPage = ({
         }
     }
 
+    const handleModalConfirm = () => {
+        if (modalConfig.action) {
+            modalConfig.action();
+        }
+    };
+
+    const handleModalCancel = () => {
+        setShowModal(false);
+    };
+
+    const CustomSelect = ({ options, onChange }) => (
+        <div className="react-select-container">
+            <Select 
+                options={categoryOptions}
+                onChange={handleCatChange}
+                styles={customSelectStyles}
+                className="react-select-container"
+                classNamePrefix="react-select"
+            />
+        </div>
+    );
+
     return (
         <div className='AdminPage'>
-            <button onClick={handleAllFactRemoval}>Remove All Facts</button>
-            <button onClick={handleAllCatRemoval}>Remove All Categories</button>
-            <Select options={categoryOptions} onChange={handleCatChange}/>
-            <button onClick={handleRemoveCat}>Remove Selected Category</button>
-            <button onClick={handleRemoveAllFactsOfCat}>Remove All Facts In Selected Category</button>
-            <input type="text" onChange={handleNewCatNameChange}/>
-            <button onClick={handleNewCategoryAdd}>Add New Category</button>
-            <div className="allFacts">
-                {allFacts.map((fact) => {
-                    <div className="Fact" key={fact.id}>
-                        <h1>{fact.title}</h1>
-                        <p>{fact.description}</p>
-                        <p>{fact.lat}</p>
-                        <p>{fact.lng}</p>
-                        <p>{getCatTitle(fact.category)}</p>
-                        <p>{console.log(fact.title)}</p>
+            <div className="AdminContent">
+                <div className="category-section">
+                    <h2 className="section-title">Category Management</h2>
+                    <CustomSelect options={categoryOptions} onChange={handleCatChange}/>
+                    <div className="category-buttons">
+                        <button 
+                            className="category-btn remove-cat-btn" 
+                            onClick={handleRemoveCat}
+                        >
+                            Remove Selected Category
+                        </button>
+                        <button 
+                            className="category-btn remove-facts-cat-btn" 
+                            onClick={handleRemoveAllFactsOfCat}
+                        >
+                            Remove All Facts In Selected Category
+                        </button>
                     </div>
-                })}
+                </div>
+
+                <div className="input-section">
+                    <h2 className="section-title">Add New Category</h2>
+                    <input 
+                        type="text" 
+                        className="category-input"
+                        placeholder="Enter category name..."
+                        value={newCatName}
+                        onChange={handleNewCatNameChange}
+                    />
+                    <button 
+                        className="add-btn" 
+                        onClick={handleNewCategoryAdd}
+                    >
+                        Add New Category
+                    </button>
+                </div>
+
+                <div className="all-facts">
+                    <h2 className="section-title">All Facts</h2>
+                    {allFacts.map((fact) => (
+                        <div className="fact-card" key={fact.id}>
+                            <h3 className="fact-title">{fact.title}</h3>
+                            <p className="fact-description">{fact.description}</p>
+                            <div className="fact-details">
+                                <span className="fact-detail">Lat: {fact.lat}</span>
+                                <span className="fact-detail">Lng: {fact.lng}</span>
+                                <span className="fact-detail">Category: {getCatTitle(fact.category)}</span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="floating-buttons">
+                    <button 
+                        className="floating-btn remove-all-facts" 
+                        onClick={handleAllFactRemoval}
+                    >
+                        Remove All Facts
+                    </button>
+                    <button 
+                        className="floating-btn remove-all-cats" 
+                        onClick={handleAllCatRemoval}
+                    >
+                        Remove All Categories
+                    </button>
+                </div>
+            </div>
+
+            <div className={`modal-overlay ${showModal ? 'show' : ''}`} onClick={handleModalCancel}>
+                <div className="modal-container">
+                    <div className="modal-header">
+                        <div className="modal-icon">⚠️</div>
+                        <h3 className="modal-title">{modalConfig.title}</h3>
+                    </div>
+                    <p className="modal-message">{modalConfig.message}</p>
+                    <div className="modal-buttons">
+                        <button 
+                            className="modal-btn modal-btn-cancel" 
+                            onClick={handleModalCancel}
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            className="modal-btn modal-btn-confirm" 
+                            onClick={handleModalConfirm}
+                        >
+                            Confirm
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     )

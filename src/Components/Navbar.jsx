@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 const Navbar = ({
 
 }) => {
-    const [navbarOpen, setNavbarOpen] = useState(false);
+    const [navbarOpen, setNavbarOpen] = useState(true);
     const [navbarClass, setNavbarClass] = useState("Navbar");
     const [overlayClass, setOverlayClass] = useState("Overlay");
 

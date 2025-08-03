@@ -4,6 +4,7 @@
     left: 0;
     width: 100%;
     z-index: 1000;
+    pointer-events: none;
 }
 
 .Navbar {
@@ -17,10 +18,11 @@
     height: 60px;
     transition: transform 0.3s ease-in-out;
     transform: translateY(0);
+    pointer-events: auto;
 }
 
 .Navbar.collapsed {
-    transform: translateY(-100%);
+    transform: translateY(-200%);
 }
 
 .Navbar > div {
