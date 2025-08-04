@@ -109,8 +109,8 @@ app.post('/remove_fact_by_id', async (req, res) => {
     }
 
     await pool.query("DELETE FROM facts WHERE id=UNHEX(?) ", inID, 
-        function(err, rows) {
-            if (err) {
+        function(err, result) {
+            if (err || result.affectedRows === 0) {
                 res.status(400).json('Error removing fact, see backend console for details');
                 console.log("Error removing fact: %s", err);
             } else {
