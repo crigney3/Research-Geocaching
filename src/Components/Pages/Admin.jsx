@@ -139,7 +139,10 @@ const AdminPage = ({
             }).then(response => {
                 if (response.ok) {
                     reloadFacts();
+                } else {
+                    console.log(response);
                 }
+                console.log(response);
             });
         } catch (err) {
             console.log(err);
