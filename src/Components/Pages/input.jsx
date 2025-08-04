@@ -89,7 +89,7 @@ const InputPage = ({
                 } else {
                     setModalConfig({
                         title: 'Submission Failed',
-                        message: 'There was an error submitting your fact. Please try again. Response code: ' + response.json(),
+                        message: 'There was an error submitting your fact. Please try again. Response code: ' + response.status,
                         isSuccess: false
                     });
                     setShowModal(true);

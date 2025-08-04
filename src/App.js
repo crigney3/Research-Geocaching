@@ -33,7 +33,11 @@ function App() {
 
   const getCurrentLocation = useCallback(async () => {
     try {
-      const coords = await Geolocation.getCurrentPosition();
+      const coords = await Geolocation.getCurrentPosition({
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 2000
+      });
       setCurrentLocation(coords);
     } catch(err) {
       if (err.code !== 3) {
@@ -84,6 +88,8 @@ function App() {
         title = cat.title;
         // This returns .some, not the outer function
         // It's a hacky way to make this a break foreach loop
+        // I say hacky but the alternative is that this function
+        // gets super laggy. So it's an optimization hacky
         return true;
       }
     });

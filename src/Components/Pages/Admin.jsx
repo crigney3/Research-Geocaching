@@ -127,7 +127,7 @@ const AdminPage = ({
         setShowModal(true);
     }
 
-    const removeFact = async (factID) => {
+    const removeFact = async (fact) => {
         try {
             await fetch(BACKEND_URL + "/remove_fact_by_id", {
                 method: 'POST',
@@ -135,26 +135,25 @@ const AdminPage = ({
                   'Content-Type': 'application/json;charset=utf-8'
                 },
                 mode: 'cors',
-                body: JSON.stringify({id: factID})
+                body: JSON.stringify({id: fact.id})
             }).then(response => {
                 if (response.ok) {
                     reloadFacts();
                 } else {
                     console.log(response);
                 }
-                console.log(response);
             });
         } catch (err) {
             console.log(err);
         }
     }
 
-    const handleDeleteFact = (factId, factTitle) => {
+    const handleDeleteFact = (fact) => {
         setModalConfig({
             title: 'Delete Fact',
-            message: `Are you sure you want to delete "${factTitle}"? This action cannot be undone.`,
+            message: `Are you sure you want to delete "${fact.title}"? This action cannot be undone.`,
             action: () => {
-                removeFact(factId);
+                removeFact(fact);
                 setShowModal(false);
             }
         });
@@ -347,7 +346,7 @@ const AdminPage = ({
                         <div className="fact-card" key={fact.id}>
                             <button 
                                 className="fact-delete-btn"
-                                onClick={() => handleDeleteFact(fact.id, fact.title)}
+                                onClick={() => handleDeleteFact(fact)}
                                 title="Delete fact"
                             >
                                 <CloseIcon size={16} />
