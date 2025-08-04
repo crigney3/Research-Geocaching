@@ -22,6 +22,13 @@ function App() {
     getAllCategories();
     getAllFacts();
     getCurrentLocation();
+
+    // Update our position every 3 seconds
+    const locationUpdater = setInterval(() => {
+      getCurrentLocation();
+    }, 3000);
+
+    return () => clearInterval(locationUpdater);
   }, []);
 
   const getCurrentLocation = useCallback(async () => {
@@ -29,7 +36,9 @@ function App() {
       const coords = await Geolocation.getCurrentPosition();
       setCurrentLocation(coords);
     } catch(err) {
-      console.log(err);
+      if (err.code !== 3) {
+        console.log(err);
+      }
     }
   });
 
@@ -68,13 +77,18 @@ function App() {
   }
 
   const getCategoryTitleFromID = (id) => {
-    allCategories.forEach((cat) => {
-      if (cat.id === id) {
-        return cat.title;
+    let title = "Unknown";
+
+    allCategories.some((cat) => {
+      if (cat.id == id) {
+        title = cat.title;
+        // This returns .some, not the outer function
+        // It's a hacky way to make this a break foreach loop
+        return true;
       }
     });
 
-    return "Unknown";
+    return title;
   }
 
   return (
@@ -82,7 +96,7 @@ function App() {
       
       <BrowserRouter>
       <Navbar/>
-      <ResearchContext value={{allCategories, allFacts, getCategoryTitleFromID, currentLocation}}>
+      <ResearchContext value={{allCategories, allFacts, getCategoryTitleFromID, currentLocation, getAllCategories, getAllFacts, getCurrentLocation}}>
         <Routes>
           <Route path="/" element={<HomePage/>}>
           

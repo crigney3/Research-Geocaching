@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from "react";
 import Select from "react-select";
 import ResearchContext from "../ResearchContext";
 import { BACKEND_URL } from "../../secrets";
+import CloseIcon from '@mui/icons-material/Close';
 import './Admin.css';
 
 const AdminPage = ({
@@ -18,6 +19,8 @@ const AdminPage = ({
     const allCategories = useContext(ResearchContext).allCategories;
     const allFacts = useContext(ResearchContext).allFacts;
     const getCatTitle = useContext(ResearchContext).getCategoryTitleFromID;
+    const reloadFacts = useContext(ResearchContext).getAllFacts;
+    const reloadCategories = useContext(ResearchContext).getAllCategories;
 
     const customSelectStyles = {
         control: (provided, state) => ({
@@ -59,7 +62,8 @@ const AdminPage = ({
             borderRadius: '12px',
             overflow: 'hidden',
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
-            border: '1px solid rgba(76, 38, 131, 0.2)'
+            border: '1px solid rgba(76, 38, 131, 0.2)',
+            zIndex: 9999
         }),
         option: (provided, state) => ({
             ...provided,
@@ -77,11 +81,10 @@ const AdminPage = ({
 
     useEffect(() => {
         categoriesToOptions();
-        //console.log(allCategories);
     }, [allCategories]);
 
     useEffect(() => {
-        console.log(allFacts);
+        //console.log(allFacts);
     }, [allFacts]);
 
     const categoriesToOptions = () => {
@@ -103,7 +106,9 @@ const AdminPage = ({
                 },
                 mode: 'cors'
             }).then(response => {
-
+                if (response.ok) {
+                    reloadFacts();
+                }
             });
         } catch (err) {
             console.log(err);
@@ -122,6 +127,37 @@ const AdminPage = ({
         setShowModal(true);
     }
 
+    const removeFact = async (factID) => {
+        try {
+            await fetch(BACKEND_URL + "/remove_fact_by_id", {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json;charset=utf-8'
+                },
+                mode: 'cors',
+                body: JSON.stringify({id: factID})
+            }).then(response => {
+                if (response.ok) {
+                    reloadFacts();
+                }
+            });
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+    const handleDeleteFact = (factId, factTitle) => {
+        setModalConfig({
+            title: 'Delete Fact',
+            message: `Are you sure you want to delete "${factTitle}"? This action cannot be undone.`,
+            action: () => {
+                removeFact(factId);
+                setShowModal(false);
+            }
+        });
+        setShowModal(true);
+    };
+
     const removeAllCategories = async () => {
         try {
             await fetch(BACKEND_URL + "/remove_all_categories", {
@@ -131,7 +167,10 @@ const AdminPage = ({
                 },
                 mode: 'cors'
             }).then(response => {
-
+                if (response.ok) {
+                    reloadCategories();
+                    reloadFacts();
+                }
             });
         } catch (err) {
             console.log(err);
@@ -182,8 +221,11 @@ const AdminPage = ({
                 mode: 'cors',
                 body: JSON.stringify({id: localCat.value})
             }).then(response => {
-            
-        });
+                if (response.ok) {
+                    reloadFacts();
+                    reloadCategories();
+                }
+            });
         } catch (err) {
             console.log(err);
         }
@@ -191,20 +233,22 @@ const AdminPage = ({
 
     const handleRemoveAllFactsOfCat = async (event) => {
         try {
-
+            fetch(BACKEND_URL + "/remove_all_facts_in_category", {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json;charset=utf-8'
+                },
+                mode: 'cors',
+                body: JSON.stringify({id: catValue.value})
+            }).then(response => {
+                if (response.ok) {
+                    reloadFacts();
+                    reloadCategories();
+                }
+            });
         } catch (err) {
             console.log(err);
         }
-        fetch(BACKEND_URL + "/remove_all_facts_in_category", {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json;charset=utf-8'
-            },
-            mode: 'cors',
-            body: JSON.stringify({id: catValue.value})
-        }).then(response => {
-            
-        });
     }
 
     const handleNewCategoryAdd = async (event) => {
@@ -222,7 +266,10 @@ const AdminPage = ({
                 mode: 'cors',
                 body: JSON.stringify({title: newCatName})
             }).then(response => {
-
+                if (response.ok) {
+                    reloadCategories();
+                    setNewCatName("");
+                }
             });
         } catch (err) {
             console.log(err);
@@ -247,6 +294,7 @@ const AdminPage = ({
                 styles={customSelectStyles}
                 className="react-select-container"
                 classNamePrefix="react-select"
+                maxMenuHeight={250}
             />
         </div>
     );
@@ -294,11 +342,18 @@ const AdminPage = ({
                     <h2 className="section-title">All Facts</h2>
                     {allFacts.map((fact) => (
                         <div className="fact-card" key={fact.id}>
+                            <button 
+                                className="fact-delete-btn"
+                                onClick={() => handleDeleteFact(fact.id, fact.title)}
+                                title="Delete fact"
+                            >
+                                <CloseIcon size={16} />
+                            </button>
                             <h3 className="fact-title">{fact.title}</h3>
                             <p className="fact-description">{fact.description}</p>
                             <div className="fact-details">
-                                <span className="fact-detail">Lat: {fact.lat}</span>
-                                <span className="fact-detail">Lng: {fact.lng}</span>
+                                <span className="fact-detail">Lat: {fact.lat}, Lng: {fact.lng}</span>
+                                <span className="fact-detail">User: {fact.user}</span>
                                 <span className="fact-detail">Category: {getCatTitle(fact.category)}</span>
                             </div>
                         </div>

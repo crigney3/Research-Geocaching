@@ -22,6 +22,7 @@ const InputPage = ({
 
     const allCategories = useContext(ResearchContext).allCategories;
     const userLoc = useContext(ResearchContext).currentLocation;
+    const reloadFacts = useContext(ResearchContext).getAllFacts;
 
     useEffect(() => {
         categoriesToOptions();
@@ -83,10 +84,12 @@ const InputPage = ({
                     setTitleValue('');
                     setDescValue('');
                     setCatValue(null);
+                    // Also reload facts
+                    reloadFacts();
                 } else {
                     setModalConfig({
                         title: 'Submission Failed',
-                        message: 'There was an error submitting your fact. Please try again.',
+                        message: 'There was an error submitting your fact. Please try again. Response code: ' + response.json(),
                         isSuccess: false
                     });
                     setShowModal(true);
@@ -222,6 +225,7 @@ const InputPage = ({
                                 styles={customSelectStyles}
                                 placeholder="Select category..."
                                 value={catValue}
+                                maxMenuHeight={250}
                             />
                         </div>
                     </div>
@@ -269,7 +273,7 @@ const InputPage = ({
                         className={`modal-button ${modalConfig.isSuccess ? 'success' : 'error'}`}
                         onClick={handleModalClose}
                     >
-                        {modalConfig.isSuccess ? 'Great!' : 'Try Again'}
+                        {modalConfig.isSuccess ? 'Great!' : 'Close'}
                     </button>
                 </div>
             </div>

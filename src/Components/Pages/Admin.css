@@ -69,8 +69,32 @@
     background: rgba(76, 38, 131, 0.05);
     border-radius: 15px;
     padding: 15px;
+    padding-right: 55px;
     margin-bottom: 15px;
     border-left: 4px solid #F68B1F;
+    position: relative;
+}
+
+.fact-delete-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, var(--red-accent), #802416);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(224, 78, 57, 0.3);
+}
+
+.fact-delete-btn:active {
+    transform: scale(0.95);
 }
 
 .fact-title {
@@ -155,6 +179,8 @@
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    z-index: 10;
 }
 
 .section-title {
