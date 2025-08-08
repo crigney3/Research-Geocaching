@@ -66,13 +66,13 @@ const CoreMap = ({
             gestureHandling={'greedy'}
             disableDefaultUI={true}
             mapId={MAP_ID}
-            styles={[{
-              featureType: "poi",
-              elementType: "labels",
-              stylers: [
-                { visibility: "off" }
-              ]
-            }]}
+            // styles={[{
+            //   featureType: "poi",
+            //   elementType: "labels",
+            //   stylers: [
+            //     { visibility: "off" }
+            //   ]
+            // }]}
           >
             {mapMarkers}
             {/* <MapMarker/> */}

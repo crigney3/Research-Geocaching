@@ -41,6 +41,7 @@ app.post('/add_fact', async (req, res) => {
     let inLat = req.body.lat;
     let inLng = req.body.lng;
     let inCategory = req.body.category;
+    let inUserID = req.body.userID;
 
     if (!inTitle) {
         return res.status(400).json('Title cannot be blank');
@@ -62,10 +63,14 @@ app.post('/add_fact', async (req, res) => {
         return res.status(400).json('Category cannot be blank');
     }
 
+    if (!inUserID) {
+        return res.status(400).json('Submitting user cannot be blank');
+    }
+
     // Generate a uuid for this entry
     let newID = uuidv4();
 
-    await pool.query("INSERT INTO facts (id, title, description, lat, lng, category) VALUES(UNHEX(REPLACE(?, '-', '')),?,?,?,?,UNHEX(?))", [newID, inTitle, inDescription, inLat, inLng, inCategory], 
+    await pool.query("INSERT INTO facts (id, title, description, lat, lng, category, user) VALUES(UNHEX(REPLACE(?, '-', '')),?,?,?,?,UNHEX(?),?)", [newID, inTitle, inDescription, inLat, inLng, inCategory, inUserID], 
         function(err, rows) {
             if (err) {
                 res.status(400).json('Error inserting into facts, see backend console for details');
@@ -211,6 +216,19 @@ app.get('/get_all_categories', async (req, res) => {
         }
     );
 });
+
+app.get('/get_all_users', async (req, res) => {
+    await pool.query("SELECT * FROM users", 
+        function(err, rows) {
+            if (err) {
+                res.status(400).json('Error retrieving users, see backend console for details');
+                console.log("Error retrieving users: %s", err);
+            } else {
+                res.status(200).json(rows);
+            }
+        }
+    );
+});
 //#endregion
 
 //#region get-specific
@@ -253,6 +271,26 @@ app.get('/get_category_by_id', async (req, res) => {
     );
 });
 
+app.get('/get_user_by_id', async (req, res) => {
+    let inID = req.body.id;
+
+    if (!inID) {
+        return res.status(400).json('Must submit an ID for valid access');
+    }
+    
+    await pool.query("SELECT FROM users WHERE id=?", inID, 
+        function(err, rows) {
+            if (err) {
+                res.status(400).json('Error retrieving user, see backend console for details');
+                console.log("Error retrieving user: %s", err);
+            } else {
+                res.status(200).json(rows);
+            }
+        }
+    );
+});
+
+
 app.get('/get_all_facts_of_category', async (req, res) => {
     let inID = req.body.category;
 
@@ -270,6 +308,127 @@ app.get('/get_all_facts_of_category', async (req, res) => {
             }
         }
     );
+});
+
+//#endregion
+
+//#region user-management
+
+app.post('/user_login', async (req, res) => {
+    let inID = req.body.id;
+    let inUsername = req.body.user;
+    let inPerm = req.body.permission;
+
+    if (!inID) {
+        return res.status(400).json('Must submit a user ID for valid access');
+    }
+
+    await pool.query("SELECT FROM users WHERE id=?", inID,
+        async function(err, row) {
+            if (err) {
+                console.log("Error getting user: %s", err);
+                return res.status(400).json('Error getting user, see backend console for details');
+            }
+
+            // If the user already exists, just return that.
+            // If not, add them to the table and return the new data.
+            if (row && row.length) {
+                res.status(200).json(row);
+            } else {
+                // We need to check that username and permissions exist
+                // for first time setup only
+                if (!inUsername) {
+                    return res.status(400).json('Must submit a username for new user setup');
+                }
+                
+                if (!inPerm) {
+                    return res.status(400).json('Must submit a permission level for new user setup');
+                }
+
+                await pool.query("INSERT INTO users (id, username, permissions) VALUES(?,?,?)", [inID, inUsername, inPerm],
+                    function (err, row) {
+                        if (err) {
+                            console.log("Error inserting into users: %s", err);
+                            return res.status(400).json('Error inserting into users, see backend console for details');
+                        } else {
+                            res.status(200).json('User successfully inserted');
+                        }
+                    }
+                ); 
+            }
+        }
+    )
+});
+
+app.post('/set_level', async (req, res) => {
+    let inID = req.body.id;
+    let newLevel = req.body.level; // Level isn't required, we default to adding one
+
+    if (!inID) {
+        return res.status(400).json('Must submit a user ID for valid access');
+    }
+
+    if (newLevel) {
+        await pool.query("UPDATE users SET level=? WHERE id=?", newLevel, inID,
+            async function(err, row) {
+                if (err) {
+                    console.log("Error getting user: %s", err);
+                    return res.status(400).json('Error getting user, see backend console for details');
+                } else {
+                    res.status(200).json('User level updated');
+                }
+            }
+        );
+    } else {
+        await pool.query("UPDATE users SET level = level + 1 WHERE id=?", inID,
+            async function(err, row) {
+                if (err) {
+                    console.log("Error getting user: %s", err);
+                    return res.status(400).json('Error getting user, see backend console for details');
+                } else {
+                    res.status(200).json('User level updated');
+                }
+            }
+        );
+    }
+});
+
+app.post('/update_achievement', async (req, res) => {
+    let inID = req.body.id;
+    let inStat = req.body.stat;
+    let inStatValue = req.body.statValue; // Optional like level
+
+    if (!inID) {
+        return res.status(400).json('Must submit a user ID for valid access');
+    }
+
+    if (!inStat) {
+        return res.status(400).json('Must submit a stat to update');
+    }
+
+    if (inStatValue) {
+        await pool.query("UPDATE users SET ?=? WHERE id=?", inStat, inStatValue, inID,
+            async function(err, row) {
+                if (err) {
+                    console.log("Error getting user: %s", err);
+                    return res.status(400).json('Error getting user, see backend console for details');
+                } else {
+                    res.status(200).json('User stats updated');
+                }
+            }
+        );
+    } else {
+        await pool.query("UPDATE users SET ?=? + 1 WHERE id=?", inStat, inStat, inID,
+            async function(err, row) {
+                if (err) {
+                    console.log("Error getting user: %s", err);
+                    return res.status(400).json('Error getting user, see backend console for details');
+                } else {
+                    res.status(200).json('User stats updated');
+                }
+            }
+        );
+    }
 });
 
 //#endregion
