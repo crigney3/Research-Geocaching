@@ -118,7 +118,7 @@ const InputPage = ({
     }
 
     const handleCheckedChange = (event) => {
-        setTestChecked(event.target.value);
+        setTestChecked(!testChecked);
     }
 
     const categoriesToOptions = () => {

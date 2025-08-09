@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { InfoWindow } from '@vis.gl/react-google-maps';
 import './FactPopup.css';
 
@@ -6,23 +5,14 @@ const FactPopup = ({
     anchor,
     title,
     description,
-    handleClose,
-    inTop,
-    inLeft
+    username
 }) => {
-
-    useEffect(() => {
-        console.log(inTop);
-        console.log(inLeft);
-    }, [])
+    const isLongContent = description && description.length > 200;
 
     return (
-        <InfoWindow anchor={anchor} className='FactPopup' style={{position: "absolute", top: inTop + 'px', left: inLeft + 'px'}}>
-            <div className='TopRow'>
-                <p>{title}</p>
-                <button onClick={handleClose}>X</button>
-            </div>
-            <p className='PopupDescription'>{description}</p>
+        <InfoWindow anchor={anchor} className='FactPopup' shouldFocus={true} headerContent={<h2 className='Title'>{title}</h2>}>
+            <p className='Author'>Submitted by {username}</p>
+            <p className={`PopupDescription ${isLongContent ? 'long-content' : ''}`}>{description}</p>
         </InfoWindow>
     )
 }

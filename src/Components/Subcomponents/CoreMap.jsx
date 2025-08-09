@@ -30,6 +30,7 @@ const CoreMap = ({
     const [mapMarkers, setMapMarkers] = useState([]);
 
     const userLoc = useContext(ResearchContext).currentLocation;
+    const refreshFacts = useContext(ResearchContext).getAllFacts;
 
     useEffect(() => {
         createMapMarkers();
@@ -61,27 +62,39 @@ const CoreMap = ({
       });
     }
 
+    const handleGoToUser = () => {
+      centerSeattle.lat = userLoc?.coords.latitude;
+      centerSeattle.lng = userLoc?.coords.longitude;
+    }
+
+    const handleRefresh = () => {
+      refreshFacts();
+    }
+
     return (
         <APIProvider apiKey={GOOGLE_API_KEY}>
           <Map
-            className='MainMap'
-            // style={{width: '100vw', height: '100vh'}}
+          className='MainMap'
             defaultCenter={{lat: centerSeattle.lat, lng: centerSeattle.lng}}
             defaultZoom={19}
             gestureHandling={'greedy'}
             disableDefaultUI={true}
-            mapId={MAP_ID}
-            // styles={[{
-            //   featureType: "poi",
-            //   elementType: "labels",
-            //   stylers: [
-            //     { visibility: "off" }
-            //   ]
-            // }]}
+            mapId={MAP_ID}           
           >
             {mapMarkers}
-            {/* <MapMarker/> */}
           </Map>
+
+          {// Eventually implement these -
+          // the maps api makes directly setting a location difficult.
+          // using defaultCenter like I am means I can scroll around on the map,
+          // which is good, but not update it by code.
+          /* <button className='BackToLocationButton' onClick={handleGoToUser}>
+            go to user
+          </button>
+
+          <button className='RefreshButton' onClick={handleRefresh}>
+            refresh
+          </button> */}
         </APIProvider>
     )
 }

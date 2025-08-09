@@ -37,7 +37,7 @@ const MapMarker = ({
             <AdvancedMarker ref={markerRef} position={{lat, lng}} title={title} onClick={handleFactPopup}>
                 <Pin background='var(--purple-main)' borderColor='var(--orange-main)' glyphColor='var(--white)'/>
             </AdvancedMarker>
-            {(popupEnabled) && <FactPopup anchor={marker} title={title} description={description} handleClose={handleClose} inTop={popupPosition.top} inLeft={popupPosition.left}/>}
+            {(popupEnabled) && <FactPopup anchor={marker} title={title} description={description} username={"Yakman3"}/>}
         </div>
     )
 }
