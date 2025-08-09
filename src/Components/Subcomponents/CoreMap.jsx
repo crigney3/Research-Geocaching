@@ -10,6 +10,11 @@ const center = {
     lng: -87.53240843750176
 }
 
+const centerSeattle = {
+  lat: 47.57033851927011,
+  lng: -122.29415420009254
+}
+
 const containerStyle = {
   width: '400px',
   height: '400px',
@@ -61,7 +66,7 @@ const CoreMap = ({
           <Map
             className='MainMap'
             // style={{width: '100vw', height: '100vh'}}
-            defaultCenter={center}
+            defaultCenter={{lat: centerSeattle.lat, lng: centerSeattle.lng}}
             defaultZoom={19}
             gestureHandling={'greedy'}
             disableDefaultUI={true}

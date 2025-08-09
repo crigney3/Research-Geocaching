@@ -1,4 +1,4 @@
-import { AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
+import { AdvancedMarker, Pin, InfoWindow, useAdvancedMarkerRef } from '@vis.gl/react-google-maps';
 import React from 'react';
 import { useState, useRef } from 'react';
 import FactPopup from './FactPopup';
@@ -13,7 +13,7 @@ const MapMarker = ({
 }) => {
     
     const [popupEnabled, setPopupEnabled] = useState(false);
-    const markerRef = useRef(null);
+    const [markerRef, marker] = useAdvancedMarkerRef();
     const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0});
 
     const handleFactPopup = (event) => {
@@ -37,7 +37,7 @@ const MapMarker = ({
             <AdvancedMarker ref={markerRef} position={{lat, lng}} title={title} onClick={handleFactPopup}>
                 <Pin background='var(--purple-main)' borderColor='var(--orange-main)' glyphColor='var(--white)'/>
             </AdvancedMarker>
-            {(popupEnabled) && <FactPopup title={title} description={description} handleClose={handleClose} inTop={popupPosition.top} inLeft={popupPosition.left}/>}
+            {(popupEnabled) && <FactPopup anchor={marker} title={title} description={description} handleClose={handleClose} inTop={popupPosition.top} inLeft={popupPosition.left}/>}
         </div>
     )
 }

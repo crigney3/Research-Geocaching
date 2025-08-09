@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
+import { InfoWindow } from '@vis.gl/react-google-maps';
 import './FactPopup.css';
 
 const FactPopup = ({
+    anchor,
     title,
     description,
     handleClose,
@@ -15,13 +17,13 @@ const FactPopup = ({
     }, [])
 
     return (
-        <div className='FactPopup' style={{position: "absolute", top: inTop + 'px', left: inLeft + 'px'}}>
+        <InfoWindow anchor={anchor} className='FactPopup' style={{position: "absolute", top: inTop + 'px', left: inLeft + 'px'}}>
             <div className='TopRow'>
                 <p>{title}</p>
                 <button onClick={handleClose}>X</button>
             </div>
             <p className='PopupDescription'>{description}</p>
-        </div>
+        </InfoWindow>
     )
 }
 

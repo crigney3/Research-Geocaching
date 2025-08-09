@@ -17,11 +17,25 @@ function App() {
   const [allCategories, setAllCategories] = useState([]);
   const [allFacts, setAllFacts] = useState([]);
   const [currentLocation, setCurrentLocation] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  const testUser = {
+    id: 12397142,
+    username: 'yakman3',
+    permLevel: 3,
+    level: 0,
+    logins: 0,
+    factsViewed: 0,
+    factsPlaced: 0
+  }
 
   useEffect(() => {
     getAllCategories();
     getAllFacts();
     getCurrentLocation();
+
+    // Remove this eventually
+
 
     // Update our position every 3 seconds
     const locationUpdater = setInterval(() => {
