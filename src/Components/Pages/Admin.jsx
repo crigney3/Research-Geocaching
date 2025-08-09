@@ -3,6 +3,7 @@ import Select from "react-select";
 import ResearchContext from "../ResearchContext";
 import { BACKEND_URL } from "../../secrets";
 import CloseIcon from '@mui/icons-material/Close';
+import { Modal } from "../Subcomponents/Modal";
 import './Admin.css';
 
 const AdminPage = ({
@@ -119,6 +120,7 @@ const AdminPage = ({
         setModalConfig({
             title: 'Remove All Facts',
             message: 'Are you sure you want to remove all facts? This action cannot be undone.',
+            warningLevel: 1,
             action: () => {
                 removeAllFacts();
                 setShowModal(false);
@@ -152,6 +154,7 @@ const AdminPage = ({
         setModalConfig({
             title: 'Delete Fact',
             message: `Are you sure you want to delete "${fact.title}"? This action cannot be undone.`,
+            warningLevel: 1,
             action: () => {
                 removeFact(fact);
                 setShowModal(false);
@@ -183,6 +186,7 @@ const AdminPage = ({
         setModalConfig({
             title: 'Remove All Categories',
             message: 'Are you sure you want to remove all categories? This will also remove all associated facts and cannot be undone.',
+            warningLevel: 1,
             action: () => {
                 removeAllCategories();
                 setShowModal(false);
@@ -278,11 +282,11 @@ const AdminPage = ({
         }
     }
 
-    const handleModalConfirm = () => {
-        if (modalConfig.action) {
-            modalConfig.action();
-        }
-    };
+    // const handleModalConfirm = () => {
+    //     if (modalConfig.action) {
+    //         modalConfig.action();
+    //     }
+    // };
 
     const handleModalCancel = () => {
         setShowModal(false);
@@ -378,29 +382,7 @@ const AdminPage = ({
                 </div>
             </div>
 
-            <div className={`modal-overlay ${showModal ? 'show' : ''}`} onClick={handleModalCancel}>
-                <div className="modal-container">
-                    <div className="modal-header">
-                        <div className="modal-icon">⚠️</div>
-                        <h3 className="modal-title">{modalConfig.title}</h3>
-                    </div>
-                    <p className="modal-message">{modalConfig.message}</p>
-                    <div className="modal-buttons">
-                        <button 
-                            className="modal-btn modal-btn-cancel" 
-                            onClick={handleModalCancel}
-                        >
-                            Cancel
-                        </button>
-                        <button 
-                            className="modal-btn modal-btn-confirm" 
-                            onClick={handleModalConfirm}
-                        >
-                            Confirm
-                        </button>
-                    </div>
-                </div>
-            </div>
+            <Modal show={showModal} onClose={handleModalCancel} title={modalConfig.title} message={modalConfig.message} warningLevel={modalConfig.warningLevel} action={modalConfig.action}/>
         </div>
     )
 }

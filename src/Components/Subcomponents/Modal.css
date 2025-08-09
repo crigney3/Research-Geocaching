@@ -1,0 +1,118 @@
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.modal-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-container {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 30px 25px;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    transform: scale(0.9) translateY(20px);
+    transition: all 0.3s ease;
+    border: 2px solid rgba(76, 38, 131, 0.1);
+    text-align: center;
+}
+
+.modal-overlay.show .modal-container {
+    transform: scale(1) translateY(0);
+}
+
+.modal-icon {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1.5rem;
+}
+
+.modal-icon.success {
+    background: linear-gradient(135deg, var(--green-accent), var(--light-blue-accent));
+}
+
+.modal-icon.error {
+    background: linear-gradient(135deg, var(--red-accent), var(--orange-main));
+}
+
+.modal-icon.warning {
+    background: linear-gradient(135deg, var(--orange-main), var(--orange-accent));
+}
+
+.modal-title {
+    color: var(--purple-main);
+    font-size: 1.4rem;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.modal-message {
+    color: var(--blue-accent);
+    font-size: 1rem;
+    line-height: 1.5;
+    margin-bottom: 25px;
+}
+
+.modal-button {
+    width: 100%;
+    padding: 15px 20px;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--white);
+}
+
+.modal-button.success {
+    background: linear-gradient(135deg, var(--green-accent), var(--light-blue-accent));
+}
+
+.modal-button.error {
+    background: linear-gradient(135deg, var(--red-accent), var(--orange-main));
+}
+
+.modal-button.warning {
+    background: linear-gradient(135deg, var(--orange-main), var(--orange-accent));
+}
+
+.modal-button:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.modal-btn-confirm {
+    background: linear-gradient(135deg, var(--red-accent), #802416);
+    color: white;
+    order: 2;
+}
+
+@media (max-width: 480px) {
+    .modal-container {
+        padding: 25px 20px;
+        margin: 10px;
+    }
+}

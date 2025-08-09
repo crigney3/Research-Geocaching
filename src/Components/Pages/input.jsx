@@ -3,6 +3,7 @@ import ResearchContext from '../ResearchContext';
 import Select from 'react-select';
 import { BACKEND_URL } from '../../secrets';
 import './input.css';
+import { Modal } from '../Subcomponents/Modal';
 
 const UETestLoc = {
     lat: 37.97336898429983,
@@ -18,7 +19,7 @@ const InputPage = ({
     const [testChecked, setTestChecked] = useState(true);
     const [categoryOptions, setCategoryOptions] = useState([]);
     const [showModal, setShowModal] = useState(false);
-    const [modalConfig, setModalConfig] = useState({ title: '', message: '', isSuccess: false });
+    const [modalConfig, setModalConfig] = useState({ title: '', message: '', warningLevel: 0 });
 
     const allCategories = useContext(ResearchContext).allCategories;
     const userLoc = useContext(ResearchContext).currentLocation;
@@ -35,7 +36,7 @@ const InputPage = ({
             setModalConfig({
                 title: 'Title Required',
                 message: 'Please enter a title for your fact before submitting.',
-                isSuccess: false
+                warningLevel: 1
             });
             setShowModal(true);
             return;
@@ -43,7 +44,7 @@ const InputPage = ({
             setModalConfig({
                 title: 'Description Required',
                 message: 'Please enter a description for your fact before submitting.',
-                isSuccess: false
+                warningLevel: 1
             });
             setShowModal(true);
             return;
@@ -51,7 +52,7 @@ const InputPage = ({
             setModalConfig({
                 title: 'Category Required',
                 message: 'Please select a category for your fact before submitting.',
-                isSuccess: false
+                warningLevel: 1
             });
             setShowModal(true);
             return;
@@ -77,7 +78,7 @@ const InputPage = ({
                     setModalConfig({
                         title: 'Success!',
                         message: 'Your fact has been successfully submitted and saved.',
-                        isSuccess: true
+                        warningLevel: 2
                     });
                     setShowModal(true);
                     // Clear form on success
@@ -90,7 +91,7 @@ const InputPage = ({
                     setModalConfig({
                         title: 'Submission Failed',
                         message: 'There was an error submitting your fact. Please try again. Response code: ' + response.status,
-                        isSuccess: false
+                        warningLevel: 0
                     });
                     setShowModal(true);
                 }
@@ -99,7 +100,7 @@ const InputPage = ({
             setModalConfig({
                 title: 'Unexpected error!',
                 message: err,
-                isSuccess: false
+                warningLevel: 0
             });
             setShowModal(true);
         }
@@ -262,21 +263,7 @@ const InputPage = ({
                 </button>
             </form>
 
-            <div className={`modal-overlay ${showModal ? 'show' : ''}`}>
-                <div className="modal-container">
-                    <div className={`modal-icon ${modalConfig.isSuccess ? 'success' : 'error'}`}>
-                        {modalConfig.isSuccess ? '✓' : '⚠️'}
-                    </div>
-                    <h3 className="modal-title">{modalConfig.title}</h3>
-                    <p className="modal-message">{modalConfig.message}</p>
-                    <button 
-                        className={`modal-button ${modalConfig.isSuccess ? 'success' : 'error'}`}
-                        onClick={handleModalClose}
-                    >
-                        {modalConfig.isSuccess ? 'Great!' : 'Close'}
-                    </button>
-                </div>
-            </div>
+            <Modal show={showModal} onClose={handleModalClose} title={modalConfig.title} message={modalConfig.message} warningLevel={modalConfig.warningLevel} />
         </div>
     )
 }

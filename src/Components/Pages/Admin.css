@@ -297,98 +297,6 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
-    padding: 20px;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease;
-}
-
-.modal-overlay.show {
-    opacity: 1;
-    visibility: visible;
-}
-
-.modal-container {
-    background: white;
-    border-radius: 20px;
-    padding: 30px 25px;
-    max-width: 400px;
-    width: 100%;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    transform: scale(0.9) translateY(20px);
-    transition: all 0.3s ease;
-    border: 2px solid rgba(76, 38, 131, 0.1);
-}
-
-.modal-overlay.show .modal-container {
-    transform: scale(1) translateY(0);
-}
-
-.modal-header {
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-.modal-title {
-    color: #4C2683;
-    font-size: 1.4rem;
-    font-weight: bold;
-    margin-bottom: 15px;
-}
-
-.modal-message {
-    color: #34657F;
-    font-size: 1rem;
-    line-height: 1.5;
-    text-align: center;
-    margin-bottom: 25px;
-}
-
-.modal-buttons {
-    display: flex;
-    gap: 12px;
-    flex-direction: column;
-}
-
-.modal-btn {
-    padding: 15px 20px;
-    border: none;
-    border-radius: 12px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-align: center;
-}
-
-.modal-btn-confirm {
-    background: linear-gradient(135deg, var(--red-accent), #802416);
-    color: white;
-    order: 2;
-}
-
-.modal-btn-cancel {
-    background: linear-gradient(135deg, #703bbb, var(--purple-main));
-    color: white;
-    order: 1;
-}
-
-.modal-btn:active {
-    transform: translateY(2px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
 @media (max-width: 480px) {
     .admin-page {
         padding: 15px;
@@ -402,14 +310,5 @@
     
     .category-section, .input-section {
         padding: 20px;
-    }
-
-    .modal-container {
-        padding: 25px 20px;
-        margin: 10px;
-    }
-
-    .modal-buttons {
-        gap: 10px;
     }
 }
