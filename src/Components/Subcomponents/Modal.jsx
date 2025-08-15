@@ -83,11 +83,38 @@ const Modal = ({
 const FactModal = ({
     show, 
     title, 
-    message,
+    description,
     user,
     onClose
 }) => {
+    if (!show) return null;
 
+    const isLongContent = description && description.length > 200;
+
+    return (
+        <>
+            <div className="modal-backdrop" onClick={onClose}>
+                <div className="fact-popup" onClick={(e) => e.stopPropagation()}>
+                    <div className="modal-header">
+                        <h2 className="title">{title}</h2>
+                        <button 
+                            className="modal-close-button"
+                            onClick={onClose}
+                            aria-label="Close modal"
+                        >
+                            ×
+                        </button>
+                    </div>
+                    
+                    <p className="author">Submitted by {user}</p>
+                    
+                    <p className={`popup-description ${isLongContent ? 'long-content' : ''}`}>
+                        {description}
+                    </p>
+                </div>
+            </div>
+        </>
+    );
 }
 
 export {

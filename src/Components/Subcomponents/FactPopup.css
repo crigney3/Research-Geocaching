@@ -32,6 +32,20 @@
     hyphens: auto;
 }
 
+.FactPopup .ReadMore {
+    background: linear-gradient(135deg, var(--purple-main, #4C2683) 0%, var(--blue-accent, #34657F) 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(76, 38, 131, 0.2);
+}
+
 /* Scrollable description for content longer than ~200 characters */
 .FactPopup .PopupDescription.long-content {
     max-height: 120px;

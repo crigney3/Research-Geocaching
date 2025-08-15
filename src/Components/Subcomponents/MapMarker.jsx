@@ -2,6 +2,7 @@ import { AdvancedMarker, Pin, InfoWindow, useAdvancedMarkerRef } from '@vis.gl/r
 import React from 'react';
 import { useState, useRef } from 'react';
 import FactPopup from './FactPopup';
+import { FactModal } from './Modal';
 
 const MapMarker = ({
     id,
@@ -15,6 +16,11 @@ const MapMarker = ({
     const [popupEnabled, setPopupEnabled] = useState(false);
     const [markerRef, marker] = useAdvancedMarkerRef();
     const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0});
+    const [showFullFact, setShowFullFact] = useState(false);
+
+    const toggleFullscreenFact = () => {
+        setShowFullFact(!showFullFact);
+    }
 
     const handleFactPopup = (event) => {
         setPopupEnabled(!popupEnabled);
@@ -33,12 +39,15 @@ const MapMarker = ({
     }
 
     return (
-        <div className='Marker'>
+        <>
+        <div className='Marker' style={{zIndex: 10001}}>
             <AdvancedMarker ref={markerRef} position={{lat, lng}} title={title} onClick={handleFactPopup}>
                 <Pin background='var(--purple-main)' borderColor='var(--orange-main)' glyphColor='var(--white)'/>
             </AdvancedMarker>
-            {(popupEnabled) && <FactPopup anchor={marker} title={title} description={description} username={"Yakman3"}/>}
+            {(popupEnabled) && <FactPopup anchor={marker} title={title} description={description} username={"Yakman3"} closeFact={handleClose} fullscreenFact={toggleFullscreenFact}/>}
         </div>
+        {(showFullFact) && <FactModal show={showFullFact} title={title} description={description} user={"Yakman3"} onClose={toggleFullscreenFact} />}
+        </>
     )
 }
 
