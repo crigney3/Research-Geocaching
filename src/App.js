@@ -18,6 +18,7 @@ function App() {
   const [allFacts, setAllFacts] = useState([]);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const testUser = {
     id: 12397142,
@@ -37,12 +38,16 @@ function App() {
     // Remove this eventually
 
 
-    // Update our position every 3 seconds
-    const locationUpdater = setInterval(() => {
-      getCurrentLocation();
-    }, 3000);
+    // Watch our position so it updates constantly
+    const callbackID = Geolocation.watchPosition({
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 2000
+    }, (coords) => {
+      setCurrentLocation(coords);
+    });
 
-    return () => clearInterval(locationUpdater);
+    return () => Geolocation.clearWatch(callbackID);
   }, []);
 
   const getCurrentLocation = useCallback(async () => {
@@ -115,29 +120,42 @@ function App() {
     <div className="App">
       
       <BrowserRouter>
-      <Navbar/>
-      <ResearchContext value={{allCategories, allFacts, getCategoryTitleFromID, currentLocation, getAllCategories, getAllFacts, getCurrentLocation}}>
-        <Routes>
-          <Route path="/" element={<HomePage/>}>
-          
-          </Route>
-          <Route path='/map' element={<MapPage/>}>
+        <ResearchContext.Provider value={{
+          allCategories, 
+          allFacts, 
+          getCategoryTitleFromID, 
+          currentLocation, 
+          getAllCategories, 
+          getAllFacts, 
+          getCurrentLocation, 
+          currentUser, 
+          setCurrentUser, 
+          isLoggedIn, 
+          setIsLoggedIn, 
+          testUser}}>
             
-          </Route>
-          <Route path='/input' element={<InputPage/>}>
+          <Navbar/>
+          <Routes>
+            {/* <Route path="/" element={<HomePage/>}>
 
-          </Route>
-          <Route path='/profile' element={<ProfilePage/>}>
+            </Route> */}
+            <Route path='/' element={<MapPage/>}>
 
-          </Route>
-          <Route path='/login' element={<LoginPage/>}>
+            </Route>
+            <Route path='/input' element={<InputPage/>}>
 
-          </Route>
-          <Route path='/admin' element={<AdminPage/>}>
+            </Route>
+            <Route path='/profile' element={<ProfilePage/>}>
 
-          </Route>
-        </Routes>
-      </ResearchContext>
+            </Route>
+            <Route path='/login' element={<LoginPage/>}>
+
+            </Route>
+            <Route path='/admin' element={<AdminPage/>}>
+
+            </Route>
+          </Routes>
+        </ResearchContext.Provider>
       </BrowserRouter>
     </div>
   );

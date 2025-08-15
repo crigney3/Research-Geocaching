@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import MenuIcon from '@mui/icons-material/Menu';
 import './Navbar.css';
 import { useState, useEffect } from "react";
+import LoginButton from "./Subcomponents/LoginButton";
 
 const Navbar = ({
 
@@ -25,28 +26,29 @@ const Navbar = ({
 
             <div className="Navbar-Container">
                 <div className={navbarClass} id="navbar">
-                    <div className="HomeButton">
+                    {/* <div className="HomeButton">
                         <Link to="/">Home</Link>
-                    </div>
+                    </div> */}
 
                     <div className="AdminButton">
-                        <Link to="/admin">Admin</Link>
+                        <Link to="/admin" onClick={toggleNavbarState}>Admin</Link>
                     </div>
 
                     <div className="LoginButton">
-                        <Link to="/login">Login</Link>
+                        <LoginButton onClick={toggleNavbarState}/>
                     </div>
+                    
 
                     <div className="InputButton">
-                        <Link to="/input">Input</Link>
+                        <Link to="/input" onClick={toggleNavbarState}>Input</Link>
                     </div>
 
                     <div className="MapButton">
-                        <Link to="/map">Map</Link>
+                        <Link to="/" onClick={toggleNavbarState}>Map</Link>
                     </div>
 
                     <div className="ProfileButton">
-                        <Link to="/profile">Profile</Link>
+                        <Link to="/profile" onClick={toggleNavbarState}>Profile</Link>
                     </div>
                 </div>
             </div>

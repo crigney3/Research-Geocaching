@@ -68,6 +68,7 @@
 
 .LoginButton a {
     background-color: var(--light-blue-accent);
+    text-align: center;
 }
 
 .InputButton a {

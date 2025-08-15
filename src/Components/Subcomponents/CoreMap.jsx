@@ -1,8 +1,11 @@
-import { APIProvider, Map } from '@vis.gl/react-google-maps';
+import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps';
 import { GOOGLE_API_KEY, MAP_ID, BACKEND_URL } from "../../secrets";
 import { useState, useCallback, useContext, useEffect } from 'react';
 import MapMarker from './MapMarker';
 import ResearchContext from '../ResearchContext';
+import NavigationIcon from '@mui/icons-material/Navigation';
+import AddIcon from '@mui/icons-material/Add';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import './Map.css';
 
 const center = {
@@ -26,6 +29,8 @@ const CoreMap = ({
     const allFacts = useContext(ResearchContext).allFacts;
     const [currentCategoryFacts, setCurrentCategoryFacts] = useState([]);
     const [currentCategory, setCurrentCategory] = useState([]);
+    const [currentLoc, setCurrentLoc] = useState({lat: centerSeattle.lat, lng: centerSeattle.lng, heading: 0});
+    const [refreshClass, setRefreshClass] = useState('refresh-button');
 
     const [mapMarkers, setMapMarkers] = useState([]);
 
@@ -34,9 +39,17 @@ const CoreMap = ({
 
     useEffect(() => {
         createMapMarkers();
-        center.lat = userLoc?.coords.latitude;
-        center.lng = userLoc?.coords.longitude;
     }, [allFacts]);
+
+    useEffect(() => {
+      if (userLoc !== null) {
+        setCurrentLoc({
+          lat: userLoc?.coords.latitude,
+          lng: userLoc?.coords.longitude,
+          heading: userLoc?.coords.heading
+        });
+      }
+    }, [userLoc]);
 
     const createMapMarkers = () => {
         let tempMarkers = [];
@@ -69,32 +82,44 @@ const CoreMap = ({
 
     const handleRefresh = () => {
       refreshFacts();
+      setRefreshClass("refresh-button spinning");
+      const classClear = setTimeout(() => {
+        setRefreshClass("refresh-button");
+        clearTimeout(classClear);
+      }, 601);
+    }
+
+    const addFactMap = () => {
+
     }
 
     return (
         <APIProvider apiKey={GOOGLE_API_KEY}>
+          <button className={refreshClass} onClick={handleRefresh}>
+            <RefreshIcon/>
+          </button>
+
+          <button className='add-button' onClick={addFactMap}>
+            <AddIcon />
+          </button>
+
           <Map
           className='MainMap'
-            defaultCenter={{lat: centerSeattle.lat, lng: centerSeattle.lng}}
+            center={{lat: currentLoc.lat, lng: currentLoc.lng}}
             defaultZoom={19}
             gestureHandling={'greedy'}
             disableDefaultUI={true}
             mapId={MAP_ID}           
           >
+            {// Marks the user's current position with an arrow
+            userLoc && <AdvancedMarker position={{lat: currentLoc.lat, lng: currentLoc.lng}} >
+              <NavigationIcon style={{
+                  transform: `rotate(${currentLoc.heading}deg)`,
+                  color: "#F68B1F"
+                }}/>
+            </AdvancedMarker>}
             {mapMarkers}
           </Map>
-
-          {// Eventually implement these -
-          // the maps api makes directly setting a location difficult.
-          // using defaultCenter like I am means I can scroll around on the map,
-          // which is good, but not update it by code.
-          /* <button className='BackToLocationButton' onClick={handleGoToUser}>
-            go to user
-          </button>
-
-          <button className='RefreshButton' onClick={handleRefresh}>
-            refresh
-          </button> */}
         </APIProvider>
     )
 }
