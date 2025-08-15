@@ -25,6 +25,7 @@ function App() {
     username: 'yakman3',
     permLevel: 3,
     level: 0,
+    xp: 0,
     logins: 0,
     factsViewed: 0,
     factsPlaced: 0
@@ -133,7 +134,7 @@ function App() {
           isLoggedIn, 
           setIsLoggedIn, 
           testUser}}>
-            
+
           <Navbar/>
           <Routes>
             {/* <Route path="/" element={<HomePage/>}>
