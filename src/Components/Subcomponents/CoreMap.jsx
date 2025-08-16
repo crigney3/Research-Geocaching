@@ -6,6 +6,8 @@ import ResearchContext from '../ResearchContext';
 import NavigationIcon from '@mui/icons-material/Navigation';
 import AddIcon from '@mui/icons-material/Add';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import { ComponentModal } from './Modal';
+import InputPage from '../Pages/input.jsx';
 import './Map.css';
 
 const center = {
@@ -31,6 +33,7 @@ const CoreMap = ({
     const [currentCategory, setCurrentCategory] = useState([]);
     const [currentLoc, setCurrentLoc] = useState({lat: centerSeattle.lat, lng: centerSeattle.lng, heading: 0});
     const [refreshClass, setRefreshClass] = useState('refresh-button');
+    const [addWindowOpen, setAddWindowOpen] = useState(false);
 
     const [mapMarkers, setMapMarkers] = useState([]);
 
@@ -89,8 +92,8 @@ const CoreMap = ({
       }, 601);
     }
 
-    const addFactMap = () => {
-
+    const toggleInputWindow = () => {
+      setAddWindowOpen(!addWindowOpen);
     }
 
     return (
@@ -99,9 +102,11 @@ const CoreMap = ({
             <RefreshIcon/>
           </button>
 
-          <button className='add-button' onClick={addFactMap}>
+          <button className='add-button' onClick={toggleInputWindow}>
             <AddIcon />
           </button>
+
+          <ComponentModal show={addWindowOpen} onClose={toggleInputWindow} component={<InputPage/>}/>
 
           <Map
           className='MainMap'

@@ -117,7 +117,26 @@ const FactModal = ({
     );
 }
 
+const ComponentModal = ({
+    show,
+    component,
+    onClose
+}) => {
+    if (!show) return null;
+
+    return (
+        <>
+        <div className="modal-backdrop-component" onClick={onClose}>
+            <div className='component-container' onClick={(e) => e.stopPropagation()}>
+                {component}
+            </div>       
+        </div>
+        </>
+    )
+}
+
 export {
     Modal,
-    FactModal
+    FactModal,
+    ComponentModal
 } ;

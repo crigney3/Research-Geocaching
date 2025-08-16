@@ -245,14 +245,14 @@ const InputPage = ({
                     </div>
                 </div>
 
-                <div className="test-checkbox">
+                {/* <div className="test-checkbox">
                     <input 
                         type="checkbox" 
                         checked={testChecked} 
                         onChange={handleCheckedChange}
                     />
                     <label>Test checkbox (will be removed in production)</label>
-                </div>
+                </div> */}
 
                 <button 
                     className="floating-submit"

@@ -138,7 +138,7 @@
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     max-width: 400px;
     width: 100%;
-    max-height: 90vh;
+    height: 70%;
     overflow: hidden;
     animation: modalSlideIn 0.3s ease-out;
     z-index: 10001 !important;
@@ -291,4 +291,26 @@
         margin: 10px;
         max-width: calc(100% - 20px);
     }
+}
+
+.component-container {
+    height: 92%;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 20px;
+}
+
+.modal-backdrop-component {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 22px;
+    box-sizing: border-box;
 }

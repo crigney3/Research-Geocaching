@@ -1,12 +1,11 @@
 .InputPage {
-    min-height: 100vh;
-    background: linear-gradient(135deg, 
+    /* background: linear-gradient(135deg, 
         var(--orange-main) 0%, 
-        var(--purple-main) 100%);
+        var(--purple-main) 100%); */
+    background-color: var(--silver); 
     background-attachment: fixed;
     position: relative;
     padding: 20px;
-    padding-bottom: 100px;
     font-family: 'Arial', sans-serif;
 }
 
@@ -66,13 +65,14 @@
 }
 
 .title-input {
-    height: 50px;
+    height: 20px;
 }
 
 .description-container {
     background: rgba(255, 255, 255, 0.95);
     border-radius: 20px;
     padding: 25px;
+    padding-bottom: 0px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -99,7 +99,7 @@
 .title-container {
     background: rgba(255, 255, 255, 0.95);
     border-radius: 15px;
-    padding: 15px;
+    padding: 1px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
     backdrop-filter: blur(5px);
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -108,7 +108,8 @@
 .floating-submit {
     position: fixed;
     bottom: 20px;
-    right: 20px;
+    left: 50%;
+    transform: translateX(-50%);
     width: 70px;
     height: 70px;
     background: linear-gradient(135deg, var(--orange-main), var(--orange-accent));
@@ -181,7 +182,7 @@
     .description-container,
     .select-container,
     .title-container {
-        padding: 15px;
+        padding: 10px;
     }
 
     .floating-submit {
