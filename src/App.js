@@ -28,16 +28,14 @@ function App() {
     xp: 0,
     logins: 0,
     factsViewed: 0,
-    factsPlaced: 0
+    factsPlaced: 0,
+    range: 400
   }
 
   useEffect(() => {
     getAllCategories();
     getAllFacts();
     getCurrentLocation();
-
-    // Remove this eventually
-
 
     // Watch our position so it updates constantly
     const callbackID = Geolocation.watchPosition({

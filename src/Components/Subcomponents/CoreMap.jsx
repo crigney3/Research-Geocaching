@@ -1,6 +1,6 @@
-import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps';
-import { GOOGLE_API_KEY, MAP_ID, BACKEND_URL } from "../../secrets";
-import { useState, useCallback, useContext, useEffect } from 'react';
+import { Map, AdvancedMarker, useMap, useAdvancedMarkerRef } from '@vis.gl/react-google-maps';
+import { MAP_ID, BACKEND_URL } from "../../secrets";
+import { useState, useCallback, useContext, useEffect, useRef } from 'react';
 import MapMarker from './MapMarker';
 import ResearchContext from '../ResearchContext';
 import NavigationIcon from '@mui/icons-material/Navigation';
@@ -34,11 +34,17 @@ const CoreMap = ({
     const [currentLoc, setCurrentLoc] = useState({lat: centerSeattle.lat, lng: centerSeattle.lng, heading: 0});
     const [refreshClass, setRefreshClass] = useState('refresh-button');
     const [addWindowOpen, setAddWindowOpen] = useState(false);
+    const [circleRadius, setCircleRadius] = useState(0);
 
     const [mapMarkers, setMapMarkers] = useState([]);
 
+    const map = useMap();
+    const [navMarkerRef, navMarker] = useAdvancedMarkerRef();
+    const rangeRef = useRef(null);
+
     const userLoc = useContext(ResearchContext).currentLocation;
     const refreshFacts = useContext(ResearchContext).getAllFacts;
+    const userRange = useContext(ResearchContext).testUser.range;
 
     useEffect(() => {
         createMapMarkers();
@@ -54,11 +60,30 @@ const CoreMap = ({
       }
     }, [userLoc]);
 
+    useEffect(() => {
+      console.log(rangeRef);
+    }, [rangeRef]);
+
+    const calculateCircleRadius = () => {
+        if (!map) return 0;
+      
+        const zoom = map.getZoom();
+        const center = map.getCenter();
+
+        // Get meters per pixel at current zoom level
+        const metersPerPixel = 156543.03392 * Math.cos(center.lat() * Math.PI / 180) / Math.pow(2, zoom);
+
+        // Convert range to meters, then meters to pixels
+        const radiusInPixels = (userRange * 0.3048) / metersPerPixel;
+
+        return radiusInPixels;
+    };
+
     const createMapMarkers = () => {
         let tempMarkers = [];
 
         allFacts.forEach((fact) => {
-            tempMarkers.push(<MapMarker key={fact.id} id={fact.id} title={fact.title} description={fact.description} lat={fact.lat} lng={fact.lng} category={fact.category}/>);
+            tempMarkers.push(<MapMarker key={fact.id} id={fact.id} title={fact.title} description={fact.description} lat={fact.lat} lng={fact.lng} category={fact.category} rangeRef={rangeRef}/>);
         })
 
         setMapMarkers(tempMarkers);
@@ -78,11 +103,6 @@ const CoreMap = ({
       });
     }
 
-    const handleGoToUser = () => {
-      centerSeattle.lat = userLoc?.coords.latitude;
-      centerSeattle.lng = userLoc?.coords.longitude;
-    }
-
     const handleRefresh = () => {
       refreshFacts();
       setRefreshClass("refresh-button spinning");
@@ -96,8 +116,12 @@ const CoreMap = ({
       setAddWindowOpen(!addWindowOpen);
     }
 
+    const handleZoomChanged = () => {
+      setCircleRadius(calculateCircleRadius());
+    }
+
     return (
-        <APIProvider apiKey={GOOGLE_API_KEY}>
+      <>
           <button className={refreshClass} onClick={handleRefresh}>
             <RefreshIcon/>
           </button>
@@ -106,18 +130,25 @@ const CoreMap = ({
             <AddIcon />
           </button>
 
+          <div className='RangeCircle' ref={rangeRef} style={{
+              width: `${circleRadius * 2}px`,
+              height: `${circleRadius * 2}px`,
+          }}/>
+
           <ComponentModal show={addWindowOpen} onClose={toggleInputWindow} component={<InputPage/>}/>
 
           <Map
-          className='MainMap'
+            className='MainMap'
             center={{lat: currentLoc.lat, lng: currentLoc.lng}}
             defaultZoom={19}
             gestureHandling={'greedy'}
             disableDefaultUI={true}
-            mapId={MAP_ID}           
+            mapId={MAP_ID}
+            onTilesLoaded={handleZoomChanged}
+            onZoomChanged={handleZoomChanged}       
           >
             {// Marks the user's current position with an arrow
-            userLoc && <AdvancedMarker position={{lat: currentLoc.lat, lng: currentLoc.lng}} >
+            userLoc && <AdvancedMarker position={{lat: currentLoc.lat, lng: currentLoc.lng}} ref={navMarkerRef} style={{zIndex: 100000, transform: "translate(0%, 50%)"}}>
               <NavigationIcon style={{
                   transform: `rotate(${currentLoc.heading}deg)`,
                   color: "#F68B1F"
@@ -125,7 +156,7 @@ const CoreMap = ({
             </AdvancedMarker>}
             {mapMarkers}
           </Map>
-        </APIProvider>
+        </>
     )
 }
 

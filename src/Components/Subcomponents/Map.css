@@ -64,3 +64,15 @@
 .add-button:active {
     transform: scale(0.95);
 }
+
+.RangeCircle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border-radius: 50%;
+    border: 2px solid "#4C2683f";
+    background-color: rgba(92, 38, 136, 0.1);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 1000;
+}
