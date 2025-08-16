@@ -29,7 +29,7 @@ function App() {
     logins: 0,
     factsViewed: 0,
     factsPlaced: 0,
-    range: 400
+    range: 100
   }
 
   useEffect(() => {

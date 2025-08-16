@@ -4,7 +4,7 @@ import { useState, useCallback, useContext, useEffect, useRef } from 'react';
 import MapMarker from './MapMarker';
 import ResearchContext from '../ResearchContext';
 import NavigationIcon from '@mui/icons-material/Navigation';
-import AddIcon from '@mui/icons-material/Add';
+import AddLocationAltIcon from '@mui/icons-material/AddLocationAlt';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { ComponentModal } from './Modal';
 import InputPage from '../Pages/input.jsx';
@@ -35,6 +35,9 @@ const CoreMap = ({
     const [refreshClass, setRefreshClass] = useState('refresh-button');
     const [addWindowOpen, setAddWindowOpen] = useState(false);
     const [circleRadius, setCircleRadius] = useState(0);
+    const [inputMode, setInputMode] = useState(false);
+
+    const [selectedCoords, setSelectedCoords] = useState({lat: 0, lng: 0});
 
     const [mapMarkers, setMapMarkers] = useState([]);
 
@@ -61,8 +64,12 @@ const CoreMap = ({
     }, [userLoc]);
 
     useEffect(() => {
-      console.log(rangeRef);
-    }, [rangeRef]);
+      if (selectedCoords.lat !== 0 &&
+          selectedCoords.lng !== 0) {
+        toggleInputWindow(true);
+        setInputMode(false);
+      }
+    }, [selectedCoords]);
 
     const calculateCircleRadius = () => {
         if (!map) return 0;
@@ -116,6 +123,16 @@ const CoreMap = ({
       setAddWindowOpen(!addWindowOpen);
     }
 
+    const handleAddButtonClicked = () => {
+      setInputMode(true);
+    }
+
+    const handleSetSelectedCoords = (e) => {
+      if (inputMode) {
+        setSelectedCoords({lat: e.detail.latLng.lat, lng: e.detail.latLng.lng});
+      }
+    }
+
     const handleZoomChanged = () => {
       setCircleRadius(calculateCircleRadius());
     }
@@ -126,8 +143,8 @@ const CoreMap = ({
             <RefreshIcon/>
           </button>
 
-          <button className='add-button' onClick={toggleInputWindow}>
-            <AddIcon />
+          <button className='add-button' onClick={handleAddButtonClicked}>
+            <AddLocationAltIcon/>
           </button>
 
           <div className='RangeCircle' ref={rangeRef} style={{
@@ -135,17 +152,21 @@ const CoreMap = ({
               height: `${circleRadius * 2}px`,
           }}/>
 
-          <ComponentModal show={addWindowOpen} onClose={toggleInputWindow} component={<InputPage/>}/>
+          <ComponentModal show={addWindowOpen} onClose={toggleInputWindow} component={<InputPage inLat={selectedCoords.lat} inLng={selectedCoords.lng}/>}/>
 
           <Map
             className='MainMap'
             center={{lat: currentLoc.lat, lng: currentLoc.lng}}
             defaultZoom={19}
             gestureHandling={'greedy'}
+            disableDoubleClickZoom={false}
+            zoomControl={true}
+            zoomControlOptions={{position: window.google?.maps?.ControlPosition?.LEFT_BOTTOM}}
             disableDefaultUI={true}
             mapId={MAP_ID}
             onTilesLoaded={handleZoomChanged}
-            onZoomChanged={handleZoomChanged}       
+            onZoomChanged={handleZoomChanged}   
+            onClick={handleSetSelectedCoords}    
           >
             {// Marks the user's current position with an arrow
             userLoc && <AdvancedMarker position={{lat: currentLoc.lat, lng: currentLoc.lng}} ref={navMarkerRef} style={{zIndex: 100000, transform: "translate(0%, 50%)"}}>
@@ -154,7 +175,7 @@ const CoreMap = ({
                   color: "#F68B1F"
                 }}/>
             </AdvancedMarker>}
-            {mapMarkers}
+            {!inputMode && mapMarkers}
           </Map>
         </>
     )

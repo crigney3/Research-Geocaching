@@ -11,7 +11,8 @@ const UETestLoc = {
 }
 
 const InputPage = ({
-    
+    inLat,
+    inLng
 }) => {
     const [titleValue, setTitleValue] = useState("");
     const [descValue, setDescValue] = useState("");
@@ -59,12 +60,7 @@ const InputPage = ({
         }
 
         try {
-            let JSONString = "";
-            if (testChecked) {
-                JSONString = JSON.stringify({title: titleValue, description: descValue, lat: userLoc?.coords.latitude, lng: userLoc?.coords.longitude, category: catValue.value});
-            } else {
-                JSONString = JSON.stringify({title: titleValue, description: descValue, lat: UETestLoc.lat, lng: UETestLoc.lng, category: catValue.value});
-            }
+            let JSONString = JSON.stringify({title: titleValue, description: descValue, lat: inLat, lng: inLng, category: catValue.value});
 
             fetch(BACKEND_URL + "/add_fact", {
                 method: 'POST',
