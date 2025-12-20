@@ -33,45 +33,51 @@ const ProfilePage = ({
   const achievements = [
     {
       title: "First Steps",
-      description: "Complete your first login",
+      description: "Walk around",
       current: testUser.logins,
       target: 1,
-      difficulty: 1
+      difficulty: 1,
+      image: <DirectionsWalkIcon/>
     },
     {
       title: "Explorer",
       description: "View facts around you",
       current: testUser.factsViewed,
       target: 10,
-      difficulty: 2
+      difficulty: 2,
+      image: <BookIcon/>
     },
     {
       title: "Contributor",
       description: "Place facts on the map",
       current: testUser.factsPlaced,
       target: 5,
-      difficulty: 3
+      difficulty: 3,
+      image: <CreateIcon/>
     },
     {
       title: "Regular User",
       description: "Log in multiple times",
       current: testUser.logins,
       target: 7,
-      difficulty: 0
+      difficulty: 0,
+      image: <CalendarMonthIcon/>
     },
     {
       title: "Knowledge Seeker",
       description: "Discover many facts",
       current: testUser.factsViewed,
       target: 50,
-      difficulty: 0
+      difficulty: 0,
+      image: <StarRateIcon/>
     },
     {
       title: "Map Maker",
       description: "Add facts to help others",
       current: testUser.factsPlaced,
       target: 25,
-      difficulty: 0
+      difficulty: 0,
+      image: <CreateIcon/>
     },
     {
       title: "Veteran",
@@ -87,7 +93,7 @@ const ProfilePage = ({
       current: testUser.xp,
       target: 5000,
       difficulty: 0,
-      image: <DirectionsWalkIcon/>
+      image: <EventRepeatIcon/>
     }
   ];
 
