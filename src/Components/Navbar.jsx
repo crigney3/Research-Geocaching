@@ -35,7 +35,7 @@ const Navbar = ({
                     </div>
 
                     <div className="LoginButton">
-                        <LoginButton onClick={toggleNavbarState}/>
+                        <Link to="/login" onClick={toggleNavbarState}>Login</Link>
                     </div>
                     
 

@@ -4,9 +4,13 @@ const secrets = require('./secrets');
 const { v4: uuidv4 } = require('uuid');
 const sql = require('mysql');
 const cors = require("cors");
+const { OAuth2Client } = require('google-auth-library');
+const cookieParser = require('cookie-parser');
+const jwt = require('jsonwebtoken');
 
 const appPort = 3330;
 const app = express();
+const oauthClient = new OAuth2Client();
 app.use(bodyParser.json());
 
 const corsOptions = {
@@ -33,6 +37,8 @@ const pool = sql.createPool({
     //     idleTimeoutMillis: 30000
     // }
 });
+
+const JWT_SECRET = secrets.JWT_SECRET;
 
 //#region additions
 app.post('/add_fact', async (req, res) => {
@@ -314,6 +320,7 @@ app.get('/get_all_facts_of_category', async (req, res) => {
 
 //#region user-management
 
+// Deprecated, moving to google login
 app.post('/user_login', async (req, res) => {
     let inID = req.body.id;
     let inUsername = req.body.user;
@@ -358,6 +365,78 @@ app.post('/user_login', async (req, res) => {
             }
         }
     )
+});
+
+app.post('/google_login', async (req, res) => {
+    const { credential, client_id, inUsername } = req.body;
+
+    try {
+        const ticket = await oauthClient.verifyIdToken({
+            idToken: credential,
+            audience: client_id,
+        });
+
+        const payload = ticket.getPayload();
+        const userid = payload['sub'];
+        console.log(userid);
+        let msg = "";
+
+        await pool.query("SELECT FROM users WHERE id=?", userid,
+        async function(err, row) {
+            if (err) {
+                console.log("Error checking users: %s", err);
+                return res.status(400).json('Error checking users, see backend console for details');
+            }
+
+            let user;
+            // If the user already exists, just return that.
+            // If not, add them to the table and return the new data.
+            if (row && row.length) {
+                user = row;
+                msg = "Authentication Successful for existing user";
+            } else {
+                if (!inUsername) {
+                    return res.status(400).json('Must submit a username for new user setup');
+                }
+
+                if (!userid) {
+                    return res.status(400).json('Must submit a valid token for new user setup');
+                }
+
+                await pool.query("INSERT INTO users (id, username, permissions) VALUES(?,?,?)", [userid, inUsername, 0],
+                    function (err, row) {
+                        if (err) {
+                            console.log("Error inserting into users: %s", err);
+                            return res.status(400).json('Error inserting into users, see backend console for details');
+                        } else {
+                            msg = "Authentication Successful for new user";
+                            user = row;
+                        }
+                    }
+                ); 
+            }
+        });
+
+        if(!user) {
+            console.log("Error checking users: %s", err);
+            return res.status(400).json('Error checking users, see backend console for details');
+        }
+
+        const token = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET, {
+            expiresIn: '1h', // Adjust expiration time as needed
+        });
+
+        res
+            .status(200)
+            .cookie('token', token, {
+              httpOnly: true,
+              secure: false, // Set to true in production when using HTTPS
+              maxAge: 3600000, // 1 hour in milliseconds
+            })
+            .json({ message: msg, user });
+   } catch (err) {
+        res.status(400).json({ err });
+   }
 });
 
 app.post('/set_level', async (req, res) => {
