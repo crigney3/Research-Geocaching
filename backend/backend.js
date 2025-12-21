@@ -399,8 +399,6 @@ app.post('/google_login', async (req, res) => {
             audience: client_id,
         });
 
-        console.log(ticket);
-
         const payload = ticket.getPayload();
         const userid = payload['sub'];
         console.log(userid);
@@ -441,25 +439,25 @@ app.post('/google_login', async (req, res) => {
                     }
                 ); 
             }
-        });
 
-        if(!user) {
-            console.log("Error checking users: %s", err);
-            return res.status(400).json('Error checking users, see backend console for details');
-        }
-
-        const token = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET, {
-            expiresIn: '1h', // Adjust expiration time as needed
-        });
-
-        return res
-            .status(200)
-            .cookie('token', token, {
-              httpOnly: true,
-              secure: false, // Set to true in production when using HTTPS
-              maxAge: 3600000, // 1 hour in milliseconds
-            })
-            .json({ message: msg, user });
+            if(!user) {
+                console.log("Error checking users: %s", err);
+                return res.status(400).json('Error checking users, see backend console for details');
+            }
+        
+            const token = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET, {
+                expiresIn: '1h', // Adjust expiration time as needed
+            });
+        
+            return res
+                .status(200)
+                .cookie('token', token, {
+                  httpOnly: true,
+                  secure: false, // Set to true in production when using HTTPS
+                  maxAge: 3600000, // 1 hour in milliseconds
+                })
+                .json({ message: msg, user });
+            });
    } catch (err) {
         console.log(err);
         return res.status(400).json({ err });
