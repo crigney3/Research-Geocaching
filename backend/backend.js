@@ -10,7 +10,7 @@ const jwt = require('jsonwebtoken');
 
 const appPort = 3330;
 const app = express();
-const oauthClient = new OAuth2Client();
+const oauthClient = new OAuth2Client(secrets.GOOGLE_LOGIN_CLIENT_ID);
 app.use(bodyParser.json());
 app.use(cookieParser());
 
@@ -373,8 +373,6 @@ app.post('/google_login', async (req, res) => {
     let credential = req.body.credential;
     let client_id = req.body.client_id;
     let inUsername = req.body.inUsername;
-
-    console.log(credential);
 
     try {
         const ticket = await oauthClient.verifyIdToken({
