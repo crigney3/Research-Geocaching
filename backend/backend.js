@@ -405,6 +405,7 @@ app.post('/google_login', async (req, res) => {
         const userid = payload['sub'];
         console.log(userid);
         let msg = "";
+        let user;
 
         await pool.query("SELECT * FROM users WHERE id=?", userid,
         async function(err, row) {
@@ -413,7 +414,6 @@ app.post('/google_login', async (req, res) => {
                 return res.status(400).json('Error checking users, see backend console for details');
             }
 
-            let user;
             // If the user already exists, just return that.
             // If not, add them to the table and return the new data.
             // Every new user starts with permission level 0
