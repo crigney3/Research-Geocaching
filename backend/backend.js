@@ -13,6 +13,9 @@ const initFetch = async () => {
   const nodeFetch = await import('node-fetch');
   global.fetch = nodeFetch.default;
   global.Headers = nodeFetch.Headers;
+  global.Request = nodeFetch.Request;
+  global.Response = nodeFetch.Response;
+  global.Blob = nodeFetch.Blob;
   console.log("Loaded headers\n");
 };
 
