@@ -1,6 +1,5 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const secrets = require('./secrets');
 const { v4: uuidv4 } = require('uuid');
 const sql = require('mysql');
@@ -9,9 +8,17 @@ const { OAuth2Client } = require('google-auth-library');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 
-if(!global.Headers) {
-    global.Headers = fetch.Headers;
-}
+const initFetch = async () => {
+  console.log("Attempting header load\n");
+  const nodeFetch = await import('node-fetch');
+  global.fetch = nodeFetch.default;
+  global.Headers = nodeFetch.Headers;
+  console.log("Loaded headers\n");
+};
+
+(async () => {
+    await initFetch();
+})();
 
 const appPort = 3330;
 const app = express();
