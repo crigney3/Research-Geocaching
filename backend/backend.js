@@ -16,7 +16,9 @@ const initFetch = async () => {
   global.Request = nodeFetch.Request;
   global.Response = nodeFetch.Response;
   global.Blob = nodeFetch.Blob;
-  console.log("Loaded headers\n");
+  global.FormData = nodeFetch.FormData;
+  global.File = nodeFetch.File;
+  console.log("Loaded every fetch global\n");
 };
 
 (async () => {
