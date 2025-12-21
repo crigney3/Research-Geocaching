@@ -12,6 +12,7 @@ const appPort = 3330;
 const app = express();
 const oauthClient = new OAuth2Client();
 app.use(bodyParser.json());
+app.use(cookieParser());
 
 const corsOptions = {
   origin: (origin, callback) => {
@@ -391,6 +392,7 @@ app.post('/google_login', async (req, res) => {
             let user;
             // If the user already exists, just return that.
             // If not, add them to the table and return the new data.
+            // Every new user starts with permission level 0
             if (row && row.length) {
                 user = row;
                 msg = "Authentication Successful for existing user";
