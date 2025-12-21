@@ -1,5 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const secrets = require('./secrets');
 const { v4: uuidv4 } = require('uuid');
 const sql = require('mysql');
@@ -7,7 +8,6 @@ const cors = require("cors");
 const { OAuth2Client } = require('google-auth-library');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
-const fetch = require('node-fetch');
 
 if(!global.Headers) {
     global.Headers = fetch.Headers;
