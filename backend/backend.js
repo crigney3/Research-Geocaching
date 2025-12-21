@@ -440,6 +440,7 @@ app.post('/google_login', async (req, res) => {
             })
             .json({ message: msg, user });
    } catch (err) {
+        console.log(err);
         res.status(400).json({ err });
    }
 });
