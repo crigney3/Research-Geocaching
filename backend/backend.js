@@ -7,6 +7,11 @@ const cors = require("cors");
 const { OAuth2Client } = require('google-auth-library');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
+const fetch = require('node-fetch');
+
+if(!global.Headers) {
+    global.Headers = fetch.Headers;
+}
 
 const appPort = 3330;
 const app = express();
