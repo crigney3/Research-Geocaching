@@ -1,4 +1,5 @@
 import './App.css';
+import Cookies from 'universal-cookie';
 import { useCallback, useEffect, useState } from "react";
 import MapPage from './Components/Pages/map';
 import InputPage from './Components/Pages/input';
@@ -19,6 +20,8 @@ function App() {
   const [currentLocation, setCurrentLocation] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const cookies = new Cookies();
 
   const testUser = {
     id: 12397142,
@@ -131,7 +134,8 @@ function App() {
           setCurrentUser, 
           isLoggedIn, 
           setIsLoggedIn, 
-          testUser}}>
+          testUser,
+          cookies}}>
 
           <Navbar/>
           <Routes>

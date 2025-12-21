@@ -1,10 +1,12 @@
-import React from 'react';
+import {useContext} from 'react';
 import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
 import { GOOGLE_LOGIN_CLIENT_ID } from '../../secrets';
 import { BACKEND_URL } from '../../secrets';
+import ResearchContext from '../ResearchContext';
 
 const GoogleAuth = () => {
  const clientId = GOOGLE_LOGIN_CLIENT_ID;
+ const cookieHandler = useContext(ResearchContext).cookies;
   return (
    <GoogleOAuthProvider clientId={clientId}>
      <GoogleLogin
@@ -21,13 +23,11 @@ const GoogleAuth = () => {
             },
             mode: 'cors',
             body: JSONString
-        }).then(response => {
-            if (response.ok) {
-                console.log("User logged in");
-            } else {
-                console.log('Login Failed');
-                console.log(response);
-            }
+        }).then(response => response.json())
+          .then(data => {
+            console.log(data);
+            cookieHandler.set('user', data.user[0].id, { path: '/' });
+            console.log(cookieHandler.get('user'));
         })
        }}
        onError={() => {
