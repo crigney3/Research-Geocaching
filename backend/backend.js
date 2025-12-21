@@ -369,7 +369,12 @@ app.post('/user_login', async (req, res) => {
 });
 
 app.post('/google_login', async (req, res) => {
-    const { credential, client_id, inUsername } = req.body;
+    // const { credential, client_id, inUsername } = req.body;
+    let credential = req.body.credential;
+    let client_id = req.body.client_id;
+    let inUsername = req.body.inUsername;
+
+    console.log(credential);
 
     try {
         const ticket = await oauthClient.verifyIdToken({
