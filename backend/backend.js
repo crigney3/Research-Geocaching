@@ -264,7 +264,7 @@ app.get('/get_fact_by_id', async (req, res) => {
         return res.status(400).json('Must submit an ID for valid access');
     }
     
-    await pool.query("SELECT FROM facts WHERE id=UNHEX(?)", inID, 
+    await pool.query("SELECT * FROM facts WHERE id=UNHEX(?)", inID, 
         function(err, rows) {
             if (err) {
                 res.status(400).json('Error retrieving fact, see backend console for details');
@@ -283,30 +283,11 @@ app.get('/get_category_by_id', async (req, res) => {
         return res.status(400).json('Must submit an ID for valid access');
     }
     
-    await pool.query("SELECT FROM categories WHERE id=UNHEX(?)", inID, 
+    await pool.query("SELECT * FROM categories WHERE id=UNHEX(?)", inID, 
         function(err, rows) {
             if (err) {
                 res.status(400).json('Error retrieving category, see backend console for details');
                 console.log("Error retrieving category: %s", err);
-            } else {
-                res.status(200).json(rows);
-            }
-        }
-    );
-});
-
-app.get('/get_user_by_id', async (req, res) => {
-    let inID = req.body.id;
-
-    if (!inID) {
-        return res.status(400).json('Must submit an ID for valid access');
-    }
-    
-    await pool.query("SELECT FROM users WHERE id=?", inID, 
-        function(err, rows) {
-            if (err) {
-                res.status(400).json('Error retrieving user, see backend console for details');
-                console.log("Error retrieving user: %s", err);
             } else {
                 res.status(200).json(rows);
             }
@@ -322,7 +303,7 @@ app.get('/get_all_facts_of_category', async (req, res) => {
         return res.status(400).json('Must submit an Category for valid access');
     }
     
-    await pool.query("SELECT FROM facts WHERE category=UNHEX(?)", inID, 
+    await pool.query("SELECT * FROM facts WHERE category=UNHEX(?)", inID, 
         function(err, rows) {
             if (err) {
                 res.status(400).json('Error retrieving facts, see backend console for details');
@@ -386,12 +367,9 @@ app.post('/user_login', async (req, res) => {
 });
 
 app.post('/google_login', async (req, res) => {
-    // const { credential, client_id, inUsername } = req.body;
     let credential = req.body.credential;
     let client_id = req.body.client_id;
     let inUsername = req.body.inUsername;
-
-    console.log(oauthClient);
 
     try {
         const ticket = await oauthClient.verifyIdToken({
@@ -444,11 +422,11 @@ app.post('/google_login', async (req, res) => {
                 console.log("Error checking users: %s", err);
                 return res.status(400).json('Error checking users, see backend console for details');
             }
-        
+
             const token = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET, {
                 expiresIn: '1h', // Adjust expiration time as needed
             });
-        
+
             return res
                 .status(200)
                 .cookie('token', token, {
@@ -464,6 +442,47 @@ app.post('/google_login', async (req, res) => {
    }
 });
 
+app.post('/change_username', async (req, res) => {
+    let inID = req.body.id;
+    let newUsername = req.body.username;
+
+    if (!inID) {
+        return res.status(400).json('Must submit a user ID for valid access');
+    }
+
+    await pool.query("UPDATE users SET permissions=? WHERE id=?", newPermLevel, inID,
+        async function(err, row) {
+            if (err) {
+                console.log("Error getting user: %s", err);
+                return res.status(400).json('Error getting user, see backend console for details');
+            } else {
+                res.status(200).json('Permissions updated');
+            }
+        }
+    );
+});
+
+app.post('/change_permissions', async (req, res) => {
+    let inID = req.body.id;
+    let newPermLevel = req.body.permLevel;
+
+    if (!inID) {
+        return res.status(400).json('Must submit a user ID for valid access');
+    }
+
+    await pool.query("UPDATE users SET username=? WHERE id=?", newUsername, inID,
+        async function(err, row) {
+            if (err) {
+                console.log("Error getting user: %s", err);
+                return res.status(400).json('Error getting user, see backend console for details');
+            } else {
+                res.status(200).json('Username updated');
+            }
+        }
+    );
+});
+
+// TODO: Make this change seperate achievements table, not users
 app.post('/set_level', async (req, res) => {
     let inID = req.body.id;
     let newLevel = req.body.level; // Level isn't required, we default to adding one
@@ -533,6 +552,67 @@ app.post('/update_achievement', async (req, res) => {
             }
         );
     }
+});
+
+//#endregion
+
+//#region get-user-info
+
+app.get('/get_user_by_id', async (req, res) => {
+    let inID = req.body.id;
+
+    if (!inID) {
+        return res.status(400).json('Must submit an ID for valid access');
+    }
+    
+    await pool.query("SELECT * FROM users WHERE id=?", inID, 
+        function(err, rows) {
+            if (err) {
+                res.status(400).json('Error retrieving user, see backend console for details');
+                console.log("Error retrieving user: %s", err);
+            } else {
+                res.status(200).json(rows);
+            }
+        }
+    );
+});
+
+app.get('/get_username_by_id', async (req, res) => {
+    let inID = req.body.id;
+
+    if (!inID) {
+        return res.status(400).json('Must submit an ID for valid access');
+    }
+    
+    await pool.query("SELECT username FROM users WHERE id=?", inID, 
+        function(err, rows) {
+            if (err) {
+                res.status(400).json('Error retrieving user, see backend console for details');
+                console.log("Error retrieving user: %s", err);
+            } else {
+                res.status(200).json(rows);
+            }
+        }
+    );
+});
+
+app.get('/get_user_perms_by_id', async (req, res) => {
+    let inID = req.body.id;
+
+    if (!inID) {
+        return res.status(400).json('Must submit an ID for valid access');
+    }
+    
+    await pool.query("SELECT perms FROM users WHERE id=?", inID, 
+        function(err, rows) {
+            if (err) {
+                res.status(400).json('Error retrieving user, see backend console for details');
+                console.log("Error retrieving user: %s", err);
+            } else {
+                res.status(200).json(rows);
+            }
+        }
+    );
 });
 
 //#endregion
