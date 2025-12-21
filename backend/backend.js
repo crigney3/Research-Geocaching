@@ -374,11 +374,15 @@ app.post('/google_login', async (req, res) => {
     let client_id = req.body.client_id;
     let inUsername = req.body.inUsername;
 
+    console.log(oauthClient);
+
     try {
         const ticket = await oauthClient.verifyIdToken({
             idToken: credential,
             audience: client_id,
         });
+
+        console.log(ticket);
 
         const payload = ticket.getPayload();
         const userid = payload['sub'];
