@@ -348,7 +348,7 @@ app.post('/user_login', async (req, res) => {
         return res.status(400).json('Must submit a user ID for valid access');
     }
 
-    await pool.query("SELECT FROM users WHERE id=?", inID,
+    await pool.query("SELECT * FROM users WHERE id=?", inID,
         async function(err, row) {
             if (err) {
                 console.log("Error getting user: %s", err);
@@ -406,7 +406,7 @@ app.post('/google_login', async (req, res) => {
         console.log(userid);
         let msg = "";
 
-        await pool.query("SELECT FROM users WHERE id=?", userid,
+        await pool.query("SELECT * FROM users WHERE id=?", userid,
         async function(err, row) {
             if (err) {
                 console.log("Error checking users: %s", err);
@@ -452,7 +452,7 @@ app.post('/google_login', async (req, res) => {
             expiresIn: '1h', // Adjust expiration time as needed
         });
 
-        res
+        return res
             .status(200)
             .cookie('token', token, {
               httpOnly: true,
@@ -462,7 +462,7 @@ app.post('/google_login', async (req, res) => {
             .json({ message: msg, user });
    } catch (err) {
         console.log(err);
-        res.status(400).json({ err });
+        return res.status(400).json({ err });
    }
 });
 
