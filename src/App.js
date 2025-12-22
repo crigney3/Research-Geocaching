@@ -39,6 +39,8 @@ function App() {
     getAllCategories();
     getAllFacts();
     getCurrentLocation();
+    
+    checkForExistingUser();
 
     // Watch our position so it updates constantly
     const callbackID = Geolocation.watchPosition({
@@ -116,6 +118,46 @@ function App() {
     });
 
     return title;
+  }
+
+  const checkForExistingUser = async () => {
+    if (cookies.get('user')) {
+      // We already have a login session, fetch data based on that
+      let tempUser = {};
+
+      await fetch(BACKEND_URL + "/get_user_by_id", {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json;charset=utf-8'
+          },
+          mode: 'cors',
+          body: JSON.stringify({id: cookies.get('user')})
+      }).then(response => response.json())
+        .then(data => {
+          tempUser.id = data.id;
+          tempUser.username = data.username;
+          tempUser.permLevel = data.perms;
+      });
+
+      await fetch(BACKEND_URL + "/get_all_achievements_by_id", {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json;charset=utf-8'
+          },
+          mode: 'cors',
+          body: JSON.stringify({id: cookies.get('user')})
+      }).then(response => response.json())
+        .then(data => {
+          tempUser.level = data.level;
+          tempUser.xp = data.xp;
+          tempUser.daysUsed = data.daysUsed;
+          tempUser.factsViewed = data.factsViewed;
+          tempUser.factsPlaced = data.factsPlaced;
+          tempUser.range = data.userRange;
+      });
+
+      setCurrentUser(tempUser);
+    }
   }
 
   return (

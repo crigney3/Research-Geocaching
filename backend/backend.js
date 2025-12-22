@@ -320,51 +320,51 @@ app.get('/get_all_facts_of_category', async (req, res) => {
 //#region user-management
 
 // Deprecated, moving to google login
-app.post('/user_login', async (req, res) => {
-    let inID = req.body.id;
-    let inUsername = req.body.user;
-    let inPerm = req.body.permission;
+// app.post('/user_login', async (req, res) => {
+//     let inID = req.body.id;
+//     let inUsername = req.body.user;
+//     let inPerm = req.body.permission;
 
-    if (!inID) {
-        return res.status(400).json('Must submit a user ID for valid access');
-    }
+//     if (!inID) {
+//         return res.status(400).json('Must submit a user ID for valid access');
+//     }
 
-    await pool.query("SELECT * FROM users WHERE id=?", inID,
-        async function(err, row) {
-            if (err) {
-                console.log("Error getting user: %s", err);
-                return res.status(400).json('Error getting user, see backend console for details');
-            }
+//     await pool.query("SELECT * FROM users WHERE id=?", inID,
+//         async function(err, row) {
+//             if (err) {
+//                 console.log("Error getting user: %s", err);
+//                 return res.status(400).json('Error getting user, see backend console for details');
+//             }
 
-            // If the user already exists, just return that.
-            // If not, add them to the table and return the new data.
-            if (row && row.length) {
-                res.status(200).json(row);
-            } else {
-                // We need to check that username and permissions exist
-                // for first time setup only
-                if (!inUsername) {
-                    return res.status(400).json('Must submit a username for new user setup');
-                }
+//             // If the user already exists, just return that.
+//             // If not, add them to the table and return the new data.
+//             if (row && row.length) {
+//                 res.status(200).json(row);
+//             } else {
+//                 // We need to check that username and permissions exist
+//                 // for first time setup only
+//                 if (!inUsername) {
+//                     return res.status(400).json('Must submit a username for new user setup');
+//                 }
                 
-                if (!inPerm) {
-                    return res.status(400).json('Must submit a permission level for new user setup');
-                }
+//                 if (!inPerm) {
+//                     return res.status(400).json('Must submit a permission level for new user setup');
+//                 }
 
-                await pool.query("INSERT INTO users (id, username, permissions) VALUES(?,?,?)", [inID, inUsername, inPerm],
-                    function (err, row) {
-                        if (err) {
-                            console.log("Error inserting into users: %s", err);
-                            return res.status(400).json('Error inserting into users, see backend console for details');
-                        } else {
-                            res.status(200).json('User successfully inserted');
-                        }
-                    }
-                ); 
-            }
-        }
-    )
-});
+//                 await pool.query("INSERT INTO users (id, username, permissions) VALUES(?,?,?)", [inID, inUsername, inPerm],
+//                     function (err, row) {
+//                         if (err) {
+//                             console.log("Error inserting into users: %s", err);
+//                             return res.status(400).json('Error inserting into users, see backend console for details');
+//                         } else {
+//                             res.status(200).json('User successfully inserted');
+//                         }
+//                     }
+//                 ); 
+//             }
+//         }
+//     )
+// });
 
 app.post('/google_login', async (req, res) => {
     let credential = req.body.credential;
@@ -382,6 +382,7 @@ app.post('/google_login', async (req, res) => {
         console.log(userid);
         let msg = "";
         let user;
+        let achievements;
 
         await pool.query("SELECT * FROM users WHERE id=?", userid,
         async function(err, row) {
@@ -413,6 +414,18 @@ app.post('/google_login', async (req, res) => {
                         } else {
                             msg = "Authentication Successful for new user";
                             user = row;
+
+                            // We can assume from this point that a user also doesn't exist in the achievements table
+                            pool.query("INSERT INTO achievements (id, level, xp, daysUsed, factsViewed, factsPlaced, userRange) VALUES(?, ?, ?, ?, ?, ?, ?)", [userid, 0, 0, 1, 0, 0, 100],
+                                function (err, row) {
+                                    if (err) {
+                                        console.log("Error inserting into achievements: %s", err);
+                                        return res.status(400).json('Error inserting into achievements, see backend console for details');
+                                    } else {
+                                        achievements = row;
+                                    }
+                                }
+                            );
                         }
                     }
                 ); 
@@ -423,19 +436,20 @@ app.post('/google_login', async (req, res) => {
                 return res.status(400).json('Error checking users, see backend console for details');
             }
 
-            const token = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET, {
-                expiresIn: '1h', // Adjust expiration time as needed
-            });
+            // const token = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET, {
+            //     expiresIn: '1h', // Adjust expiration time as needed
+            // });
+
+            // .cookie('token', token, {
+            //   httpOnly: true,
+            //   secure: false, // Set to true in production when using HTTPS
+            //   maxAge: 3600000, // 1 hour in milliseconds
+            // })
 
             return res
                 .status(200)
-                .cookie('token', token, {
-                  httpOnly: true,
-                  secure: false, // Set to true in production when using HTTPS
-                  maxAge: 3600000, // 1 hour in milliseconds
-                })
-                .json({ message: msg, user });
-            });
+                .json({ message: msg, user, achievements });
+        });
    } catch (err) {
         console.log(err);
         return res.status(400).json({ err });
@@ -450,13 +464,13 @@ app.post('/change_username', async (req, res) => {
         return res.status(400).json('Must submit a user ID for valid access');
     }
 
-    await pool.query("UPDATE users SET permissions=? WHERE id=?", newPermLevel, inID,
+    await pool.query("UPDATE users SET username=? WHERE id=?", newUsername, inID,
         async function(err, row) {
             if (err) {
                 console.log("Error getting user: %s", err);
                 return res.status(400).json('Error getting user, see backend console for details');
             } else {
-                res.status(200).json('Permissions updated');
+                res.status(200).json({msg: 'Username updated', user: row});
             }
         }
     );
@@ -470,13 +484,13 @@ app.post('/change_permissions', async (req, res) => {
         return res.status(400).json('Must submit a user ID for valid access');
     }
 
-    await pool.query("UPDATE users SET username=? WHERE id=?", newUsername, inID,
+    await pool.query("UPDATE users SET permissions=? WHERE id=?", newPermLevel, inID,
         async function(err, row) {
             if (err) {
                 console.log("Error getting user: %s", err);
                 return res.status(400).json('Error getting user, see backend console for details');
             } else {
-                res.status(200).json('Username updated');
+                res.status(200).json({msg: 'Permissions updated', user: row});
             }
         }
     );
@@ -487,29 +501,53 @@ app.post('/set_level', async (req, res) => {
     let inID = req.body.id;
     let newLevel = req.body.level; // Level isn't required, we default to adding one
 
+    let rangeOut;
+
     if (!inID) {
         return res.status(400).json('Must submit a user ID for valid access');
     }
 
     if (newLevel) {
-        await pool.query("UPDATE users SET level=? WHERE id=?", newLevel, inID,
+        await pool.query("UPDATE achievements SET level=? WHERE id=?", newLevel, inID,
             async function(err, row) {
                 if (err) {
                     console.log("Error getting user: %s", err);
                     return res.status(400).json('Error getting user, see backend console for details');
                 } else {
-                    res.status(200).json('User level updated');
+                    await pool.query("UPDATE achievements SET range=? WHERE id=?", 100 + 50 * Math.log2(newLevel + 1), inID,
+                        function(err, row2) {
+                            if (err) {
+                                console.log("Error getting user: %s", err);
+                                return res.status(400).json('Error getting user, see backend console for details');
+                            } else {      
+                                rangeOut = row2[0].range;
+                            }
+                        }
+                    );
+
+                    return res.status(200).json({msg: 'User level updated', achievements: row, range: rangeOut});
                 }
             }
         );
     } else {
-        await pool.query("UPDATE users SET level = level + 1 WHERE id=?", inID,
+        await pool.query("UPDATE achievements SET level = level + 1 WHERE id=?", inID,
             async function(err, row) {
                 if (err) {
                     console.log("Error getting user: %s", err);
                     return res.status(400).json('Error getting user, see backend console for details');
                 } else {
-                    res.status(200).json('User level updated');
+                    await pool.query("UPDATE achievements SET range=? WHERE id=?", 100 + 50 * Math.log2(row[0].level + 1), inID,
+                        function(err, row2) {
+                            if (err) {
+                                console.log("Error getting user: %s", err);
+                                return res.status(400).json('Error getting user, see backend console for details');
+                            } else {      
+                                rangeOut = row2[0].range;
+                            }
+                        }
+                    );
+
+                    return res.status(200).json({msg: 'User level updated', achievements: row});
                 }
             }
         );
@@ -519,7 +557,7 @@ app.post('/set_level', async (req, res) => {
 app.post('/update_achievement', async (req, res) => {
     let inID = req.body.id;
     let inStat = req.body.stat;
-    let inStatValue = req.body.statValue; // Optional like level
+    let inStatValue = req.body.statValue;
 
     if (!inID) {
         return res.status(400).json('Must submit a user ID for valid access');
@@ -529,29 +567,20 @@ app.post('/update_achievement', async (req, res) => {
         return res.status(400).json('Must submit a stat to update');
     }
 
-    if (inStatValue) {
-        await pool.query("UPDATE users SET ?=? WHERE id=?", inStat, inStatValue, inID,
-            async function(err, row) {
-                if (err) {
-                    console.log("Error getting user: %s", err);
-                    return res.status(400).json('Error getting user, see backend console for details');
-                } else {
-                    res.status(200).json('User stats updated');
-                }
-            }
-        );
-    } else {
-        await pool.query("UPDATE users SET ?=? + 1 WHERE id=?", inStat, inStat, inID,
-            async function(err, row) {
-                if (err) {
-                    console.log("Error getting user: %s", err);
-                    return res.status(400).json('Error getting user, see backend console for details');
-                } else {
-                    res.status(200).json('User stats updated');
-                }
-            }
-        );
+    if (!inStatValue) {
+        return res.status(400).json("Must submit a new value for the stat");
     }
+
+    await pool.query("UPDATE achievements SET ?=? WHERE id=?", inStat, inStatValue, inID,
+        async function(err, row) {
+            if (err) {
+                console.log("Error getting user: %s", err);
+                return res.status(400).json('Error getting user, see backend console for details');
+            } else {
+                return res.status(200).json('User stats updated');
+            }
+        }
+    );
 });
 
 //#endregion
@@ -615,7 +644,142 @@ app.get('/get_user_perms_by_id', async (req, res) => {
     );
 });
 
+app.get('/get_user_level_by_id', async (req, res) => {
+    let inID = req.body.id;
+
+    if (!inID) {
+        return res.status(400).json('Must submit an ID for valid access');
+    }
+    
+    await pool.query("SELECT level FROM achievements WHERE id=?", inID, 
+        function(err, rows) {
+            if (err) {
+                res.status(400).json('Error retrieving achievement, see backend console for details');
+                console.log("Error retrieving achievement: %s", err);
+            } else {
+                res.status(200).json(rows);
+            }
+        }
+    );
+});
+
+app.get('/get_user_xp_by_id', async (req, res) => {
+    let inID = req.body.id;
+
+    if (!inID) {
+        return res.status(400).json('Must submit an ID for valid access');
+    }
+    
+    await pool.query("SELECT xp FROM achievements WHERE id=?", inID, 
+        function(err, rows) {
+            if (err) {
+                res.status(400).json('Error retrieving achievement, see backend console for details');
+                console.log("Error retrieving achievement: %s", err);
+            } else {
+                res.status(200).json(rows);
+            }
+        }
+    );
+});
+
+app.get('/get_user_days_by_id', async (req, res) => {
+    let inID = req.body.id;
+
+    if (!inID) {
+        return res.status(400).json('Must submit an ID for valid access');
+    }
+    
+    await pool.query("SELECT daysUsed FROM achievements WHERE id=?", inID, 
+        function(err, rows) {
+            if (err) {
+                res.status(400).json('Error retrieving achievement, see backend console for details');
+                console.log("Error retrieving achievement: %s", err);
+            } else {
+                res.status(200).json(rows);
+            }
+        }
+    );
+});
+
+app.get('/get_user_facts_viewed_by_id', async (req, res) => {
+    let inID = req.body.id;
+
+    if (!inID) {
+        return res.status(400).json('Must submit an ID for valid access');
+    }
+    
+    await pool.query("SELECT factsViewed FROM achievements WHERE id=?", inID, 
+        function(err, rows) {
+            if (err) {
+                res.status(400).json('Error retrieving achievement, see backend console for details');
+                console.log("Error retrieving achievement: %s", err);
+            } else {
+                res.status(200).json(rows);
+            }
+        }
+    );
+});
+
+app.get('/get_user_facts_placed_by_id', async (req, res) => {
+    let inID = req.body.id;
+
+    if (!inID) {
+        return res.status(400).json('Must submit an ID for valid access');
+    }
+    
+    await pool.query("SELECT factsPlaced FROM achievements WHERE id=?", inID, 
+        function(err, rows) {
+            if (err) {
+                res.status(400).json('Error retrieving achievement, see backend console for details');
+                console.log("Error retrieving achievement: %s", err);
+            } else {
+                res.status(200).json(rows);
+            }
+        }
+    );
+});
+
+app.get('/get_user_range_by_id', async (req, res) => {
+    let inID = req.body.id;
+
+    if (!inID) {
+        return res.status(400).json('Must submit an ID for valid access');
+    }
+    
+    await pool.query("SELECT userRange FROM achievements WHERE id=?", inID, 
+        function(err, rows) {
+            if (err) {
+                res.status(400).json('Error retrieving achievement, see backend console for details');
+                console.log("Error retrieving achievement: %s", err);
+            } else {
+                res.status(200).json(rows);
+            }
+        }
+    );
+});
+
+app.get('/get_user_all_achievements_by_id', async (req, res) => {
+    let inID = req.body.id;
+
+    if (!inID) {
+        return res.status(400).json('Must submit an ID for valid access');
+    }
+    
+    await pool.query("SELECT * FROM achievements WHERE id=?", inID, 
+        function(err, rows) {
+            if (err) {
+                res.status(400).json('Error retrieving achievement, see backend console for details');
+                console.log("Error retrieving achievement: %s", err);
+            } else {
+                res.status(200).json(rows);
+            }
+        }
+    );
+});
+
 //#endregion
+
+//#region app-launch
 
 app.listen(appPort, () => {
     console.log('Research Geocaching backend live on port %d \n', appPort);
@@ -630,3 +794,5 @@ app.listen(appPort, () => {
         console.log(err);
     }
 });
+
+//#endregion
