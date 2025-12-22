@@ -124,8 +124,9 @@ function App() {
     if (cookies.get('user')) {
       // We already have a login session, fetch data based on that
       let tempUser = {};
+      console.log(cookies.get('user').replace('id_', ''));
 
-      await fetch(BACKEND_URL + "/get_user_by_id?id=" + cookies.get('user'), {
+      await fetch(BACKEND_URL + "/get_user_by_id?id=" + cookies.get('user').replace('id_', ''), {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json;charset=utf-8'
@@ -138,14 +139,14 @@ function App() {
 
         return response.json();
       }).then(data => {
-          tempUser.id = data.id;
-          tempUser.username = data.username;
-          tempUser.permLevel = data.perms;
+        tempUser.id = data[0].id;
+        tempUser.username = data[0].username;
+        tempUser.permLevel = data[0].perms;
       }).catch(error => {
             console.error('Error: ', error);
       });
 
-      await fetch(BACKEND_URL + "/get_user_all_achievements_by_id?id=" + cookies.get('user'), {
+      await fetch(BACKEND_URL + "/get_user_all_achievements_by_id?id=" + cookies.get('user').replace('id_', ''), {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json;charset=utf-8'
@@ -158,12 +159,12 @@ function App() {
 
         return response.json();
       }).then(data => {
-          tempUser.level = data.level;
-          tempUser.xp = data.xp;
-          tempUser.daysUsed = data.daysUsed;
-          tempUser.factsViewed = data.factsViewed;
-          tempUser.factsPlaced = data.factsPlaced;
-          tempUser.range = data.userRange;
+        tempUser.level = data[0].level;
+        tempUser.xp = data[0].xp;
+        tempUser.daysUsed = data[0].daysUsed;
+        tempUser.factsViewed = data[0].factsViewed;
+        tempUser.factsPlaced = data[0].factsPlaced;
+        tempUser.range = data[0].userRange;
       }).catch(error => {
             console.error('Error: ', error);
       });

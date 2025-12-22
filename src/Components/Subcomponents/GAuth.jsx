@@ -37,7 +37,7 @@ const GoogleAuth = ({
             return response.json();
         }).then(data => {
             setLoginState(1);
-            cookieHandler.set('user', data.user[0].id, { path: '/' });
+            cookieHandler.set('user', 'id_' + data.user[0].id, { path: '/' });
             console.log(cookieHandler.get('user'));
         }).catch(error => {
             console.error('Error: ', error);

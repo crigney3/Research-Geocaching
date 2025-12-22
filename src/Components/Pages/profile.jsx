@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import './profile.css';
 import ResearchContext from '../ResearchContext';
 import Achievement from '../Subcomponents/Achievement';
@@ -13,20 +13,33 @@ import EventRepeatIcon from '@mui/icons-material/EventRepeat';
 const ProfilePage = ({
 
 }) => {
-  const testUser = useContext(ResearchContext).testUser;
+  const currentUser = useContext(ResearchContext).currentUser;
+  const [isUserLoaded, setIsUserLoaded] = useState(false);
+
+  useEffect(() => {
+    if (currentUser != null) {
+      setIsUserLoaded(true);
+      console.log(currentUser);
+    }
+  }, [])
+
+  if(!isUserLoaded) {
+    return null;
+  }
 
   const getPermissionString = (permLevel) => {
     switch (permLevel) {
       case 0: return 'student';
       case 1: return 'professor';
       case 2: return 'administrator';
+      case 3: return 'dev';
       default: return 'user';
     }
   };
 
   // Calculate level progress
   const xpPerLevel = 1000;
-  const currentLevelXP = testUser.xp % xpPerLevel;
+  const currentLevelXP = currentUser.xp % xpPerLevel;
   const levelProgress = (currentLevelXP / xpPerLevel) * 100;
 
   // Test achievements data
@@ -34,7 +47,7 @@ const ProfilePage = ({
     {
       title: "First Steps",
       description: "Walk around",
-      current: testUser.logins,
+      current: currentUser.daysUsed,
       target: 1,
       difficulty: 1,
       image: <DirectionsWalkIcon/>
@@ -42,7 +55,7 @@ const ProfilePage = ({
     {
       title: "Explorer",
       description: "View facts around you",
-      current: testUser.factsViewed,
+      current: currentUser.factsViewed,
       target: 10,
       difficulty: 2,
       image: <BookIcon/>
@@ -50,7 +63,7 @@ const ProfilePage = ({
     {
       title: "Contributor",
       description: "Place facts on the map",
-      current: testUser.factsPlaced,
+      current: currentUser.factsPlaced,
       target: 5,
       difficulty: 3,
       image: <CreateIcon/>
@@ -58,7 +71,7 @@ const ProfilePage = ({
     {
       title: "Regular User",
       description: "Log in multiple times",
-      current: testUser.logins,
+      current: currentUser.daysUsed,
       target: 7,
       difficulty: 0,
       image: <CalendarMonthIcon/>
@@ -66,7 +79,7 @@ const ProfilePage = ({
     {
       title: "Knowledge Seeker",
       description: "Discover many facts",
-      current: testUser.factsViewed,
+      current: currentUser.factsViewed,
       target: 50,
       difficulty: 0,
       image: <StarRateIcon/>
@@ -74,7 +87,7 @@ const ProfilePage = ({
     {
       title: "Map Maker",
       description: "Add facts to help others",
-      current: testUser.factsPlaced,
+      current: currentUser.factsPlaced,
       target: 25,
       difficulty: 0,
       image: <CreateIcon/>
@@ -82,7 +95,7 @@ const ProfilePage = ({
     {
       title: "Veteran",
       description: "Reach level 5",
-      current: testUser.level,
+      current: currentUser.level,
       target: 5,
       difficulty: 0,
       image: <CreateIcon/>
@@ -90,7 +103,7 @@ const ProfilePage = ({
     {
       title: "Expert",
       description: "Accumulate experience",
-      current: testUser.xp,
+      current: currentUser.xp,
       target: 5000,
       difficulty: 0,
       image: <EventRepeatIcon/>
@@ -101,13 +114,13 @@ const ProfilePage = ({
     <div className="profile-container">
       <div className="profile-header">
         <h1 className="profile-username">
-          {testUser.username}
+          {currentUser.username}
         </h1>
         
         <div>
           <div className="profile-level-section">
             <span className="profile-level-label">
-              Level {testUser.level} {getPermissionString(testUser.permLevel)}
+              Level {currentUser.level} {getPermissionString(currentUser.permLevel)}
             </span>
             <span className="profile-xp-label">
               {currentLevelXP}/{xpPerLevel} XP
