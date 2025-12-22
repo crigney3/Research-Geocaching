@@ -1,18 +1,27 @@
 import { Link } from "react-router-dom";
 import MenuIcon from '@mui/icons-material/Menu';
 import './Navbar.css';
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import LoginButton from "./Subcomponents/LoginButton";
+import ResearchContext from "./ResearchContext";
+import { LoginModal } from "./Subcomponents/Modal";
 
 const Navbar = ({
 
 }) => {
     const [navbarOpen, setNavbarOpen] = useState(true);
+    const [showLogin, setShowLogin] = useState(false);
     const [navbarClass, setNavbarClass] = useState("Navbar");
     const [overlayClass, setOverlayClass] = useState("Overlay");
 
+    const currentUser = useContext(ResearchContext).testUser;
+
     const toggleNavbarState = (e) => {
         setNavbarOpen(!navbarOpen);
+    }
+
+    const toggleLoginPopup = (e) => {
+        setShowLogin(!showLogin);
     }
 
     useEffect(() => {
@@ -30,12 +39,13 @@ const Navbar = ({
                         <Link to="/">Home</Link>
                     </div> */}
 
+                    {(currentUser.permLevel >= 2) &&
                     <div className="AdminButton">
                         <Link to="/admin" onClick={toggleNavbarState}>Admin</Link>
-                    </div>
+                    </div>}
 
                     <div className="LoginButton">
-                        <Link to="/login" onClick={toggleNavbarState}>Login</Link>
+                        <button onClick={toggleLoginPopup}>Login</button>
                     </div>
                     
 
@@ -56,6 +66,8 @@ const Navbar = ({
             <button className="toggle-button" id="toggleButton" onClick={toggleNavbarState}>
                 <MenuIcon id="navbarHamburger"></MenuIcon>
             </button>
+
+            <LoginModal show={showLogin} onClose={toggleLoginPopup}/>
         </div>
 
     )

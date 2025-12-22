@@ -1,3 +1,5 @@
+import GoogleAuth from './GAuth';
+import { useEffect, useState } from 'react';
 import './Modal.css'
 
 const Modal = ({ 
@@ -135,8 +137,52 @@ const ComponentModal = ({
     )
 }
 
+const LoginModal = ({
+    show,
+    onClose
+}) => {
+    // -1: not attempted
+    // 0: login failed
+    // 1: login successful
+    const [loginState, setLoginState] = useState(-1);
+
+    useEffect(() => {
+        if (loginState == 1) {
+            onClose();
+        }
+    }, [loginState]);
+
+    if (!show) return null;
+
+    return (
+        <>
+        <div className="modal-backdrop-component" onClick={onClose}>
+            <div className='component-container' onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                    <h2 className="title">Login</h2>
+                    <button 
+                        className="modal-close-button"
+                        onClick={onClose}
+                        aria-label="Close modal"
+                    >
+                        ×
+                    </button>
+                </div>
+
+                <div className='modal-login'>
+                    <GoogleAuth loginState={loginState} setLoginState={setLoginState}/>
+                </div>
+
+                <p className='login-disclaimer'>This app does not store (or sell) any of the info from your google account. We don't even get your email!</p>
+            </div>       
+        </div>
+        </>
+    )
+}
+
 export {
     Modal,
     FactModal,
-    ComponentModal
+    ComponentModal,
+    LoginModal
 } ;
