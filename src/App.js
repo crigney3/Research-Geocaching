@@ -131,27 +131,41 @@ function App() {
             'Content-Type': 'application/json;charset=utf-8'
           },
           mode: 'cors'
-      }).then(response => response.json())
-        .then(data => {
+      }).then(response => {
+        if(!response.ok) {
+          throw new Error('Getting user with cookie ID failed');
+        }
+
+        return response.json();
+      }).then(data => {
           tempUser.id = data.id;
           tempUser.username = data.username;
           tempUser.permLevel = data.perms;
+      }).catch(error => {
+            console.error('Error: ', error);
       });
 
-      await fetch(BACKEND_URL + "/get_all_achievements_by_id?id=" + cookies.get('user'), {
+      await fetch(BACKEND_URL + "/get_user_all_achievements_by_id?id=" + cookies.get('user'), {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json;charset=utf-8'
           },
           mode: 'cors'
-      }).then(response => response.json())
-        .then(data => {
+      }).then(response => {
+        if(!response.ok) {
+          throw new Error('Getting user achievements with cookie ID failed');
+        }
+
+        return response.json();
+      }).then(data => {
           tempUser.level = data.level;
           tempUser.xp = data.xp;
           tempUser.daysUsed = data.daysUsed;
           tempUser.factsViewed = data.factsViewed;
           tempUser.factsPlaced = data.factsPlaced;
           tempUser.range = data.userRange;
+      }).catch(error => {
+            console.error('Error: ', error);
       });
 
       setCurrentUser(tempUser);
