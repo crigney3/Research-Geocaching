@@ -125,13 +125,12 @@ function App() {
       // We already have a login session, fetch data based on that
       let tempUser = {};
 
-      await fetch(BACKEND_URL + "/get_user_by_id", {
+      await fetch(BACKEND_URL + "/get_user_by_id?id=" + cookies.get('user'), {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json;charset=utf-8'
           },
-          mode: 'cors',
-          body: JSON.stringify({id: cookies.get('user')})
+          mode: 'cors'
       }).then(response => response.json())
         .then(data => {
           tempUser.id = data.id;
@@ -139,13 +138,12 @@ function App() {
           tempUser.permLevel = data.perms;
       });
 
-      await fetch(BACKEND_URL + "/get_all_achievements_by_id", {
+      await fetch(BACKEND_URL + "/get_all_achievements_by_id?id=" + cookies.get('user'), {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json;charset=utf-8'
           },
-          mode: 'cors',
-          body: JSON.stringify({id: cookies.get('user')})
+          mode: 'cors'
       }).then(response => response.json())
         .then(data => {
           tempUser.level = data.level;

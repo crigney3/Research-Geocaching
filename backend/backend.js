@@ -258,7 +258,7 @@ app.get('/get_all_users', async (req, res) => {
 //#region get-specific
 
 app.get('/get_fact_by_id', async (req, res) => {
-    let inID = req.body.id;
+    let inID = req.query.id;
 
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid access');
@@ -277,7 +277,7 @@ app.get('/get_fact_by_id', async (req, res) => {
 });
 
 app.get('/get_category_by_id', async (req, res) => {
-    let inID = req.body.id;
+    let inID = req.query.id;
 
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid access');
@@ -588,7 +588,7 @@ app.post('/update_achievement', async (req, res) => {
 //#region get-user-info
 
 app.get('/get_user_by_id', async (req, res) => {
-    let inID = req.body.id;
+    let inID = req.query.id;
 
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid access');
@@ -607,7 +607,7 @@ app.get('/get_user_by_id', async (req, res) => {
 });
 
 app.get('/get_username_by_id', async (req, res) => {
-    let inID = req.body.id;
+    let inID = req.query.id;
 
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid access');
@@ -626,7 +626,7 @@ app.get('/get_username_by_id', async (req, res) => {
 });
 
 app.get('/get_user_perms_by_id', async (req, res) => {
-    let inID = req.body.id;
+    let inID = req.query.id;
 
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid access');
@@ -645,7 +645,7 @@ app.get('/get_user_perms_by_id', async (req, res) => {
 });
 
 app.get('/get_user_level_by_id', async (req, res) => {
-    let inID = req.body.id;
+    let inID = req.query.id;
 
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid access');
@@ -664,7 +664,7 @@ app.get('/get_user_level_by_id', async (req, res) => {
 });
 
 app.get('/get_user_xp_by_id', async (req, res) => {
-    let inID = req.body.id;
+    let inID = req.query.id;
 
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid access');
@@ -683,7 +683,7 @@ app.get('/get_user_xp_by_id', async (req, res) => {
 });
 
 app.get('/get_user_days_by_id', async (req, res) => {
-    let inID = req.body.id;
+    let inID = req.query.id;
 
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid access');
@@ -702,7 +702,7 @@ app.get('/get_user_days_by_id', async (req, res) => {
 });
 
 app.get('/get_user_facts_viewed_by_id', async (req, res) => {
-    let inID = req.body.id;
+    let inID = req.query.id;
 
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid access');
@@ -721,7 +721,7 @@ app.get('/get_user_facts_viewed_by_id', async (req, res) => {
 });
 
 app.get('/get_user_facts_placed_by_id', async (req, res) => {
-    let inID = req.body.id;
+    let inID = req.query.id;
 
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid access');
@@ -740,7 +740,7 @@ app.get('/get_user_facts_placed_by_id', async (req, res) => {
 });
 
 app.get('/get_user_range_by_id', async (req, res) => {
-    let inID = req.body.id;
+    let inID = req.query.id;
 
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid access');
@@ -759,7 +759,7 @@ app.get('/get_user_range_by_id', async (req, res) => {
 });
 
 app.get('/get_user_all_achievements_by_id', async (req, res) => {
-    let inID = req.body.id;
+    let inID = req.query.id;
 
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid access');
