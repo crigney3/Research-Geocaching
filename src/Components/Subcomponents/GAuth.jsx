@@ -2,7 +2,7 @@ import {useContext} from 'react';
 import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
 import { GOOGLE_LOGIN_CLIENT_ID } from '../../secrets';
 import { BACKEND_URL } from '../../secrets';
-import ResearchContext from '../ResearchContext';
+import { ResearchContext } from '../ResearchContext';
 
 const GoogleAuth = ({
     loginState,

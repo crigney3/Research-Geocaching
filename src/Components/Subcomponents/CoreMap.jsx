@@ -2,7 +2,7 @@ import { Map, AdvancedMarker, useMap, useAdvancedMarkerRef } from '@vis.gl/react
 import { MAP_ID, BACKEND_URL } from "../../secrets";
 import { useState, useCallback, useContext, useEffect, useRef } from 'react';
 import MapMarker from './MapMarker';
-import ResearchContext from '../ResearchContext';
+import { LocationContext, ResearchContext } from '../ResearchContext';
 import NavigationIcon from '@mui/icons-material/Navigation';
 import AddLocationAltIcon from '@mui/icons-material/AddLocationAlt';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -45,7 +45,7 @@ const CoreMap = ({
     const [navMarkerRef, navMarker] = useAdvancedMarkerRef();
     const rangeRef = useRef(null);
 
-    const userLoc = useContext(ResearchContext).currentLocation;
+    const userLoc = useContext(LocationContext).currentLocation;
     const refreshFacts = useContext(ResearchContext).getAllFacts;
     const userRange = useContext(ResearchContext).testUser.range;
 

@@ -7,4 +7,14 @@ const ResearchContext = createContext({
 }
 );
 
-export default  ResearchContext;
+export const updateLocationContext = (values = {}) => ({ category: values });
+
+const LocationContext = createContext({
+
+}
+);
+
+export { 
+    ResearchContext,
+    LocationContext
+};

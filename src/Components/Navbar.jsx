@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
+import React from "react";
 import MenuIcon from '@mui/icons-material/Menu';
 import './Navbar.css';
 import { useState, useEffect, useContext } from "react";
 import LoginButton from "./Subcomponents/LoginButton";
-import ResearchContext from "./ResearchContext";
+import { ResearchContext } from './ResearchContext';
 import { LoginModal } from "./Subcomponents/Modal";
 
 const Navbar = ({
@@ -73,4 +74,4 @@ const Navbar = ({
     )
 }
 
-export default Navbar;
+export default React.memo(Navbar);

@@ -3,7 +3,7 @@ import React, { useContext } from 'react';
 import { useState, useRef } from 'react';
 import FactPopup from './FactPopup';
 import { FactModal } from './Modal';
-import ResearchContext from '../ResearchContext';
+import { ResearchContext } from '../ResearchContext';
 
 const MapMarker = ({
     id,

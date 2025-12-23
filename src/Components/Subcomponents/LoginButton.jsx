@@ -1,4 +1,4 @@
-import ResearchContext from '../ResearchContext';
+import { ResearchContext } from '../ResearchContext';
 import './LoginButton.css';
 import { useContext, useEffect, useState } from "react";
 import { Modal } from './Modal';

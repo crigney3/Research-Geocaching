@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from 'react';
-import ResearchContext from '../ResearchContext';
+import { ResearchContext } from '../ResearchContext';
 import Select from 'react-select';
 import { BACKEND_URL } from '../../secrets';
 import './input.css';

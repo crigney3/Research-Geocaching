@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from "react";
 import Select from "react-select";
-import ResearchContext from "../ResearchContext";
+import { ResearchContext } from "../ResearchContext";
 import { BACKEND_URL } from "../../secrets";
 import CloseIcon from '@mui/icons-material/Close';
 import { Modal } from "../Subcomponents/Modal";
@@ -360,7 +360,7 @@ const AdminPage = ({
                             <div className="fact-details">
                                 <span className="fact-detail">Lat: {fact.lat}, Lng: {fact.lng}</span>
                                 <span className="fact-detail">User: {fact.user}</span>
-                                <span className="fact-detail">Category: {getCatTitle(fact.category)}</span>
+                                <span className="fact-detail">Category: {getCatTitle(fact.category, allCategories)}</span>
                             </div>
                         </div>
                     ))}

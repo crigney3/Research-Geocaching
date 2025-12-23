@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
 import './profile.css';
-import ResearchContext from '../ResearchContext';
+import { ResearchContext } from '../ResearchContext';
 import Achievement from '../Subcomponents/Achievement';
 import { BACKEND_URL } from '../../secrets';
 
@@ -16,6 +16,7 @@ const ProfilePage = ({
 
 }) => {
   const currentUser = useContext(ResearchContext).currentUser;
+  const reloadUser = useContext(ResearchContext).checkForExistingUser;
   const [showUsernameModal, setShowUsernameModal] = useState(false);
   const [isUserLoaded, setIsUserLoaded] = useState(false);
 
@@ -123,14 +124,10 @@ const ProfilePage = ({
         body: JSON.stringify({id: currentUser.id, username: newName})
     }).then(response => {
         if (response.ok) {
-
+          reloadUser();
         } else {
           throw new Error("Request to change username failed!");
         }
-
-        return response.json();
-    }).then(data => {
-      currentUser.username = data[0].username;
     }).catch(error => {
       console.error('Error: ', error);
       return;

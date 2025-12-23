@@ -1,6 +1,6 @@
 import './App.css';
 import Cookies from 'universal-cookie';
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import MapPage from './Components/Pages/map';
 import InputPage from './Components/Pages/input';
 import ProfilePage from './Components/Pages/profile';
@@ -9,9 +9,23 @@ import HomePage from './Components/Pages/home';
 import AdminPage from './Components/Pages/Admin';
 import Navbar from './Components/Navbar';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import ResearchContext from './Components/ResearchContext';
+import { ResearchContext, LocationContext } from './Components/ResearchContext';
 import { BACKEND_URL } from './secrets';
 import { Geolocation } from '@capacitor/geolocation';
+
+const cookies = new Cookies();
+
+const testUser = {
+  id: 12397142,
+  username: 'yakman3',
+  permLevel: 3,
+  level: 0,
+  xp: 0,
+  logins: 0,
+  factsViewed: 0,
+  factsPlaced: 0,
+  range: 100
+}
 
 function App() {
 
@@ -21,27 +35,16 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const cookies = new Cookies();
-
-  const testUser = {
-    id: 12397142,
-    username: 'yakman3',
-    permLevel: 3,
-    level: 0,
-    xp: 0,
-    logins: 0,
-    factsViewed: 0,
-    factsPlaced: 0,
-    range: 100
-  }
-
   useEffect(() => {
     getAllCategories();
     getAllFacts();
     getCurrentLocation();
     
     checkForExistingUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
+  useEffect(() => {
     // Watch our position so it updates constantly
     const callbackID = Geolocation.watchPosition({
         enableHighAccuracy: true,
@@ -67,9 +70,9 @@ function App() {
         console.log(err);
       }
     }
-  });
+  }, []);
 
-  const getAllCategories = async () => {
+  const getAllCategories = useCallback(async () => {
     try {
       await fetch(BACKEND_URL + "/get_all_categories", {
           method: 'GET',
@@ -84,9 +87,9 @@ function App() {
     } catch (err) {
       console.log(err);
     }
-  }
+  }, []);
 
-  const getAllFacts = async () => {
+  const getAllFacts = useCallback(async () => {
     try {
       await fetch(BACKEND_URL + "/get_all_facts", {
           method: 'GET',
@@ -101,12 +104,12 @@ function App() {
     } catch (err) {
       console.log(err);
     }
-  }
+  }, []);
 
-  const getCategoryTitleFromID = (id) => {
+  const getCategoryTitleFromID = useCallback((id, categories) => {
     let title = "Unknown";
 
-    allCategories.some((cat) => {
+    categories.some((cat) => {
       if (cat.id == id) {
         title = cat.title;
         // This returns .some, not the outer function
@@ -118,9 +121,9 @@ function App() {
     });
 
     return title;
-  }
+  }, []);
 
-  const checkForExistingUser = async () => {
+  const checkForExistingUser = useCallback(async () => {
     if (cookies.get('user')) {
       // We already have a login session, fetch data based on that
       let tempUser = {};
@@ -171,26 +174,40 @@ function App() {
 
       setCurrentUser(tempUser);
     }
-  }
+  }, []);
+
+  const researchValue = useMemo(() => ({
+    allCategories, 
+    allFacts, 
+    getCategoryTitleFromID,
+    getAllCategories, 
+    getAllFacts, 
+    getCurrentLocation, 
+    currentUser, 
+    setCurrentUser, 
+    isLoggedIn, 
+    setIsLoggedIn, 
+    testUser,
+    cookies,
+    checkForExistingUser
+  }), [
+    allCategories, 
+    allFacts, 
+    getCategoryTitleFromID,
+    getAllCategories, 
+    getAllFacts, 
+    getCurrentLocation, 
+    currentUser, 
+    isLoggedIn, 
+    checkForExistingUser
+  ]);
 
   return (
     <div className="App">
       
       <BrowserRouter>
-        <ResearchContext.Provider value={{
-          allCategories, 
-          allFacts, 
-          getCategoryTitleFromID, 
-          currentLocation, 
-          getAllCategories, 
-          getAllFacts, 
-          getCurrentLocation, 
-          currentUser, 
-          setCurrentUser, 
-          isLoggedIn, 
-          setIsLoggedIn, 
-          testUser,
-          cookies}}>
+        <LocationContext.Provider value={{currentLocation}}>
+        <ResearchContext.Provider value={researchValue}>
 
           <Navbar/>
           <Routes>
@@ -214,6 +231,7 @@ function App() {
             </Route>
           </Routes>
         </ResearchContext.Provider>
+        </LocationContext.Provider>
       </BrowserRouter>
     </div>
   );
