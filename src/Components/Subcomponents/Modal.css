@@ -314,3 +314,60 @@
     padding: 22px;
     box-sizing: border-box;
 }
+
+/* Input field styling */
+.input-modal-field {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid rgba(76, 38, 131, 0.2);
+    border-radius: 12px;
+    font-size: 1rem;
+    margin-bottom: 25px;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+    color: var(--blue-accent);
+}
+
+.input-modal-field:focus {
+    outline: none;
+    border-color: var(--purple-main);
+    box-shadow: 0 0 0 3px rgba(76, 38, 131, 0.1);
+}
+
+.input-modal-field::placeholder {
+    color: var(--slate-accent);
+    opacity: 0.6;
+}
+
+/* Button container for side-by-side layout */
+.input-modal-buttons {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+}
+
+.input-modal-buttons .modal-button {
+    flex: 1;
+}
+
+/* Cancel button styling */
+.input-modal-btn-cancel {
+    background: linear-gradient(135deg, var(--slate-accent), #5a7a8a);
+}
+
+/* Disabled state for submit button */
+.input-modal-buttons .modal-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 480px) {
+    .input-modal-buttons {
+        flex-direction: column;
+    }
+
+    .input-modal-buttons .modal-button {
+        width: 100%;
+    }
+}

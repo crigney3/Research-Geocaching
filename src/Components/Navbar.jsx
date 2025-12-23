@@ -14,7 +14,7 @@ const Navbar = ({
     const [navbarClass, setNavbarClass] = useState("Navbar");
     const [overlayClass, setOverlayClass] = useState("Overlay");
 
-    const currentUser = useContext(ResearchContext).testUser;
+    const currentUser = useContext(ResearchContext).currentUser;
 
     const toggleNavbarState = (e) => {
         setNavbarOpen(!navbarOpen);
@@ -39,7 +39,7 @@ const Navbar = ({
                         <Link to="/">Home</Link>
                     </div> */}
 
-                    {(currentUser.permLevel >= 2) &&
+                    {(currentUser != null) && (currentUser.permLevel >= 2) &&
                     <div className="AdminButton">
                         <Link to="/admin" onClick={toggleNavbarState}>Admin</Link>
                     </div>}

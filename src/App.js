@@ -141,7 +141,7 @@ function App() {
       }).then(data => {
         tempUser.id = data[0].id;
         tempUser.username = data[0].username;
-        tempUser.permLevel = data[0].perms;
+        tempUser.permLevel = data[0].permissions;
       }).catch(error => {
             console.error('Error: ', error);
       });

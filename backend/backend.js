@@ -137,7 +137,7 @@ app.post('/remove_fact_by_id', async (req, res) => {
         return res.status(400).json('Must submit an ID for valid deletion');
     }
 
-    await pool.query("DELETE FROM facts WHERE id=UNHEX(?) ", inID, 
+    await pool.query("DELETE FROM facts WHERE id=UNHEX(?) ", [inID], 
         function(err, result) {
             if (err || result.affectedRows === 0) {
                 console.log("Error removing fact: %s", err);
@@ -156,7 +156,7 @@ app.post('/remove_category_by_id', async (req, res) => {
         return res.status(400).json('Must submit an ID for valid deletion');
     }
 
-    await pool.query("DELETE FROM categories WHERE id=UNHEX(?) ", inID, 
+    await pool.query("DELETE FROM categories WHERE id=UNHEX(?) ", [inID], 
         function(err, rows) {
             if (err) {
                 console.log("Error removing category: %s", err);
@@ -175,7 +175,7 @@ app.post('/remove_all_facts_in_category', async (req, res) => {
         return res.status(400).json('Must submit a category for valid deletion');
     }
 
-    await pool.query("DELETE FROM facts WHERE category=UNHEX(?) ", inID, 
+    await pool.query("DELETE FROM facts WHERE category=UNHEX(?) ", [inID], 
         function(err, rows) {
             if (err) {
                 console.log("Error removing facts: %s", err);
@@ -264,7 +264,7 @@ app.get('/get_fact_by_id', async (req, res) => {
         return res.status(400).json('Must submit an ID for valid access');
     }
     
-    await pool.query("SELECT * FROM facts WHERE id=UNHEX(?)", inID, 
+    await pool.query("SELECT * FROM facts WHERE id=UNHEX(?)", [inID], 
         function(err, rows) {
             if (err) {
                 console.log("Error retrieving fact: %s", err);
@@ -283,7 +283,7 @@ app.get('/get_category_by_id', async (req, res) => {
         return res.status(400).json('Must submit an ID for valid access');
     }
     
-    await pool.query("SELECT * FROM categories WHERE id=UNHEX(?)", inID, 
+    await pool.query("SELECT * FROM categories WHERE id=UNHEX(?)", [inID], 
         function(err, rows) {
             if (err) {
                 console.log("Error retrieving category: %s", err);
@@ -303,7 +303,7 @@ app.get('/get_all_facts_of_category', async (req, res) => {
         return res.status(400).json('Must submit an Category for valid access');
     }
     
-    await pool.query("SELECT * FROM facts WHERE category=UNHEX(?)", inID, 
+    await pool.query("SELECT * FROM facts WHERE category=UNHEX(?)", [inID], 
         function(err, rows) {
             if (err) {
                 console.log("Error retrieving facts: %s", err);
@@ -329,7 +329,7 @@ app.get('/get_all_facts_of_category', async (req, res) => {
 //         return res.status(400).json('Must submit a user ID for valid access');
 //     }
 
-//     await pool.query("SELECT * FROM users WHERE id=?", inID,
+//     await pool.query("SELECT * FROM users WHERE id=?", [inID],
 //         async function(err, row) {
 //             if (err) {
 //                 console.log("Error getting user: %s", err);
@@ -464,7 +464,7 @@ app.post('/change_username', async (req, res) => {
         return res.status(400).json('Must submit a user ID for valid access');
     }
 
-    await pool.query("UPDATE users SET username=? WHERE id=?", newUsername, inID,
+    await pool.query("UPDATE users SET username=? WHERE id=?", [newUsername, inID],
         async function(err, row) {
             if (err) {
                 console.log("Error getting user: %s", err);
@@ -484,7 +484,7 @@ app.post('/change_permissions', async (req, res) => {
         return res.status(400).json('Must submit a user ID for valid access');
     }
 
-    await pool.query("UPDATE users SET permissions=? WHERE id=?", newPermLevel, inID,
+    await pool.query("UPDATE users SET permissions=? WHERE id=?", [newPermLevel, inID],
         async function(err, row) {
             if (err) {
                 console.log("Error getting user: %s", err);
@@ -508,7 +508,7 @@ app.post('/set_level', async (req, res) => {
     }
 
     if (newLevel) {
-        await pool.query("UPDATE achievements SET level=? WHERE id=?", newLevel, inID,
+        await pool.query("UPDATE achievements SET level=? WHERE id=?", [newLevel, inID],
             async function(err, row) {
                 if (err) {
                     console.log("Error getting user: %s", err);
@@ -530,7 +530,7 @@ app.post('/set_level', async (req, res) => {
             }
         );
     } else {
-        await pool.query("UPDATE achievements SET level = level + 1 WHERE id=?", inID,
+        await pool.query("UPDATE achievements SET level = level + 1 WHERE id=?", [inID],
             async function(err, row) {
                 if (err) {
                     console.log("Error getting user: %s", err);
@@ -594,7 +594,7 @@ app.get('/get_user_by_id', async (req, res) => {
         return res.status(400).json('Must submit an ID for valid access');
     }
     
-    await pool.query("SELECT * FROM users WHERE id=?", inID, 
+    await pool.query("SELECT * FROM users WHERE id=?", [inID], 
         function(err, rows) {
             if (err) {
                 console.log("Error retrieving user: %s", err);
@@ -613,7 +613,7 @@ app.get('/get_username_by_id', async (req, res) => {
         return res.status(400).json('Must submit an ID for valid access');
     }
     
-    await pool.query("SELECT username FROM users WHERE id=?", inID, 
+    await pool.query("SELECT username FROM users WHERE id=?", [inID], 
         function(err, rows) {
             if (err) {
                 console.log("Error retrieving user: %s", err);
@@ -632,7 +632,7 @@ app.get('/get_user_perms_by_id', async (req, res) => {
         return res.status(400).json('Must submit an ID for valid access');
     }
     
-    await pool.query("SELECT perms FROM users WHERE id=?", inID, 
+    await pool.query("SELECT perms FROM users WHERE id=?", [inID], 
         function(err, rows) {
             if (err) {
                 console.log("Error retrieving user: %s", err);
@@ -651,7 +651,7 @@ app.get('/get_user_level_by_id', async (req, res) => {
         return res.status(400).json('Must submit an ID for valid access');
     }
     
-    await pool.query("SELECT level FROM achievements WHERE id=?", inID, 
+    await pool.query("SELECT level FROM achievements WHERE id=?", [inID], 
         function(err, rows) {
             if (err) {
                 console.log("Error retrieving achievement: %s", err);
@@ -670,7 +670,7 @@ app.get('/get_user_xp_by_id', async (req, res) => {
         return res.status(400).json('Must submit an ID for valid access');
     }
     
-    await pool.query("SELECT xp FROM achievements WHERE id=?", inID, 
+    await pool.query("SELECT xp FROM achievements WHERE id=?", [inID], 
         function(err, rows) {
             if (err) {
                 console.log("Error retrieving achievement: %s", err);
@@ -689,7 +689,7 @@ app.get('/get_user_days_by_id', async (req, res) => {
         return res.status(400).json('Must submit an ID for valid access');
     }
     
-    await pool.query("SELECT daysUsed FROM achievements WHERE id=?", inID, 
+    await pool.query("SELECT daysUsed FROM achievements WHERE id=?", [inID], 
         function(err, rows) {
             if (err) {
                 console.log("Error retrieving achievement: %s", err);
@@ -708,7 +708,7 @@ app.get('/get_user_facts_viewed_by_id', async (req, res) => {
         return res.status(400).json('Must submit an ID for valid access');
     }
     
-    await pool.query("SELECT factsViewed FROM achievements WHERE id=?", inID, 
+    await pool.query("SELECT factsViewed FROM achievements WHERE id=?", [inID], 
         function(err, rows) {
             if (err) {
                 console.log("Error retrieving achievement: %s", err);
@@ -727,7 +727,7 @@ app.get('/get_user_facts_placed_by_id', async (req, res) => {
         return res.status(400).json('Must submit an ID for valid access');
     }
     
-    await pool.query("SELECT factsPlaced FROM achievements WHERE id=?", inID, 
+    await pool.query("SELECT factsPlaced FROM achievements WHERE id=?", [inID], 
         function(err, rows) {
             if (err) {
                 console.log("Error retrieving achievement: %s", err);
@@ -746,7 +746,7 @@ app.get('/get_user_range_by_id', async (req, res) => {
         return res.status(400).json('Must submit an ID for valid access');
     }
     
-    await pool.query("SELECT userRange FROM achievements WHERE id=?", inID, 
+    await pool.query("SELECT userRange FROM achievements WHERE id=?", [inID], 
         function(err, rows) {
             if (err) {
                 console.log("Error retrieving achievement: %s", err);
@@ -765,7 +765,7 @@ app.get('/get_user_all_achievements_by_id', async (req, res) => {
         return res.status(400).json('Must submit an ID for valid access');
     }
     
-    await pool.query("SELECT * FROM achievements WHERE id=?", inID, 
+    await pool.query("SELECT * FROM achievements WHERE id=?", [inID], 
         function(err, rows) {
             if (err) {
                 console.log("Error retrieving achievement: %s", err);

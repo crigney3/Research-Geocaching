@@ -155,9 +155,14 @@ const LoginModal = ({
     if (!show) return null;
 
     return (
-        <>
-        <div className="modal-backdrop-component" onClick={onClose}>
-            <div className='component-container' onClick={(e) => e.stopPropagation()}>
+        <div 
+            className={`modal-overlay ${show ? 'show' : ''}`}
+            onClick={onClose}
+        >
+            <div 
+                className="modal-container"
+                onClick={(e) => e.stopPropagation()}
+            >
                 <div className="modal-header">
                     <h2 className="title">Login</h2>
                     <button 
@@ -176,13 +181,119 @@ const LoginModal = ({
                 <p className='login-disclaimer'>This app does not store (or sell) any of the info from your google account. We don't even get your email!</p>
             </div>       
         </div>
-        </>
     )
 }
+
+const InputModal = ({ 
+    show, 
+    title, 
+    message, 
+    placeholder = '',
+    warningLevel = 2,
+    onClose,
+    action,
+    initialValue = ''
+}) => {
+    const [inputValue, setInputValue] = useState(initialValue);
+
+    // Reset input when modal opens/closes
+    useEffect(() => {
+        if (show) {
+            setInputValue(initialValue);
+        }
+    }, [show, initialValue]);
+
+    const handleSubmit = () => {
+        if (action && inputValue.trim()) {
+            action(inputValue);
+            setInputValue('');
+        }
+    };
+
+    // Define styles based on warning level
+    const getModalStyles = (level) => {
+        switch (level) {
+            case 0: // Error
+                return {
+                    iconClass: 'error',
+                    icon: '❌',
+                    buttonText: 'Submit',
+                    buttonClass: 'error'
+                };
+            case 1: // Warning
+                return {
+                    iconClass: 'warning',
+                    icon: '⚠️',
+                    buttonText: 'Submit',
+                    buttonClass: 'warning'
+                };
+            case 2: // Success
+                return {
+                    iconClass: 'success',
+                    icon: '✓',
+                    buttonText: 'Submit',
+                    buttonClass: 'success'
+                };
+            default:
+                return {
+                    iconClass: 'success',
+                    icon: '✓',
+                    buttonText: 'Submit',
+                    buttonClass: 'success'
+                };
+        }
+    };
+
+    const modalStyles = getModalStyles(warningLevel);
+
+    return (
+        <div 
+            className={`modal-overlay ${show ? 'show' : ''}`}
+            onClick={onClose}
+        >
+            <div 
+                className="modal-container"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className={`modal-icon ${modalStyles.iconClass}`}>
+                    {modalStyles.icon}
+                </div>
+                <h3 className="modal-title">{title}</h3>
+                {message && <p className="modal-message">{message}</p>}
+                
+                <input
+                    type="text"
+                    className="input-modal-field"
+                    placeholder={placeholder}
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    autoFocus
+                />
+
+                <div className="input-modal-buttons">
+                    <button 
+                        className="modal-button input-modal-btn-cancel"
+                        onClick={onClose}
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        className={`modal-button ${modalStyles.buttonClass}`}
+                        onClick={handleSubmit}
+                        disabled={!inputValue.trim()}
+                    >
+                        {modalStyles.buttonText}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 export {
     Modal,
     FactModal,
     ComponentModal,
-    LoginModal
+    LoginModal,
+    InputModal
 } ;

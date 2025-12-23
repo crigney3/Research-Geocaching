@@ -2,6 +2,7 @@ import { useContext, useEffect, useState } from 'react';
 import './profile.css';
 import ResearchContext from '../ResearchContext';
 import Achievement from '../Subcomponents/Achievement';
+import { BACKEND_URL } from '../../secrets';
 
 import DirectionsWalkIcon from '@mui/icons-material/DirectionsWalk';
 import BookIcon from '@mui/icons-material/Book';
@@ -9,11 +10,13 @@ import StarRateIcon from '@mui/icons-material/StarRate';
 import CreateIcon from '@mui/icons-material/Create';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import EventRepeatIcon from '@mui/icons-material/EventRepeat';
+import { InputModal } from '../Subcomponents/Modal';
 
 const ProfilePage = ({
 
 }) => {
   const currentUser = useContext(ResearchContext).currentUser;
+  const [showUsernameModal, setShowUsernameModal] = useState(false);
   const [isUserLoaded, setIsUserLoaded] = useState(false);
 
   useEffect(() => {
@@ -110,10 +113,45 @@ const ProfilePage = ({
     }
   ];
 
+  const handleNewUsername = (newName) => {
+    fetch(BACKEND_URL + "/change_username", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json;charset=utf-8'
+        },
+        mode: 'cors',
+        body: JSON.stringify({id: currentUser.id, username: newName})
+    }).then(response => {
+        if (response.ok) {
+
+        } else {
+          throw new Error("Request to change username failed!");
+        }
+
+        return response.json();
+    }).then(data => {
+      currentUser.username = data[0].username;
+    }).catch(error => {
+      console.error('Error: ', error);
+      return;
+    } );   
+
+    setShowUsernameModal(false);
+  }
+
   return (
     <div className="profile-container">
+      <InputModal
+        show={showUsernameModal}
+        title="Edit Your Username"
+        placeholder="Type here..."
+        warningLevel={2}
+        onClose={() => setShowUsernameModal(false)}
+        action={handleNewUsername}
+      />
+
       <div className="profile-header">
-        <h1 className="profile-username">
+        <h1 className="profile-username" onClick={() => setShowUsernameModal(true)}>
           {currentUser.username}
         </h1>
         
