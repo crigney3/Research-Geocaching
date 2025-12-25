@@ -31,6 +31,7 @@ function App() {
 
   const [allCategories, setAllCategories] = useState([]);
   const [allFacts, setAllFacts] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -38,6 +39,7 @@ function App() {
   useEffect(() => {
     getAllCategories();
     getAllFacts();
+    getAllUsers();
     getCurrentLocation();
     
     checkForExistingUser();
@@ -100,6 +102,23 @@ function App() {
       }).then(response => response.json())
         .then(data => {
           setAllFacts(data);
+      });
+    } catch (err) {
+      console.log(err);
+    }
+  }, []);
+
+  const getAllUsers = useCallback(async () => {
+    try {
+      await fetch(BACKEND_URL + "/get_all_users", {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json;charset=utf-8'
+          },
+          mode: 'cors'
+      }).then(response => response.json())
+        .then(data => {
+          setAllUsers(data);
       });
     } catch (err) {
       console.log(err);
@@ -178,10 +197,12 @@ function App() {
 
   const researchValue = useMemo(() => ({
     allCategories, 
-    allFacts, 
+    allFacts,
+    allUsers,
     getCategoryTitleFromID,
     getAllCategories, 
-    getAllFacts, 
+    getAllFacts,
+    getAllUsers, 
     getCurrentLocation, 
     currentUser, 
     setCurrentUser, 
@@ -192,10 +213,12 @@ function App() {
     checkForExistingUser
   }), [
     allCategories, 
-    allFacts, 
+    allFacts,
+    allUsers,
     getCategoryTitleFromID,
     getAllCategories, 
-    getAllFacts, 
+    getAllFacts,
+    getAllUsers,
     getCurrentLocation, 
     currentUser, 
     isLoggedIn, 

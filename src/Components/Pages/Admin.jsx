@@ -3,7 +3,8 @@ import Select from "react-select";
 import { ResearchContext } from "../ResearchContext";
 import { BACKEND_URL } from "../../secrets";
 import CloseIcon from '@mui/icons-material/Close';
-import { Modal } from "../Subcomponents/Modal";
+import EditIcon from '@mui/icons-material/Edit';
+import { Modal, InputModal } from "../Subcomponents/Modal";
 import './Admin.css';
 
 const AdminPage = ({
@@ -13,15 +14,18 @@ const AdminPage = ({
     const [catValue, setCatValue] = useState(0);
     const [categoryOptions, setCategoryOptions] = useState([]);
     const [newCatName, setNewCatName] = useState("");
-    const [isLitterboxDirty, setIsLitterboxDirty] = useState(false);
+    const [showUsernameModal, setShowUsernameModal] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [modalConfig, setModalConfig] = useState({ title: '', message: '', action: null });
+    const [selectedUser, setSelectedUser] = useState(null);
 
     const allCategories = useContext(ResearchContext).allCategories;
     const allFacts = useContext(ResearchContext).allFacts;
+    const allUsers = useContext(ResearchContext).allUsers;
     const getCatTitle = useContext(ResearchContext).getCategoryTitleFromID;
     const reloadFacts = useContext(ResearchContext).getAllFacts;
     const reloadCategories = useContext(ResearchContext).getAllCategories;
+    const reloadUsers = useContext(ResearchContext).getAllUsers;
 
     const customSelectStyles = {
         control: (provided, state) => ({
@@ -83,10 +87,6 @@ const AdminPage = ({
     useEffect(() => {
         categoriesToOptions();
     }, [allCategories]);
-
-    useEffect(() => {
-        //console.log(allFacts);
-    }, [allFacts]);
 
     const categoriesToOptions = () => {
         let tempCat = [];
@@ -237,6 +237,62 @@ const AdminPage = ({
         }
     }
 
+    const handleUsernameChange = async (newName) => {
+        fetch(BACKEND_URL + "/change_username", {
+            method: 'POST',
+            headers: {
+            'Content-Type': 'application/json;charset=utf-8'
+            },
+            mode: 'cors',
+            body: JSON.stringify({id: selectedUser.id, username: newName})
+        }).then(response => {
+            if (response.ok) {
+                reloadUsers();
+            } else {
+                throw new Error("Request to change username failed!");
+            }
+        }).catch(error => {
+            console.error('Error: ', error);
+            return;
+        } );   
+
+        setShowUsernameModal(false);
+    }
+
+    const handleDeleteUser = (user) => {
+        setModalConfig({
+            title: 'Delete User',
+            message: `Are you sure you want to delete "${user.username}"? This action cannot be undone.`,
+            warningLevel: 1,
+            action: () => {
+                deleteUser(user);
+                setShowModal(false);
+            }
+        });
+        setShowModal(true);
+    }
+
+    const deleteUser =  async(user) => {
+        try {
+            await fetch(BACKEND_URL + "/remove_user_by_id", {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json;charset=utf-8'
+                },
+                mode: 'cors',
+                body: JSON.stringify({id: user.id})
+            }).then(response => {
+                if (response.ok) {
+                    reloadUsers();
+                } else {
+                    console.log(response);
+                }
+            });
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
     const handleRemoveAllFactsOfCat = async (event) => {
         try {
             fetch(BACKEND_URL + "/remove_all_facts_in_category", {
@@ -292,6 +348,11 @@ const AdminPage = ({
         setShowModal(false);
     };
 
+    const toggleShowUsernameModal = (user) => {
+        setShowUsernameModal(!showUsernameModal);
+        setSelectedUser(user);
+    }
+
     const CustomSelect = ({ options, onChange }) => (
         <div className="react-select-container">
             <Select 
@@ -307,6 +368,15 @@ const AdminPage = ({
 
     return (
         <div className='AdminPage'>
+            <InputModal
+                show={showUsernameModal}
+                title="Force Edit this User's name"
+                placeholder="Type here..."
+                warningLevel={2}
+                onClose={() => setShowUsernameModal(false)}
+                action={handleUsernameChange}
+            />
+
             <div className="AdminContent">
                 <div className="category-section">
                     <h2 className="section-title">Category Management</h2>
@@ -362,6 +432,32 @@ const AdminPage = ({
                                 <span className="fact-detail">User: {fact.user}</span>
                                 <span className="fact-detail">Category: {getCatTitle(fact.category, allCategories)}</span>
                             </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Todo: Change to correct perms
+                {(currentUser != null) && (currentUser.permLevel >= 2) &&} */}
+                <div className="user-section">
+                    <h2 className="section-title">User Management</h2>
+                    {allUsers.map((user) => (
+                        <div className="fact-card" key={user.id}>
+                            <button 
+                                className="fact-delete-btn"
+                                onClick={() => handleDeleteUser(user)}
+                                title="Delete User"
+                            >
+                                <CloseIcon size={16} />
+                            </button>
+                            <h3 className="fact-title">{user.username}</h3>
+                            <button
+                                className="user-namechange-btn"
+                                onClick={() => toggleShowUsernameModal(user)}
+                                title="Force change username"
+                            >
+                                <EditIcon size={16} />
+                            </button>
+                            {/* Todo: Add date joined, more stats */}
                         </div>
                     ))}
                 </div>

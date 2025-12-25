@@ -168,6 +168,25 @@ app.post('/remove_category_by_id', async (req, res) => {
     );
 });
 
+app.post('/remove_user_by_id', async (req, res) => {
+    let inID = req.body.id;
+
+    if (!inID) {
+        return res.status(400).json('Must submit an ID for valid deletion');
+    }
+
+    await pool.query("DELETE FROM users WHERE id=? ", [inID], 
+        function(err, rows) {
+            if (err) {
+                console.log("Error removing user: %s", err);
+                return res.status(400).json('Error removing user, see backend console for details');
+            } else {
+                return res.status(200).json('User successfully removed');
+            }
+        }
+    );
+});
+
 app.post('/remove_all_facts_in_category', async (req, res) => {
     let inID = req.body.id;
 

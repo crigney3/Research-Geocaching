@@ -5,7 +5,7 @@ import './Navbar.css';
 import { useState, useEffect, useContext } from "react";
 import LoginButton from "./Subcomponents/LoginButton";
 import { ResearchContext } from './ResearchContext';
-import { LoginModal } from "./Subcomponents/Modal";
+import { LoginModal, Modal } from "./Subcomponents/Modal";
 
 const Navbar = ({
 
@@ -14,6 +14,7 @@ const Navbar = ({
     const [showLogin, setShowLogin] = useState(false);
     const [navbarClass, setNavbarClass] = useState("Navbar");
     const [overlayClass, setOverlayClass] = useState("Overlay");
+    const [showLoginRequirement, setShowLoginRequirement] = useState(false);
 
     const currentUser = useContext(ResearchContext).currentUser;
 
@@ -22,7 +23,12 @@ const Navbar = ({
     }
 
     const toggleLoginPopup = (e) => {
+        setShowLoginRequirement(false);
         setShowLogin(!showLogin);
+    }
+
+    const toggleLoginRequirement = (e) => {
+        setShowLoginRequirement(!showLoginRequirement);
     }
 
     useEffect(() => {
@@ -59,7 +65,8 @@ const Navbar = ({
                     </div>
 
                     <div className="ProfileButton">
-                        <Link to="/profile" onClick={toggleNavbarState}>Profile</Link>
+                        {(currentUser != null) && <Link to="/profile" onClick={toggleNavbarState}>Profile</Link>}
+                        {(currentUser == null) && <button onClick={toggleLoginRequirement}>Profile</button>}
                     </div>
                 </div>
             </div>
@@ -69,6 +76,8 @@ const Navbar = ({
             </button>
 
             <LoginModal show={showLogin} onClose={toggleLoginPopup}/>
+
+            <Modal show={showLoginRequirement} onClose={toggleLoginRequirement} title={"Not Logged In"} message={"You need to log in first!"} warningLevel={1} action={toggleLoginPopup} actionClass={'success'} actionText={"Login"}/>
         </div>
 
     )

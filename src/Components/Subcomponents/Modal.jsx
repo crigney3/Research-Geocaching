@@ -8,7 +8,9 @@ const Modal = ({
     message, 
     warningLevel,
     onClose,
-    action = null
+    action = null,
+    actionText = null,
+    actionClass = null
 }) => {
     // Define styles and content based on warning level
     const getModalStyles = (level) => {
@@ -76,7 +78,8 @@ const Modal = ({
                     {modalStyles.buttonText}
                 </button>
 
-                {(action !== null) && <button className='modal-button modal-btn-confirm' onClick={action}>Confirm</button>}
+                {(action !== null) && (actionText === null) && <button className='modal-button modal-btn-confirm' onClick={action}>Confirm</button>}
+                {(action !== null) && (actionText !== null) && (actionClass !== null) && <button className={"modal-button " + actionClass} onClick={action}>{actionText}</button>}
             </div>
         </div>
     );
