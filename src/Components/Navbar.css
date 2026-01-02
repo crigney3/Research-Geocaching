@@ -70,6 +70,8 @@
 .LoginButton a {
     background-color: var(--light-blue-accent);
     text-align: center;
+    min-width: fit-content;
+    white-space: nowrap;
 }
 
 .InputButton a {
