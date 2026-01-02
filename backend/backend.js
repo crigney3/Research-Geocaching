@@ -1,3 +1,5 @@
+//#region imports
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const secrets = require('./secrets');
@@ -7,6 +9,10 @@ const cors = require("cors");
 const { OAuth2Client } = require('google-auth-library');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
+
+//#endregion
+
+//#region initializers
 
 const initFetch = async () => {
   console.log("Attempting header load\n");
@@ -28,6 +34,7 @@ const initFetch = async () => {
 const appPort = 3330;
 const app = express();
 const oauthClient = new OAuth2Client(secrets.GOOGLE_LOGIN_CLIENT_ID);
+const VALID_CLIENT_TOKEN = secrets.APP_NETWORK_TOKEN;
 app.use(bodyParser.json());
 app.use(cookieParser());
 
@@ -56,10 +63,41 @@ const pool = sql.createPool({
     // }
 });
 
+//#endregion
+
+//#region security
+
 const JWT_SECRET = secrets.JWT_SECRET;
 
+const authenticateToken = (req, res, next) => {
+    // Get the authorization header value: "Bearer TOKEN"
+    const authHeader = req.headers['authorization'];
+
+    // Extract the token part: "TOKEN"
+    // If authHeader is present, get the second element of the split array (index 1)
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (token == null) {
+        // If no token is provided, return 401 Unauthorized
+        return res.sendStatus(401);
+    }
+
+    if (token !== VALID_CLIENT_TOKEN) {
+        // If the token is invalid or expired, return 403 Forbidden
+        return res.sendStatus(403);
+    }
+
+    // The 'user' object now contains the decoded payload from the token
+    req.user = user;
+
+    // Proceed to the next middleware or route handler
+    next();
+};
+
+//#endregion
+
 //#region additions
-app.post('/add_fact', async (req, res) => {
+app.post('/add_fact', authenticateToken, async (req, res) => {
     let inTitle = req.body.title;
     let inDescription = req.body.description;
     let inLat = req.body.lat;
@@ -106,7 +144,7 @@ app.post('/add_fact', async (req, res) => {
     );
 });
 
-app.post('/add_category', async (req, res) => {
+app.post('/add_category', authenticateToken, async (req, res) => {
     let categoryTitle = req.body.title;
 
     if (!categoryTitle) {
@@ -130,7 +168,7 @@ app.post('/add_category', async (req, res) => {
 //#endregion
 
 //#region deletions
-app.post('/remove_fact_by_id', async (req, res) => {
+app.post('/remove_fact_by_id', authenticateToken, async (req, res) => {
     let inID = req.body.id;
 
     if (!inID) {
@@ -149,7 +187,7 @@ app.post('/remove_fact_by_id', async (req, res) => {
     );
 });
 
-app.post('/remove_category_by_id', async (req, res) => {
+app.post('/remove_category_by_id', authenticateToken, async (req, res) => {
     let inID = req.body.id;
 
     if (!inID) {
@@ -168,7 +206,7 @@ app.post('/remove_category_by_id', async (req, res) => {
     );
 });
 
-app.post('/remove_user_by_id', async (req, res) => {
+app.post('/remove_user_by_id', authenticateToken, async (req, res) => {
     let inID = req.body.id;
 
     if (!inID) {
@@ -187,7 +225,7 @@ app.post('/remove_user_by_id', async (req, res) => {
     );
 });
 
-app.post('/remove_all_facts_in_category', async (req, res) => {
+app.post('/remove_all_facts_in_category', authenticateToken, async (req, res) => {
     let inID = req.body.id;
 
     if (!inID) {
@@ -206,7 +244,7 @@ app.post('/remove_all_facts_in_category', async (req, res) => {
     );
 });
 
-app.post('/remove_all_categories', async (req, res) => {
+app.post('/remove_all_categories', authenticateToken, async (req, res) => {
     await pool.query("TRUNCATE TABLE categories", 
         function(err, rows) {
             if (err) {
@@ -219,7 +257,7 @@ app.post('/remove_all_categories', async (req, res) => {
     );
 });
 
-app.post('/remove_all_facts', async (req, res) => {
+app.post('/remove_all_facts', authenticateToken, async (req, res) => {
     await pool.query("TRUNCATE TABLE facts",
         function(err, rows) {
             if (err) {
@@ -385,7 +423,7 @@ app.get('/get_all_facts_of_category', async (req, res) => {
 //     )
 // });
 
-app.post('/google_login', async (req, res) => {
+app.post('/google_login', authenticateToken, async (req, res) => {
     let credential = req.body.credential;
     let client_id = req.body.client_id;
     let inUsername = req.body.inUsername;
@@ -475,7 +513,7 @@ app.post('/google_login', async (req, res) => {
    }
 });
 
-app.post('/change_username', async (req, res) => {
+app.post('/change_username', authenticateToken, async (req, res) => {
     let inID = req.body.id;
     let newUsername = req.body.username;
 
@@ -495,7 +533,7 @@ app.post('/change_username', async (req, res) => {
     );
 });
 
-app.post('/change_permissions', async (req, res) => {
+app.post('/change_permissions', authenticateToken, async (req, res) => {
     let inID = req.body.id;
     let newPermLevel = req.body.permLevel;
 
@@ -516,7 +554,7 @@ app.post('/change_permissions', async (req, res) => {
 });
 
 // TODO: Make this change seperate achievements table, not users
-app.post('/set_level', async (req, res) => {
+app.post('/set_level', authenticateToken, async (req, res) => {
     let inID = req.body.id;
     let newLevel = req.body.level; // Level isn't required, we default to adding one
 
@@ -573,7 +611,7 @@ app.post('/set_level', async (req, res) => {
     }
 });
 
-app.post('/update_achievement', async (req, res) => {
+app.post('/update_achievement', authenticateToken, async (req, res) => {
     let inID = req.body.id;
     let inStat = req.body.stat;
     let inStatValue = req.body.statValue;

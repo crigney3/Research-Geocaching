@@ -52,7 +52,7 @@ const Navbar = ({
                     </div>}
 
                     <div className="LoginButton">
-                        <button onClick={toggleLoginPopup}>Login</button>
+                        <a onClick={toggleLoginPopup}>Login</a>
                     </div>
                     
 
@@ -67,7 +67,7 @@ const Navbar = ({
 
                     <div className="ProfileButton">
                         {(currentUser != null) && <Link to="/profile" onClick={toggleNavbarState}>Profile</Link>}
-                        {(currentUser == null) && <button onClick={toggleLoginRequirement}>Profile</button>}
+                        {(currentUser == null) && <a onClick={toggleLoginRequirement}>Profile</a>}
                     </div>
                 </div>
             </div>

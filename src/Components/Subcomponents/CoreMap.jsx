@@ -2,6 +2,8 @@ import { Map, AdvancedMarker, useMap, useAdvancedMarkerRef } from '@vis.gl/react
 import { MAP_ID, BACKEND_URL } from "../../secrets";
 import { useState, useCallback, useContext, useEffect, useRef, memo, useMemo } from 'react';
 import MapMarker from './MapMarker';
+import KeyboardDoubleArrowUpIcon from '@mui/icons-material/KeyboardDoubleArrowUp';
+import KeyboardDoubleArrowDownIcon from '@mui/icons-material/KeyboardDoubleArrowDown';
 import { LocationContext, ResearchContext } from '../ResearchContext';
 import NavigationIcon from '@mui/icons-material/Navigation';
 import AddLocationAltIcon from '@mui/icons-material/AddLocationAlt';
@@ -9,6 +11,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import { ComponentModal, LoginModal, Modal } from './Modal';
 import InputPage from '../Pages/input.jsx';
 import { Geolocation } from '@capacitor/geolocation';
+import Select from "react-select";
 import './Map.css';
 
 const center = {
@@ -30,8 +33,11 @@ const CoreMap = ({
 
 }) => {
     const allFacts = useContext(ResearchContext).allFacts;
+    const allCategories = useContext(ResearchContext).allCategories;
     const [currentCategoryFacts, setCurrentCategoryFacts] = useState([]);
     const [currentCategory, setCurrentCategory] = useState([]);
+    const [categoryOptions, setCategoryOptions] = useState([]);
+    const [categoryWindowOpen, setCategoryWindowOpen] = useState(false);
     const [refreshClass, setRefreshClass] = useState('refresh-button');
     const [addWindowOpen, setAddWindowOpen] = useState(false);
     const [circleRadius, setCircleRadius] = useState(0);
@@ -179,6 +185,97 @@ const CoreMap = ({
       onZoomChanged: handleZoomChanged, 
       onClick: handleSetSelectedCoords 
     }), []);
+    const customSelectStyles = {
+        control: (provided, state) => ({
+            ...provided,
+            border: '2px solid #4C2683',
+            borderRadius: '15px',
+            padding: '8px',
+            fontSize: '1rem',
+            boxShadow: state.isFocused ? '0 0 0 3px rgba(246, 139, 31, 0.2)' : 'none',
+            borderColor: state.isFocused ? '#F68B1F' : '#4C2683',
+            background: 'white',
+            '&:hover': {
+                borderColor: '#4C2683'
+            }
+        }),
+        valueContainer: (provided) => ({
+            ...provided,
+            padding: '0 8px'
+        }),
+        singleValue: (provided) => ({
+            ...provided,
+            color: '#4C2683',
+            fontWeight: '500'
+        }),
+        placeholder: (provided) => ({
+            ...provided,
+            color: '#7A99AC'
+        }),
+        indicatorSeparator: (provided) => ({
+            ...provided,
+            backgroundColor: '#4C2683'
+        }),
+        dropdownIndicator: (provided) => ({
+            ...provided,
+            color: '#4C2683'
+        }),
+        menu: (provided) => ({
+            ...provided,
+            borderRadius: '12px',
+            overflow: 'hidden',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
+            border: '1px solid rgba(76, 38, 131, 0.2)',
+            zIndex: 9999
+        }),
+        option: (provided, state) => ({
+            ...provided,
+            color: '#4C2683',
+            backgroundColor: state.isSelected ? '#F68B1F' : 
+                           state.isFocused ? 'rgba(76, 38, 131, 0.1)' : 'white',
+            padding: '12px 16px',
+            cursor: 'pointer',
+            '&:hover': {
+                backgroundColor: 'rgba(246, 139, 31, 0.1)',
+                color: '#4C2683'
+            }
+        })
+    };
+
+    useEffect(() => {
+        categoriesToOptions();
+    }, [allCategories]);
+
+    const categoriesToOptions = () => {
+        let tempCat = [];
+
+        allCategories.forEach((cat) => {
+            tempCat.push({value: cat.id, label:cat.title});
+        });
+
+        setCategoryOptions(tempCat);
+    }
+
+    const handleCatChange = (category) => {
+      setCurrentCategory(category);
+    }
+
+    const CategorySelect = ({ options, onChange }) => (
+      <div className="react-select-container">
+          <Select 
+              options={options}
+              onChange={onChange}
+              styles={customSelectStyles}
+              className="react-select-category-dropdown"
+              classNamePrefix="react-select"
+              maxMenuHeight={250}
+          />
+      </div>
+    );
+
+    const toggleCategoryWindow = () => {
+      setCategoryWindowOpen(!categoryWindowOpen);
+    }
 
     return (
       <>
@@ -198,6 +295,30 @@ const CoreMap = ({
               width: `${circleRadius * 2}px`,
               height: `${circleRadius * 2}px`,
           }}/>
+
+          <button className='category-toggle-button' onClick={toggleCategoryWindow}>
+            <KeyboardDoubleArrowUpIcon style={{ opacity: 0.5 }} />
+          </button>
+
+          {/* Overlay */}
+          {categoryWindowOpen && (
+            <div className='category-overlay' onClick={toggleCategoryWindow} />
+          )}
+
+          {/* Sliding category window */}
+          <div className={`category-window ${categoryWindowOpen ? 'open' : ''}`}>
+            <button className='category-close-button' onClick={toggleCategoryWindow}>
+              <KeyboardDoubleArrowDownIcon style={{ opacity: 0.5 }} />
+            </button>
+            
+            <div className='category-content'>
+              <label>Select Category:</label>
+              <CategorySelect 
+                options={categoryOptions}
+                onChange={handleCatChange}
+              />
+            </div>
+          </div>
 
           <ComponentModal show={addWindowOpen} onClose={toggleInputWindow} component={<InputPage inLat={selectedCoords.lat} inLng={selectedCoords.lng}/>}/>
 
