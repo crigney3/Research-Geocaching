@@ -56,9 +56,10 @@ const Navbar = ({
                     </div>
                     
 
-                    <div className="InputButton">
+                    {// Deprecated, add button on map page replaces this
+                    /* <div className="InputButton">
                         <Link to="/input" onClick={toggleNavbarState}>Input</Link>
-                    </div>
+                    </div> */}
 
                     <div className="MapButton">
                         <Link to="/" onClick={toggleNavbarState}>Map</Link>

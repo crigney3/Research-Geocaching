@@ -10,6 +10,7 @@ const GoogleAuth = ({
 }) => {
  const clientId = GOOGLE_LOGIN_CLIENT_ID;
  const cookieHandler = useContext(ResearchContext).cookies;
+ const loginAsGoogleUser = useContext(ResearchContext).checkForExistingUser;
   
  return (
    <GoogleOAuthProvider clientId={clientId}>
@@ -39,6 +40,7 @@ const GoogleAuth = ({
             setLoginState(1);
             cookieHandler.set('user', 'id_' + data.user[0].id, { path: '/' });
             console.log(cookieHandler.get('user'));
+            loginAsGoogleUser();
         }).catch(error => {
             console.error('Error: ', error);
             setLoginState(0);

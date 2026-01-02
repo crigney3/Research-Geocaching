@@ -1,13 +1,14 @@
 import { Map, AdvancedMarker, useMap, useAdvancedMarkerRef } from '@vis.gl/react-google-maps';
 import { MAP_ID, BACKEND_URL } from "../../secrets";
-import { useState, useCallback, useContext, useEffect, useRef } from 'react';
+import { useState, useCallback, useContext, useEffect, useRef, memo, useMemo } from 'react';
 import MapMarker from './MapMarker';
 import { LocationContext, ResearchContext } from '../ResearchContext';
 import NavigationIcon from '@mui/icons-material/Navigation';
 import AddLocationAltIcon from '@mui/icons-material/AddLocationAlt';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { ComponentModal } from './Modal';
+import { ComponentModal, LoginModal, Modal } from './Modal';
 import InputPage from '../Pages/input.jsx';
+import { Geolocation } from '@capacitor/geolocation';
 import './Map.css';
 
 const center = {
@@ -31,27 +32,28 @@ const CoreMap = ({
     const allFacts = useContext(ResearchContext).allFacts;
     const [currentCategoryFacts, setCurrentCategoryFacts] = useState([]);
     const [currentCategory, setCurrentCategory] = useState([]);
-    const [currentLoc, setCurrentLoc] = useState({lat: centerSeattle.lat, lng: centerSeattle.lng, heading: 0});
     const [refreshClass, setRefreshClass] = useState('refresh-button');
     const [addWindowOpen, setAddWindowOpen] = useState(false);
     const [circleRadius, setCircleRadius] = useState(0);
     const [inputMode, setInputMode] = useState(false);
+    const [showLoginRequirement, setShowLoginRequirement] = useState(false);
+    const [showLogin, setShowLogin] = useState(false);
 
     const [selectedCoords, setSelectedCoords] = useState({lat: 0, lng: 0});
 
     const [mapMarkers, setMapMarkers] = useState([]);
 
     const map = useMap();
-    const [navMarkerRef, navMarker] = useAdvancedMarkerRef();
+    // const [navMarkerRef, navMarker] = useAdvancedMarkerRef();
     const rangeRef = useRef(null);
 
-    const userLoc = useContext(LocationContext).currentLocation;
+    // const userLoc = useContext(LocationContext).currentLocation;
     const refreshFacts = useContext(ResearchContext).getAllFacts;
     const userRange = useContext(ResearchContext).testUser.range;
+    const currentUser = useContext(ResearchContext).currentUser;
 
-    useEffect(() => {
-        createMapMarkers();
-    }, [allFacts]);
+    const [currentLoc, setCurrentLoc] = useState({lat: centerSeattle.lat, lng: centerSeattle.lng, heading: 0});
+    const [userLoc, setUserLoc] = useState(null);
 
     useEffect(() => {
       if (userLoc !== null) {
@@ -62,6 +64,23 @@ const CoreMap = ({
         });
       }
     }, [userLoc]);
+
+    useEffect(() => {
+      // Watch our position so it updates constantly
+      const callbackID = Geolocation.watchPosition({
+          enableHighAccuracy: true,
+          maximumAge: 0,
+          timeout: 2000
+      }, (coords) => {
+        setUserLoc(coords);
+      });
+
+      return () => Geolocation.clearWatch(callbackID);
+    }, []);
+
+    useEffect(() => {
+        createMapMarkers();
+    }, [allFacts]);
 
     useEffect(() => {
       if (selectedCoords.lat !== 0 &&
@@ -137,15 +156,43 @@ const CoreMap = ({
       setCircleRadius(calculateCircleRadius());
     }
 
+    const toggleLoginPopup = (e) => {
+        setShowLoginRequirement(false);
+        setShowLogin(!showLogin);
+    }
+
+    const toggleLoginRequirement = (e) => {
+        setShowLoginRequirement(!showLoginRequirement);
+    }
+
+    const memoMapProps = useMemo(() => ({
+      className: 'MainMap',
+      center: {lat: currentLoc.lat, lng: currentLoc.lng},
+      defaultZoom: 19,
+      gestureHandling: 'greedy',
+      disableDoubleClickZoom: false,
+      zoomControl: true,
+      zoomControlOptions: {position: window.google?.maps?.ControlPosition?.LEFT_BOTTOM},
+      disableDefaultUI: true,
+      mapId: MAP_ID,
+      onTilesLoaded: handleZoomChanged,
+      onZoomChanged: handleZoomChanged, 
+      onClick: handleSetSelectedCoords 
+    }), []);
+
     return (
       <>
           <button className={refreshClass} onClick={handleRefresh}>
             <RefreshIcon/>
           </button>
 
-          <button className='add-button' onClick={handleAddButtonClicked}>
+          {(currentUser !== null) && <button className='add-button' onClick={handleAddButtonClicked}>
             <AddLocationAltIcon/>
-          </button>
+          </button>}
+
+          {(currentUser === null) && <button className='add-button' onClick={toggleLoginRequirement}>
+            <AddLocationAltIcon/>
+          </button>}
 
           <div className='RangeCircle' ref={rangeRef} style={{
               width: `${circleRadius * 2}px`,
@@ -154,31 +201,43 @@ const CoreMap = ({
 
           <ComponentModal show={addWindowOpen} onClose={toggleInputWindow} component={<InputPage inLat={selectedCoords.lat} inLng={selectedCoords.lng}/>}/>
 
-          <Map
-            className='MainMap'
-            center={{lat: currentLoc.lat, lng: currentLoc.lng}}
-            defaultZoom={19}
-            gestureHandling={'greedy'}
-            disableDoubleClickZoom={false}
-            zoomControl={true}
-            zoomControlOptions={{position: window.google?.maps?.ControlPosition?.LEFT_BOTTOM}}
-            disableDefaultUI={true}
-            mapId={MAP_ID}
-            onTilesLoaded={handleZoomChanged}
-            onZoomChanged={handleZoomChanged}   
-            onClick={handleSetSelectedCoords}    
-          >
-            {// Marks the user's current position with an arrow
-            userLoc && <AdvancedMarker position={{lat: currentLoc.lat, lng: currentLoc.lng}} ref={navMarkerRef} style={{zIndex: 100000, transform: "translate(0%, 50%)"}}>
-              <NavigationIcon style={{
-                  transform: `rotate(${currentLoc.heading}deg)`,
-                  color: "#F68B1F"
-                }}/>
-            </AdvancedMarker>}
+          <LoginModal show={showLogin} onClose={toggleLoginPopup}/>
+
+          <Modal show={showLoginRequirement} onClose={toggleLoginRequirement} title={"Not Logged In"} message={"You need to log in first!"} warningLevel={1} action={toggleLoginPopup} actionClass={'success'} actionText={"Login"}/>
+
+          <MapSubComponent {...memoMapProps}>
+            <UserLocationMarker currentLoc={currentLoc}/>
             {!inputMode && mapMarkers}
-          </Map>
+          </MapSubComponent>
         </>
     )
+}
+
+const MapSubComponent = memo(({children, ...props}) => {
+  return (
+    <Map {...props}>
+      {children}
+    </Map>
+  );
+});
+
+const UserLocationMarker = (currentLoc) => {
+  useEffect(() => {
+    console.log(currentLoc);
+  }, []);
+
+  if (!currentLoc) {
+    return null;
+  }
+
+  return (  
+    <AdvancedMarker position={{lat: currentLoc.currentLoc.lat, lng: currentLoc.currentLoc.lng}} style={{zIndex: 100000, transform: "translate(0%, 50%)"}}>
+      <NavigationIcon style={{
+          transform: `rotate(${currentLoc.currentLoc.heading}deg)`,
+          color: "#F68B1F"
+        }}/>
+    </AdvancedMarker>
+  );
 }
 
 export default CoreMap;

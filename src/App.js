@@ -46,19 +46,6 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    // Watch our position so it updates constantly
-    const callbackID = Geolocation.watchPosition({
-        enableHighAccuracy: true,
-        maximumAge: 0,
-        timeout: 2000
-    }, (coords) => {
-      setCurrentLocation(coords);
-    });
-
-    return () => Geolocation.clearWatch(callbackID);
-  }, []);
-
   const getCurrentLocation = useCallback(async () => {
     try {
       const coords = await Geolocation.getCurrentPosition({
