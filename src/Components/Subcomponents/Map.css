@@ -95,6 +95,7 @@
     cursor: pointer;
     z-index: 500;
     transition: all 0.3s ease;
+    opacity: 50%;
 }
 
 .category-toggle-button:active {
@@ -183,4 +184,78 @@
 .react-select-category-dropdown:focus {
     outline: none;
     border-color: var(--purple-main, #4C2683);
+}
+
+.react-select__control {
+  border: 2px solid #4C2683 !important;
+  border-radius: 15px !important;
+  padding: 8px !important;
+  font-size: 1rem !important;
+  background: white !important;
+  box-shadow: none !important;
+}
+
+.react-select__control:hover {
+  border-color: #4C2683 !important;
+}
+
+.react-select__control--is-focused {
+  border-color: #F68B1F !important;
+  box-shadow: 0 0 0 3px rgba(246, 139, 31, 0.2) !important;
+}
+
+/* Value container */
+.react-select__value-container {
+  padding: 0 8px !important;
+}
+
+/* Single value (selected option text) */
+.react-select__single-value {
+  color: #4C2683 !important;
+  font-weight: 500 !important;
+}
+
+/* Placeholder */
+.react-select__placeholder {
+  color: #7A99AC !important;
+}
+
+/* Indicator separator */
+.react-select__indicator-separator {
+  background-color: #4C2683 !important;
+}
+
+/* Dropdown indicator */
+.react-select__dropdown-indicator {
+  color: #4C2683 !important;
+}
+
+/* Menu (dropdown container) */
+.react-select__menu {
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid rgba(76, 38, 131, 0.2) !important;
+  z-index: 9999 !important;
+}
+
+/* Options */
+.react-select__option {
+  color: #4C2683 !important;
+  background-color: white !important;
+  padding: 12px 16px !important;
+  cursor: pointer !important;
+}
+
+.react-select__option--is-focused {
+  background-color: rgba(76, 38, 131, 0.1) !important;
+}
+
+.react-select__option--is-selected {
+  background-color: #F68B1F !important;
+}
+
+.react-select__option:hover {
+  background-color: rgba(246, 139, 31, 0.1) !important;
+  color: #4C2683 !important;
 }

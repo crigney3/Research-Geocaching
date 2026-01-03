@@ -58,32 +58,6 @@ const CoreMap = ({
     const userRange = useContext(ResearchContext).testUser.range;
     const currentUser = useContext(ResearchContext).currentUser;
 
-    const [currentLoc, setCurrentLoc] = useState({lat: centerSeattle.lat, lng: centerSeattle.lng, heading: 0});
-    const [userLoc, setUserLoc] = useState(null);
-
-    useEffect(() => {
-      if (userLoc !== null) {
-        setCurrentLoc({
-          lat: userLoc?.coords.latitude,
-          lng: userLoc?.coords.longitude,
-          heading: userLoc?.coords.heading
-        });
-      }
-    }, [userLoc]);
-
-    useEffect(() => {
-      // Watch our position so it updates constantly
-      const callbackID = Geolocation.watchPosition({
-          enableHighAccuracy: true,
-          maximumAge: 0,
-          timeout: 2000
-      }, (coords) => {
-        setUserLoc(coords);
-      });
-
-      return () => Geolocation.clearWatch(callbackID);
-    }, []);
-
     useEffect(() => {
         createMapMarkers();
     }, [allFacts]);
@@ -152,15 +126,15 @@ const CoreMap = ({
       setInputMode(true);
     }
 
-    const handleSetSelectedCoords = (e) => {
+    const handleSetSelectedCoords = useCallback((e) => {
       if (inputMode) {
         setSelectedCoords({lat: e.detail.latLng.lat, lng: e.detail.latLng.lng});
       }
-    }
+    }, [inputMode]);
 
-    const handleZoomChanged = () => {
+    const handleZoomChanged = useCallback(() => {
       setCircleRadius(calculateCircleRadius());
-    }
+    }, [map, userRange]);
 
     const toggleLoginPopup = (e) => {
         setShowLoginRequirement(false);
@@ -173,7 +147,6 @@ const CoreMap = ({
 
     const memoMapProps = useMemo(() => ({
       className: 'MainMap',
-      center: {lat: currentLoc.lat, lng: currentLoc.lng},
       defaultZoom: 19,
       gestureHandling: 'greedy',
       disableDoubleClickZoom: false,
@@ -184,63 +157,7 @@ const CoreMap = ({
       onTilesLoaded: handleZoomChanged,
       onZoomChanged: handleZoomChanged, 
       onClick: handleSetSelectedCoords 
-    }), []);
-    const customSelectStyles = {
-        control: (provided, state) => ({
-            ...provided,
-            border: '2px solid #4C2683',
-            borderRadius: '15px',
-            padding: '8px',
-            fontSize: '1rem',
-            boxShadow: state.isFocused ? '0 0 0 3px rgba(246, 139, 31, 0.2)' : 'none',
-            borderColor: state.isFocused ? '#F68B1F' : '#4C2683',
-            background: 'white',
-            '&:hover': {
-                borderColor: '#4C2683'
-            }
-        }),
-        valueContainer: (provided) => ({
-            ...provided,
-            padding: '0 8px'
-        }),
-        singleValue: (provided) => ({
-            ...provided,
-            color: '#4C2683',
-            fontWeight: '500'
-        }),
-        placeholder: (provided) => ({
-            ...provided,
-            color: '#7A99AC'
-        }),
-        indicatorSeparator: (provided) => ({
-            ...provided,
-            backgroundColor: '#4C2683'
-        }),
-        dropdownIndicator: (provided) => ({
-            ...provided,
-            color: '#4C2683'
-        }),
-        menu: (provided) => ({
-            ...provided,
-            borderRadius: '12px',
-            overflow: 'hidden',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
-            border: '1px solid rgba(76, 38, 131, 0.2)',
-            zIndex: 9999
-        }),
-        option: (provided, state) => ({
-            ...provided,
-            color: '#4C2683',
-            backgroundColor: state.isSelected ? '#F68B1F' : 
-                           state.isFocused ? 'rgba(76, 38, 131, 0.1)' : 'white',
-            padding: '12px 16px',
-            cursor: 'pointer',
-            '&:hover': {
-                backgroundColor: 'rgba(246, 139, 31, 0.1)',
-                color: '#4C2683'
-            }
-        })
-    };
+    }), [handleZoomChanged, handleSetSelectedCoords]);
 
     useEffect(() => {
         categoriesToOptions();
@@ -261,16 +178,15 @@ const CoreMap = ({
     }
 
     const CategorySelect = ({ options, onChange }) => (
-      <div className="react-select-container">
+      // <div className="react-select-container">
           <Select 
               options={options}
               onChange={onChange}
-              styles={customSelectStyles}
               className="react-select-category-dropdown"
               classNamePrefix="react-select"
               maxMenuHeight={250}
           />
-      </div>
+      // </div>
     );
 
     const toggleCategoryWindow = () => {
@@ -297,7 +213,7 @@ const CoreMap = ({
           }}/>
 
           <button className='category-toggle-button' onClick={toggleCategoryWindow}>
-            <KeyboardDoubleArrowUpIcon style={{ opacity: 0.5 }} />
+            <KeyboardDoubleArrowUpIcon />
           </button>
 
           {/* Overlay */}
@@ -308,15 +224,12 @@ const CoreMap = ({
           {/* Sliding category window */}
           <div className={`category-window ${categoryWindowOpen ? 'open' : ''}`}>
             <button className='category-close-button' onClick={toggleCategoryWindow}>
-              <KeyboardDoubleArrowDownIcon style={{ opacity: 0.5 }} />
+              <KeyboardDoubleArrowDownIcon />
             </button>
             
             <div className='category-content'>
               <label>Select Category:</label>
-              <CategorySelect 
-                options={categoryOptions}
-                onChange={handleCatChange}
-              />
+              <Select options={categoryOptions} onChange={handleCatChange}/>
             </div>
           </div>
 
@@ -327,7 +240,6 @@ const CoreMap = ({
           <Modal show={showLoginRequirement} onClose={toggleLoginRequirement} title={"Not Logged In"} message={"You need to log in first!"} warningLevel={1} action={toggleLoginPopup} actionClass={'success'} actionText={"Login"}/>
 
           <MapSubComponent {...memoMapProps}>
-            <UserLocationMarker currentLoc={currentLoc}/>
             {!inputMode && mapMarkers}
           </MapSubComponent>
         </>
@@ -335,26 +247,61 @@ const CoreMap = ({
 }
 
 const MapSubComponent = memo(({children, ...props}) => {
+  const [currentLoc, setCurrentLoc] = useState({lat: centerSeattle.lat, lng: centerSeattle.lng, heading: 0});
+  const [userLoc, setUserLoc] = useState(null);
+
+  useEffect(() => {
+    if (userLoc !== null) {
+      setCurrentLoc({
+        lat: userLoc?.coords.latitude,
+        lng: userLoc?.coords.longitude,
+        heading: userLoc?.coords.heading
+      });
+    }
+  }, [userLoc]);
+
+  useEffect(() => {
+    // Watch our position so it updates constantly
+    const callbackID = Geolocation.watchPosition({
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 2000
+    }, (coords) => {
+      setUserLoc(coords);
+    });
+
+    return () => Geolocation.clearWatch(callbackID);
+  }, []);
+
   return (
-    <Map {...props}>
+    <Map
+    center={{lat: currentLoc.lat, lng: currentLoc.lng}}
+    {...props}>
+      <UserLocationMarker inLoc={currentLoc}/>
       {children}
     </Map>
   );
 });
 
-const UserLocationMarker = (currentLoc) => {
-  useEffect(() => {
-    console.log(currentLoc);
-  }, []);
+const UserLocationMarker = (inLoc) => {
+  const [currentLoc, setCurrentLoc] = useState({});
 
-  if (!currentLoc) {
+  useEffect(() => {
+    setCurrentLoc({
+        lat: inLoc.inLoc.lat,
+        lng: inLoc.inLoc.lng,
+        heading: inLoc.inLoc.heading
+      });
+  }, [inLoc]);
+
+  if (currentLoc == null) {
     return null;
   }
 
   return (  
-    <AdvancedMarker position={{lat: currentLoc.currentLoc.lat, lng: currentLoc.currentLoc.lng}} style={{zIndex: 100000, transform: "translate(0%, 50%)"}}>
+    <AdvancedMarker position={{lat: currentLoc.lat, lng: currentLoc.lng}} style={{zIndex: 100000, transform: "translate(0%, 50%)"}}>
       <NavigationIcon style={{
-          transform: `rotate(${currentLoc.currentLoc.heading}deg)`,
+          transform: `rotate(${currentLoc.heading}deg)`,
           color: "#F68B1F"
         }}/>
     </AdvancedMarker>

@@ -216,7 +216,6 @@ function App() {
     <div className="App">
       
       <BrowserRouter>
-        <LocationContext.Provider value={{currentLocation}}>
         <ResearchContext.Provider value={researchValue}>
 
           <Navbar/>
@@ -241,7 +240,6 @@ function App() {
             </Route>
           </Routes>
         </ResearchContext.Provider>
-        </LocationContext.Provider>
       </BrowserRouter>
     </div>
   );
