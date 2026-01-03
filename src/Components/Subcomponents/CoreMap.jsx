@@ -33,9 +33,10 @@ const CoreMap = ({
 
 }) => {
     const allFacts = useContext(ResearchContext).allFacts;
+    const [factsToShow, setFactsToShow] = useState([]);
     const allCategories = useContext(ResearchContext).allCategories;
     const [currentCategoryFacts, setCurrentCategoryFacts] = useState([]);
-    const [currentCategory, setCurrentCategory] = useState([]);
+    const [currentCategory, setCurrentCategory] = useState(null);
     const [categoryOptions, setCategoryOptions] = useState([]);
     const [categoryWindowOpen, setCategoryWindowOpen] = useState(false);
     const [refreshClass, setRefreshClass] = useState('refresh-button');
@@ -60,7 +61,23 @@ const CoreMap = ({
 
     useEffect(() => {
         createMapMarkers();
-    }, [allFacts]);
+    }, [factsToShow]);
+
+    useEffect(() => {
+      let tempFacts = [];
+
+      allFacts.forEach((fact) => {
+        if (currentCategory === null) {
+          tempFacts.push(fact);
+        } else {
+          if(fact.category === currentCategory.value) {
+            tempFacts.push(fact);
+          }
+        }
+      });
+
+      setFactsToShow(tempFacts);
+    }, [allFacts, currentCategory]);
 
     useEffect(() => {
       if (selectedCoords.lat !== 0 &&
@@ -88,7 +105,7 @@ const CoreMap = ({
     const createMapMarkers = () => {
         let tempMarkers = [];
 
-        allFacts.forEach((fact) => {
+        factsToShow.forEach((fact) => {
             tempMarkers.push(<MapMarker key={fact.id} id={fact.id} title={fact.title} description={fact.description} lat={fact.lat} lng={fact.lng} category={fact.category} rangeRef={rangeRef}/>);
         })
 
@@ -175,22 +192,30 @@ const CoreMap = ({
 
     const handleCatChange = (category) => {
       setCurrentCategory(category);
+      setCategoryWindowOpen(false);
     }
 
     const CategorySelect = ({ options, onChange }) => (
-      // <div className="react-select-container">
+      <div className="react-select-container">
           <Select 
               options={options}
               onChange={onChange}
               className="react-select-category-dropdown"
               classNamePrefix="react-select"
               maxMenuHeight={250}
+              isSearchable={false}
+              value={{label: (currentCategory) && currentCategory.label}}
           />
-      // </div>
+      </div>
     );
 
     const toggleCategoryWindow = () => {
       setCategoryWindowOpen(!categoryWindowOpen);
+    }
+
+    const handleFilterClear = () => {
+      setCurrentCategory(null);
+      setCategoryWindowOpen(false);
     }
 
     return (
@@ -229,8 +254,10 @@ const CoreMap = ({
             
             <div className='category-content'>
               <label>Select Category:</label>
-              <Select options={categoryOptions} onChange={handleCatChange}/>
+              <CategorySelect options={categoryOptions} onChange={handleCatChange}/>
             </div>
+
+            <button className='clear-filter-button' onClick={handleFilterClear}>Clear</button>
           </div>
 
           <ComponentModal show={addWindowOpen} onClose={toggleInputWindow} component={<InputPage inLat={selectedCoords.lat} inLng={selectedCoords.lng}/>}/>
