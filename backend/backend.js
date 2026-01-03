@@ -87,9 +87,6 @@ const authenticateToken = (req, res, next) => {
         return res.sendStatus(403);
     }
 
-    // The 'user' object now contains the decoded payload from the token
-    req.user = user;
-
     // Proceed to the next middleware or route handler
     next();
 };
