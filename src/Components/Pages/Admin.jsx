@@ -26,6 +26,7 @@ const AdminPage = ({
     const reloadFacts = useContext(ResearchContext).getAllFacts;
     const reloadCategories = useContext(ResearchContext).getAllCategories;
     const reloadUsers = useContext(ResearchContext).getAllUsers;
+    const currentUser = useContext(ResearchContext).currentUser;
 
     const customSelectStyles = {
         control: (provided, state) => ({
@@ -338,12 +339,6 @@ const AdminPage = ({
         }
     }
 
-    // const handleModalConfirm = () => {
-    //     if (modalConfig.action) {
-    //         modalConfig.action();
-    //     }
-    // };
-
     const handleModalCancel = () => {
         setShowModal(false);
     };
@@ -436,20 +431,19 @@ const AdminPage = ({
                     ))}
                 </div>
 
-                {/* Todo: Change to correct perms
-                {(currentUser != null) && (currentUser.permLevel >= 2) &&} */}
+                {(currentUser != null) && (currentUser.permLevel >= 2) &&
                 <div className="user-section">
                     <h2 className="section-title">User Management</h2>
                     {allUsers.map((user) => (
                         <div className="fact-card" key={user.id}>
-                            <button 
+                            {((currentUser.permissions >= user.permissions) || (currentUser.id === user.id)) && <button 
                                 className="fact-delete-btn"
                                 onClick={() => handleDeleteUser(user)}
                                 title="Delete User"
                             >
                                 <CloseIcon size={16} />
-                            </button>
-                            <h3 className="fact-title">{user.username}</h3>
+                            </button>}
+                            <h3 className="user-title">{user.username}</h3>
                             <button
                                 className="user-namechange-btn"
                                 onClick={() => toggleShowUsernameModal(user)}
@@ -457,10 +451,14 @@ const AdminPage = ({
                             >
                                 <EditIcon size={16} />
                             </button>
-                            {/* Todo: Add date joined, more stats */}
+                            <div className="user-details">
+                                <span className="user-detail">Level: {user.level}</span>
+                                <span className="user-detail">XP: {user.xp}</span>
+                                <span className="user-detail">Permissions Level: {user.permissions}</span>
+                            </div>
                         </div>
                     ))}
-                </div>
+                </div>}
 
                 <div className="floating-buttons">
                     <button 
