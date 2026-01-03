@@ -34,7 +34,7 @@ const initFetch = async () => {
 const appPort = 3330;
 const app = express();
 const oauthClient = new OAuth2Client(secrets.GOOGLE_LOGIN_CLIENT_ID);
-const VALID_CLIENT_TOKEN = secrets.APP_NETWORK_TOKEN;
+const VALID_CLIENT_TOKEN = secrets.CLIENT_AUTH_SECRET;
 app.use(bodyParser.json());
 app.use(cookieParser());
 
