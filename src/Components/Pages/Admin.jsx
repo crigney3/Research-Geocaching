@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import Select from "react-select";
 import { ResearchContext } from "../ResearchContext";
-import { BACKEND_URL } from "../../secrets";
+import { BACKEND_URL, CLIENT_AUTH_SECRET } from "../../secrets";
 import CloseIcon from '@mui/icons-material/Close';
 import EditIcon from '@mui/icons-material/Edit';
 import { Modal, InputModal } from "../Subcomponents/Modal";
@@ -104,6 +104,7 @@ const AdminPage = ({
             await fetch(BACKEND_URL + "/remove_all_facts", {
                 method: 'POST',
                 headers: {
+                  'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
                   'Content-Type': 'application/json;charset=utf-8'
                 },
                 mode: 'cors'
@@ -135,6 +136,7 @@ const AdminPage = ({
             await fetch(BACKEND_URL + "/remove_fact_by_id", {
                 method: 'POST',
                 headers: {
+                  'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
                   'Content-Type': 'application/json;charset=utf-8'
                 },
                 mode: 'cors',
@@ -169,6 +171,7 @@ const AdminPage = ({
             await fetch(BACKEND_URL + "/remove_all_categories", {
                 method: 'POST',
                 headers: {
+                  'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
                   'Content-Type': 'application/json;charset=utf-8'
                 },
                 mode: 'cors'
@@ -212,6 +215,7 @@ const AdminPage = ({
             await fetch(BACKEND_URL + "/remove_category_by_id", {
                 method: 'POST',
                 headers: {
+                'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
                 'Content-Type': 'application/json;charset=utf-8'
                 },
                 mode: 'cors',
@@ -223,6 +227,7 @@ const AdminPage = ({
             await fetch(BACKEND_URL + "/remove_all_facts_in_category", {
                 method: 'POST',
                 headers: {
+                'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
                 'Content-Type': 'application/json;charset=utf-8'
                 },
                 mode: 'cors',
@@ -242,6 +247,7 @@ const AdminPage = ({
         fetch(BACKEND_URL + "/change_username", {
             method: 'POST',
             headers: {
+            'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
             'Content-Type': 'application/json;charset=utf-8'
             },
             mode: 'cors',
@@ -278,6 +284,7 @@ const AdminPage = ({
             await fetch(BACKEND_URL + "/remove_user_by_id", {
                 method: 'POST',
                 headers: {
+                  'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
                   'Content-Type': 'application/json;charset=utf-8'
                 },
                 mode: 'cors',
@@ -299,6 +306,7 @@ const AdminPage = ({
             fetch(BACKEND_URL + "/remove_all_facts_in_category", {
                 method: 'POST',
                 headers: {
+                  'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
                   'Content-Type': 'application/json;charset=utf-8'
                 },
                 mode: 'cors',
@@ -324,6 +332,7 @@ const AdminPage = ({
             await fetch(BACKEND_URL + "/add_category", {
                 method: 'POST',
                 headers: {
+                  'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
                   'Content-Type': 'application/json;charset=utf-8'
                 },
                 mode: 'cors',
@@ -455,6 +464,8 @@ const AdminPage = ({
                                 <span className="user-detail">Level: {user.level}</span>
                                 <span className="user-detail">XP: {user.xp}</span>
                                 <span className="user-detail">Permissions Level: {user.permissions}</span>
+                                <span className="user-detail">Date Joined: {user.dateJoined}</span>
+                                <span className="user-detail">Last Login Date: {user.lastLogin}</span>
                             </div>
                         </div>
                     ))}

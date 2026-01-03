@@ -8,9 +8,9 @@ import LoginPage from './Components/Pages/login';
 import HomePage from './Components/Pages/home';
 import AdminPage from './Components/Pages/Admin';
 import Navbar from './Components/Navbar';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { ResearchContext, LocationContext } from './Components/ResearchContext';
-import { BACKEND_URL } from './secrets';
+import { BACKEND_URL, CLIENT_AUTH_SECRET } from './secrets';
 import { Geolocation } from '@capacitor/geolocation';
 
 const cookies = new Cookies();
@@ -66,6 +66,7 @@ function App() {
       await fetch(BACKEND_URL + "/get_all_categories", {
           method: 'GET',
           headers: {
+            'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
             'Content-Type': 'application/json;charset=utf-8'
           },
           mode: 'cors'
@@ -83,6 +84,7 @@ function App() {
       await fetch(BACKEND_URL + "/get_all_facts", {
           method: 'GET',
           headers: {
+            'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
             'Content-Type': 'application/json;charset=utf-8'
           },
           mode: 'cors'
@@ -100,6 +102,7 @@ function App() {
       await fetch(BACKEND_URL + "/get_all_users", {
           method: 'GET',
           headers: {
+            'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
             'Content-Type': 'application/json;charset=utf-8'
           },
           mode: 'cors'
@@ -138,6 +141,7 @@ function App() {
       await fetch(BACKEND_URL + "/get_user_by_id?id=" + cookies.get('user').replace('id_', ''), {
           method: 'GET',
           headers: {
+            'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
             'Content-Type': 'application/json;charset=utf-8'
           },
           mode: 'cors'
@@ -151,6 +155,8 @@ function App() {
         tempUser.id = data[0].id;
         tempUser.username = data[0].username;
         tempUser.permLevel = data[0].permissions;
+        tempUser.dateJoined = data[0].dateJoined;
+        tempUser.lastLogin = data[0].lastLoginDay;
       }).catch(error => {
             console.error('Error: ', error);
       });
@@ -158,6 +164,7 @@ function App() {
       await fetch(BACKEND_URL + "/get_user_all_achievements_by_id?id=" + cookies.get('user').replace('id_', ''), {
           method: 'GET',
           headers: {
+            'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
             'Content-Type': 'application/json;charset=utf-8'
           },
           mode: 'cors'
@@ -182,6 +189,62 @@ function App() {
     }
   }, []);
 
+  const checkForUserLevelup = (statString, valueToAdd) => {
+    // Run the fetch to achievements here, then if we did level up update currentUser data
+    try {
+        let JSONString = JSON.stringify({id: currentUser.id, stat: statString, statValue: valueToAdd});
+
+        fetch(BACKEND_URL + "/add_to_achievement", {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
+              'Content-Type': 'application/json;charset=utf-8'
+            },
+            mode: 'cors',
+            body: JSONString
+        }).then(response => {
+            if (response.ok) {
+                // We don't generally inform the user of achievement tracking
+            } else {
+                console.error("Something went wrong updating achievements! " + response)
+                // setModalConfig({
+                //     title: 'Achievement Update Failed',
+                //     message: 'There was an error updating your achievements. Level/XP may not reflect your updated ' + statString + '. Response code: ' + response.status,
+                //     warningLevel: 0
+                // });
+                // setShowModal(true);
+            }
+            return response.json();
+        }).then(data => {
+          console.log(data);
+          if (data.leveled) {
+            let tempUser = {};
+
+            tempUser.level = data.user.level;
+            tempUser.xp = data.user.xp;
+            tempUser.daysUsed = data.user.daysUsed;
+            tempUser.factsPlaced = data.user.factsPlaced;
+            tempUser.factsViewed = data.user.factsViewed;
+            tempUser.range = data.user.userRange;
+
+            setCurrentUser(tempUser);
+          }
+        });
+    } catch(err) {
+      console.error(err);
+        // setModalConfig({
+        //     title: 'Unexpected error!',
+        //     message: err,
+        //     warningLevel: 0
+        // });
+        // setShowModal(true);
+    }
+  }
+
+  const logoutCurrentUser = () => {
+    setCurrentUser(null);
+  }
+
   const researchValue = useMemo(() => ({
     allCategories, 
     allFacts,
@@ -197,7 +260,9 @@ function App() {
     setIsLoggedIn, 
     testUser,
     cookies,
-    checkForExistingUser
+    checkForExistingUser,
+    logoutCurrentUser,
+    checkForUserLevelup
   }), [
     allCategories, 
     allFacts,

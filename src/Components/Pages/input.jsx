@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 import { ResearchContext } from '../ResearchContext';
 import Select from 'react-select';
-import { BACKEND_URL } from '../../secrets';
+import { BACKEND_URL, CLIENT_AUTH_SECRET } from '../../secrets';
 import './input.css';
 import { Modal } from '../Subcomponents/Modal';
 
@@ -24,7 +24,9 @@ const InputPage = ({
 
     const allCategories = useContext(ResearchContext).allCategories;
     const userLoc = useContext(ResearchContext).currentLocation;
+    const currentUser = useContext(ResearchContext).currentUser;
     const reloadFacts = useContext(ResearchContext).getAllFacts;
+    const userLevelUp = useContext(ResearchContext).checkForUserLevelUp;
 
     useEffect(() => {
         categoriesToOptions();
@@ -65,6 +67,7 @@ const InputPage = ({
             fetch(BACKEND_URL + "/add_fact", {
                 method: 'POST',
                 headers: {
+                  'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
                   'Content-Type': 'application/json;charset=utf-8'
                 },
                 mode: 'cors',
@@ -83,6 +86,7 @@ const InputPage = ({
                     setCatValue(null);
                     // Also reload facts
                     reloadFacts();
+                    updatePlacedAchievement();
                 } else {
                     setModalConfig({
                         title: 'Submission Failed',
@@ -100,6 +104,10 @@ const InputPage = ({
             });
             setShowModal(true);
         }
+    }
+
+    const updatePlacedAchievement = () => {
+        userLevelUp('factsPlaced', 1);
     }
 
     const handleCatChange = (option) => {

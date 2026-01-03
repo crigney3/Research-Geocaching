@@ -1,6 +1,6 @@
 import { AdvancedMarker, Pin, InfoWindow, useAdvancedMarkerRef } from '@vis.gl/react-google-maps';
 import React, { useContext } from 'react';
-import { useState, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import FactPopup from './FactPopup';
 import { FactModal } from './Modal';
 import { ResearchContext } from '../ResearchContext';
@@ -19,7 +19,16 @@ const MapMarker = ({
     const [markerRef, marker] = useAdvancedMarkerRef();
     const [showFullFact, setShowFullFact] = useState(false);
 
-    const userRange = useContext(ResearchContext).testUser.range;
+    const [userRange, setUserRange] = useState(100);
+    const currentUser = useContext(ResearchContext).currentUser;
+
+    useEffect(() => {
+        if (currentUser !== null) {
+        setUserRange(currentUser.range);
+        } else {
+        setUserRange(100);
+        }
+    }, [currentUser]);
 
     const toggleFullscreenFact = () => {
         setShowFullFact(!showFullFact);

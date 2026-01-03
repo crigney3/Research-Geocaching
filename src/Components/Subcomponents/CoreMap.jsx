@@ -1,5 +1,5 @@
 import { Map, AdvancedMarker, useMap, useAdvancedMarkerRef } from '@vis.gl/react-google-maps';
-import { MAP_ID, BACKEND_URL } from "../../secrets";
+import { MAP_ID, BACKEND_URL, CLIENT_AUTH_SECRET } from "../../secrets";
 import { useState, useCallback, useContext, useEffect, useRef, memo, useMemo } from 'react';
 import MapMarker from './MapMarker';
 import KeyboardDoubleArrowUpIcon from '@mui/icons-material/KeyboardDoubleArrowUp';
@@ -56,8 +56,16 @@ const CoreMap = ({
 
     // const userLoc = useContext(LocationContext).currentLocation;
     const refreshFacts = useContext(ResearchContext).getAllFacts;
-    const userRange = useContext(ResearchContext).testUser.range;
     const currentUser = useContext(ResearchContext).currentUser;
+    const [userRange, setUserRange] = useState(100);
+
+    useEffect(() => {
+      if (currentUser !== null) {
+        setUserRange(currentUser.range);
+      } else {
+        setUserRange(100);
+      }
+    }, [currentUser]);
 
     useEffect(() => {
         createMapMarkers();
@@ -116,6 +124,7 @@ const CoreMap = ({
         fetch(BACKEND_URL + "/get_all_facts_of_category", {
             method: 'GET',
             headers: {
+             'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
              'Content-Type': 'application/json;charset=utf-8'
             },
             mode: 'cors',

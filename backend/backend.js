@@ -96,6 +96,109 @@ const authenticateToken = (req, res, next) => {
 
 //#endregion
 
+//#region helper functions
+
+function calculateXPForLevel(level) {
+    if (level <= 1) return 0;
+    
+    // Base XP for level 2
+    const baseXP = 50;
+    
+    // Logarithmic growth factor
+    const growthFactor = 1.15;
+    
+    // Calculate XP needed for this level using logarithmic scaling
+    const xp = baseXP * Math.pow(growthFactor, level - 2);
+    
+    // Round to nearest whole number
+    return Math.round(xp);
+}
+
+function checkIfLeveledUp(currentLevel, currentXP, xpToAdd) {
+    let newLevel;
+    let newXP;
+    let xpNeeded = calculateXPForLevel(currentLevel + 1);
+
+    if (currentXP + xpToAdd >= xpNeeded) {
+        newLevel = currentLevel + 1;
+        newXP = (currentXP + xpToAdd) - xpNeeded;
+        return [true, newLevel, newXP];
+    } else {
+        return [false];
+    }
+}
+
+const handleXPLevelAndRange = async (id, updatedStat, oldStatValue, newStatValue, currentLevel, currentXP, currentRange) => {
+    let xpToAdd = 0;
+
+    if (!id) {
+        console.error('Must submit a user ID for valid level calc');
+    }
+
+    if (!updatedStat) {
+        console.error('Must submit a stat that changed for valid level calc');
+    }
+
+    if (!oldStatValue || !newStatValue) {
+        console.error("Must submit a new and old value for the stat");
+    }
+
+    if (!currentLevel || !currentRange || !currentXP) {
+        console.error("Can't calculate new xp/level/range without knowing the current xp/level/range");
+    }
+
+    // First determine whether we need to update:
+    // 1. just xp
+    // 2. xp & level & range
+    // Different stats have different xp values
+    if (updatedStat == "daysUsed") {
+        // This can only ever go up by one, so xp addition is static
+        xpToAdd += 25;
+    } else if (updatedStat == "factsViewed") {
+        for (let i = oldStatValue; i < newStatValue; i++) {
+            xpToAdd += 5;
+        }
+    } else if (updatedStat == "factsPlaced") {
+        for (let i = oldStatValue; i < newStatValue; i++) {
+            xpToAdd += 50;
+        }
+    }
+    
+    // Now we check if we should update level and therefore also range
+    // And if we level up, we need to reset the xp value then add back any that went over the level requirement
+
+    let levelResults = checkIfLeveledUp(currentLevel, currentXP, xpToAdd);
+
+    if (levelResults[0]) {
+        // We need to update xp, level, and range
+        let calculatedRange = 100 + 50 * Math.log2(levelResults[1] + 1);
+        await pool.query("UPDATE achievements SET level=?, xp=?, userRange=? WHERE id=?", levelResults[1], levelResults[2], calculatedRange, inID,
+            async function(err, row) {
+                if (err) {
+                    console.error("Error getting user: %s", err);
+                    return null;
+                } else {
+                    return {leveled: true, user: row[0]};
+                }
+            }
+        );
+    } else {
+        // We only need to update internal xp
+        await pool.query("UPDATE achievements SET xp=xp+? WHERE id=?", xpToAdd, inID,
+            async function(err, row) {
+                if (err) {
+                    console.error("Error getting user: %s", err);
+                    return null;
+                } else {
+                    return {leveled: false, user: row[0]};
+                }
+            }
+        );
+    }
+}
+
+//#endregion
+
 //#region additions
 app.post('/add_fact', authenticateToken, async (req, res) => {
     let inTitle = req.body.title;
@@ -463,7 +566,8 @@ app.post('/google_login', authenticateToken, async (req, res) => {
                     return res.status(400).json('Must submit a valid token for new user setup');
                 }
 
-                await pool.query("INSERT INTO users (id, username, permissions) VALUES(?,?,?)", [userid, inUsername, 0],
+                const currentDate = new Date();
+                await pool.query("INSERT INTO users (id, username, permissions, dateJoined, lastLoginDay) VALUES(?,?,?,?,?)", [userid, inUsername, 0, currentDate, currentDate],
                     async function (err, row) {
                         if (err) {
                             console.log("Error inserting into users: %s", err);
@@ -553,63 +657,63 @@ app.post('/change_permissions', authenticateToken, async (req, res) => {
     );
 });
 
-// TODO: Make this change seperate achievements table, not users
-app.post('/set_level', authenticateToken, async (req, res) => {
-    let inID = req.body.id;
-    let newLevel = req.body.level; // Level isn't required, we default to adding one
+// Deprecated, see helper functions
+// app.post('/set_level', authenticateToken, async (req, res) => {
+//     let inID = req.body.id;
+//     let newLevel = req.body.level; // Level isn't required, we default to adding one
 
-    let rangeOut;
+//     let rangeOut;
 
-    if (!inID) {
-        return res.status(400).json('Must submit a user ID for valid access');
-    }
+//     if (!inID) {
+//         return res.status(400).json('Must submit a user ID for valid access');
+//     }
 
-    if (newLevel) {
-        await pool.query("UPDATE achievements SET level=? WHERE id=?", [newLevel, inID],
-            async function(err, row) {
-                if (err) {
-                    console.log("Error getting user: %s", err);
-                    return res.status(400).json('Error getting user, see backend console for details');
-                } else {
-                    await pool.query("UPDATE achievements SET range=? WHERE id=?", 100 + 50 * Math.log2(newLevel + 1), inID,
-                        function(err, row2) {
-                            if (err) {
-                                console.log("Error getting user: %s", err);
-                                return res.status(400).json('Error getting user, see backend console for details');
-                            } else {      
-                                rangeOut = row2[0].range;
-                            }
-                        }
-                    );
+//     if (newLevel) {
+//         await pool.query("UPDATE achievements SET level=? WHERE id=?", [newLevel, inID],
+//             async function(err, row) {
+//                 if (err) {
+//                     console.log("Error getting user: %s", err);
+//                     return res.status(400).json('Error getting user, see backend console for details');
+//                 } else {
+//                     await pool.query("UPDATE achievements SET range=? WHERE id=?", 100 + 50 * Math.log2(newLevel + 1), inID,
+//                         function(err, row2) {
+//                             if (err) {
+//                                 console.log("Error getting user: %s", err);
+//                                 return res.status(400).json('Error getting user, see backend console for details');
+//                             } else {      
+//                                 rangeOut = row2[0].range;
+//                             }
+//                         }
+//                     );
 
-                    return res.status(200).json({msg: 'User level updated', achievements: row, range: rangeOut});
-                }
-            }
-        );
-    } else {
-        await pool.query("UPDATE achievements SET level = level + 1 WHERE id=?", [inID],
-            async function(err, row) {
-                if (err) {
-                    console.log("Error getting user: %s", err);
-                    return res.status(400).json('Error getting user, see backend console for details');
-                } else {
-                    await pool.query("UPDATE achievements SET range=? WHERE id=?", 100 + 50 * Math.log2(row[0].level + 1), inID,
-                        function(err, row2) {
-                            if (err) {
-                                console.log("Error getting user: %s", err);
-                                return res.status(400).json('Error getting user, see backend console for details');
-                            } else {      
-                                rangeOut = row2[0].range;
-                            }
-                        }
-                    );
+//                     return res.status(200).json({msg: 'User level updated', achievements: row, range: rangeOut});
+//                 }
+//             }
+//         );
+//     } else {
+//         await pool.query("UPDATE achievements SET level = level + 1 WHERE id=?", [inID],
+//             async function(err, row) {
+//                 if (err) {
+//                     console.log("Error getting user: %s", err);
+//                     return res.status(400).json('Error getting user, see backend console for details');
+//                 } else {
+//                     await pool.query("UPDATE achievements SET range=? WHERE id=?", 100 + 50 * Math.log2(row[0].level + 1), inID,
+//                         function(err, row2) {
+//                             if (err) {
+//                                 console.log("Error getting user: %s", err);
+//                                 return res.status(400).json('Error getting user, see backend console for details');
+//                             } else {      
+//                                 rangeOut = row2[0].range;
+//                             }
+//                         }
+//                     );
 
-                    return res.status(200).json({msg: 'User level updated', achievements: row});
-                }
-            }
-        );
-    }
-});
+//                     return res.status(200).json({msg: 'User level updated', achievements: row});
+//                 }
+//             }
+//         );
+//     }
+// });
 
 app.post('/update_achievement', authenticateToken, async (req, res) => {
     let inID = req.body.id;
@@ -635,6 +739,38 @@ app.post('/update_achievement', authenticateToken, async (req, res) => {
                 return res.status(400).json('Error getting user, see backend console for details');
             } else {
                 return res.status(200).json('User stats updated');
+            }
+        }
+    );
+});
+
+app.post('/add_to_achievement', authenticateToken, async (req, res) => {
+    let inID = req.body.id;
+    let inStat = req.body.stat;
+    let inStatValue = req.body.statValue;
+
+    if (!inID) {
+        return res.status(400).json('Must submit a user ID for valid access');
+    }
+
+    if (!inStat) {
+        return res.status(400).json('Must submit a stat to update');
+    }
+
+    if (!inStatValue) {
+        return res.status(400).json("Must submit a new value for the stat");
+    }
+
+    await pool.query("UPDATE achievements SET ?=?+? WHERE id=?", inStat, inStat, inStatValue, inID,
+        async function(err, row) {
+            if (err) {
+                console.log("Error getting user: %s", err);
+                return res.status(400).json('Error getting user, see backend console for details');
+            } else {
+                // Gain appropriate xp, handle potential level + range up, and return the user
+                // Hacky fix for not actually storing the old value
+                let userUpdated = await handleXPLevelAndRange(inID, inStat, inStatValue - 1, inStatValue, row[0].level, row[0].xp, row[0].userRange);
+                return res.status(200).json(userUpdated);
             }
         }
     );

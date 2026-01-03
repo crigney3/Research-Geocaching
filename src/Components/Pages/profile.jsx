@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from 'react';
 import './profile.css';
 import { ResearchContext } from '../ResearchContext';
 import Achievement from '../Subcomponents/Achievement';
-import { BACKEND_URL } from '../../secrets';
+import { BACKEND_URL, CLIENT_AUTH_SECRET } from '../../secrets';
 
 import DirectionsWalkIcon from '@mui/icons-material/DirectionsWalk';
 import BookIcon from '@mui/icons-material/Book';
@@ -25,9 +25,9 @@ const ProfilePage = ({
       setIsUserLoaded(true);
       console.log(currentUser);
     }
-  }, [])
+  }, [currentUser]);
 
-  if(!isUserLoaded) {
+  if(currentUser === null) {
     return null;
   }
 
@@ -118,6 +118,7 @@ const ProfilePage = ({
     fetch(BACKEND_URL + "/change_username", {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
           'Content-Type': 'application/json;charset=utf-8'
         },
         mode: 'cors',

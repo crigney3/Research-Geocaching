@@ -1,7 +1,7 @@
 import {useContext, useState} from 'react';
 import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
 import { GOOGLE_LOGIN_CLIENT_ID } from '../../secrets';
-import { BACKEND_URL } from '../../secrets';
+import { BACKEND_URL, CLIENT_AUTH_SECRET } from '../../secrets';
 import { ResearchContext } from '../ResearchContext';
 import { ErrorBoundary }from 'react-error-boundary';
 import { Modal } from './Modal';
@@ -44,6 +44,7 @@ const GoogleAuth = ({
           fetch(BACKEND_URL + "/google_login", {
               method: 'POST',
               headers: {
+                  'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
                   'Content-Type': 'application/json;charset=utf-8'
               },
               mode: 'cors',
@@ -58,7 +59,6 @@ const GoogleAuth = ({
           }).then(data => {
               setLoginState(1);
               cookieHandler.set('user', 'id_' + data.user[0].id, { path: '/' });
-              console.log(cookieHandler.get('user'));
               loginAsGoogleUser();
           }).catch(error => {
               console.error('Error: ', error);

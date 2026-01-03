@@ -6,17 +6,23 @@ import { useState, useEffect, useContext } from "react";
 import LoginButton from "./Subcomponents/LoginButton";
 import { ResearchContext } from './ResearchContext';
 import { LoginModal, Modal } from "./Subcomponents/Modal";
+import { useNavigate } from 'react-router-dom';
 
 const Navbar = ({
 
 }) => {
     const [navbarOpen, setNavbarOpen] = useState(true);
     const [showLogin, setShowLogin] = useState(false);
+    const [showLogout, setShowLogout] = useState(false);
     const [navbarClass, setNavbarClass] = useState("Navbar");
     const [overlayClass, setOverlayClass] = useState("Overlay");
     const [showLoginRequirement, setShowLoginRequirement] = useState(false);
 
+    const cookieHandler = useContext(ResearchContext).cookies;
     const currentUser = useContext(ResearchContext).currentUser;
+    const logoutCurrentUser = useContext(ResearchContext).logoutCurrentUser;
+
+    const navigate = useNavigate();
 
     const toggleNavbarState = (e) => {
         setNavbarOpen(!navbarOpen);
@@ -27,8 +33,19 @@ const Navbar = ({
         setShowLogin(!showLogin);
     }
 
+    const toggleLogoutPopup = (e) => {
+        setShowLogout(!showLogout);
+    }
+
     const toggleLoginRequirement = (e) => {
         setShowLoginRequirement(!showLoginRequirement);
+    }
+
+    const logoutUser = () => {
+        navigate("/");
+        cookieHandler.remove('user', { path: '/' });
+        logoutCurrentUser();
+        setShowLogout(false);
     }
 
     useEffect(() => {
@@ -52,7 +69,8 @@ const Navbar = ({
                     </div>}
 
                     <div className="LoginButton">
-                        <a onClick={toggleLoginPopup}>Login</a>
+                        {(currentUser == null) && <a onClick={toggleLoginPopup}>Login</a>}
+                        {(currentUser != null) && <a onClick={toggleLogoutPopup}>Logout</a>}
                     </div>
                     
 
@@ -79,6 +97,8 @@ const Navbar = ({
             <LoginModal show={showLogin} onClose={toggleLoginPopup}/>
 
             <Modal show={showLoginRequirement} onClose={toggleLoginRequirement} title={"Not Logged In"} message={"You need to log in first!"} warningLevel={1} action={toggleLoginPopup} actionClass={'success'} actionText={"Login"}/>
+
+            <Modal show={showLogout} onClose={toggleLogoutPopup} title={"Logout"} message={"Are you sure you want to log out?"} warningLevel={1} action={logoutUser} actionClass={'success'} actionText={"Logout"}/>
         </div>
 
     )
