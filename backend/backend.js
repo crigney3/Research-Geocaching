@@ -125,7 +125,7 @@ function checkIfLeveledUp(currentLevel, currentXP, xpToAdd) {
     }
 }
 
-const handleXPLevelAndRange = (id, updatedStat, oldStatValue, newStatValue, currentLevel, currentXP, currentRange) => {
+const handleXPLevelAndRange = async (id, updatedStat, oldStatValue, newStatValue, currentLevel, currentXP, currentRange) => {
     let xpToAdd = 0;
 
     if (!id) {
@@ -168,46 +168,14 @@ const handleXPLevelAndRange = (id, updatedStat, oldStatValue, newStatValue, curr
     if (levelResults[0]) {
         // We need to update xp, level, and range
         let calculatedRange = 100 + 50 * Math.log2(levelResults[1] + 1);
-        pool.query("UPDATE achievements SET level=?, xp=?, userRange=? WHERE id=?", [levelResults[1], levelResults[2], calculatedRange, id],
-            async function(err) {
-                if (err) {
-                    console.error("Error getting user: %s", err);
-                    return null;
-                } else {
-                    pool.query("SELECT * FROM achievements WHERE id=?", [id],
-                        function(err, row) {
-                            if (err) {
-                                console.error("Error getting user: %s", err);
-                                return null;
-                            } else {                   
-                                return {error: false, leveled: true, user: row[0]};
-                            }
-                        }
-                    );
-                }
-            }
-        );
+        await pool.query("UPDATE achievements SET level=?, xp=?, userRange=? WHERE id=?", [levelResults[1], levelResults[2], calculatedRange, id]);
+        const [row] = await pool.query("SELECT * FROM achievements WHERE id=?", [id]);              
+        return {error: false, leveled: false, user: row[0]};
     } else {
         // We only need to update internal xp
-        pool.query("UPDATE achievements SET xp=xp+? WHERE id=?", [xpToAdd, id],
-            function(err) {
-                if (err) {
-                    console.error("Error getting user: %s", err);
-                    return null;
-                } else {
-                    pool.query("SELECT * FROM achievements WHERE id=?", [id],
-                        function(err, row) {
-                            if (err) {
-                                console.error("Error getting user: %s", err);
-                                return null;
-                            } else {                   
-                                return {error: false, leveled: false, user: row[0]};
-                            }
-                        }
-                    );
-                }
-            }
-        );
+        await pool.query("UPDATE achievements SET xp=xp+? WHERE id=?", [xpToAdd, id]);
+        const [row] = await pool.query("SELECT * FROM achievements WHERE id=?", [id]);              
+        return {error: false, leveled: false, user: row[0]};
     }
 }
 
@@ -808,7 +776,7 @@ app.post('/add_to_achievement', authenticateToken, async (req, res) => {
                             return res.status(400).json('Error getting user, see backend console for details');
                         } else {
                             // Hacky fix for not actually storing the old value
-                            let userUpdated = handleXPLevelAndRange(inID, inStat, inStatValue - 1, inStatValue, row[0].level, row[0].xp, row[0].userRange);
+                            let userUpdated = await handleXPLevelAndRange(inID, inStat, inStatValue - 1, inStatValue, row[0].level, row[0].xp, row[0].userRange);
                             console.log(userUpdated);
                             return res.status(200).json(userUpdated);
                         }
