@@ -433,7 +433,7 @@ const AdminPage = ({
                             <p className="fact-description">{fact.description}</p>
                             <div className="fact-details">
                                 <span className="fact-detail">Lat: {fact.lat}, Lng: {fact.lng}</span>
-                                <span className="fact-detail">User: {fact.user}</span>
+                                <span className="fact-detail">User: {fact.username}</span>
                                 <span className="fact-detail">Category: {getCatTitle(fact.category, allCategories)}</span>
                             </div>
                         </div>
