@@ -169,24 +169,42 @@ const handleXPLevelAndRange = async (id, updatedStat, oldStatValue, newStatValue
         // We need to update xp, level, and range
         let calculatedRange = 100 + 50 * Math.log2(levelResults[1] + 1);
         await pool.query("UPDATE achievements SET level=?, xp=?, userRange=? WHERE id=?", [levelResults[1], levelResults[2], calculatedRange, id],
-            async function(err, row) {
+            async function(err) {
                 if (err) {
                     console.error("Error getting user: %s", err);
                     return null;
                 } else {
-                    return {error: false, leveled: true, user: row[0]};
+                    await pool.query("SELECT * FROM achievements WHERE id=?", [id],
+                        async function(err, row) {
+                            if (err) {
+                                console.error("Error getting user: %s", err);
+                                return null;
+                            } else {                   
+                                return {error: false, leveled: true, user: row[0]};
+                            }
+                        }
+                    );
                 }
             }
         );
     } else {
         // We only need to update internal xp
         await pool.query("UPDATE achievements SET xp=xp+? WHERE id=?", [xpToAdd, id],
-            async function(err, row) {
+            async function(err) {
                 if (err) {
                     console.error("Error getting user: %s", err);
                     return null;
                 } else {
-                    return {error: false, leveled: false, user: row[0]};
+                    await pool.query("SELECT * FROM achievements WHERE id=?", [id],
+                        async function(err, row) {
+                            if (err) {
+                                console.error("Error getting user: %s", err);
+                                return null;
+                            } else {                   
+                                return {error: false, leveled: false, user: row[0]};
+                            }
+                        }
+                    );
                 }
             }
         );
