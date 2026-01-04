@@ -539,19 +539,19 @@ app.post('/google_login', authenticateToken, async (req, res) => {
     let inUsername = req.body.inUsername;
 
     try {
-        const ticket = await oauthClient.verifyIdToken({
-            idToken: credential,
-            audience: client_id,
-        });
+        // const ticket = await oauthClient.verifyIdToken({
+        //     idToken: credential,
+        //     audience: client_id,
+        // });
 
-        const payload = ticket.getPayload();
-        const userid = payload['sub'];
-        console.log(userid);
+        // const payload = ticket.getPayload();
+        // const userid = payload['sub'];
+        // console.log(userid);
         let msg = "";
         let user;
         let achievements;
 
-        await pool.query("SELECT * FROM users WHERE id=?", userid,
+        await pool.query("SELECT * FROM users WHERE id=?", client_id,
         async function(err, row) {
             if (err) {
                 console.log("Error checking users: %s", err);
@@ -569,12 +569,12 @@ app.post('/google_login', authenticateToken, async (req, res) => {
                     return res.status(400).json('Must submit a username for new user setup');
                 }
 
-                if (!userid) {
+                if (!client_id) {
                     return res.status(400).json('Must submit a valid token for new user setup');
                 }
 
                 const currentDate = new Date();
-                await pool.query("INSERT INTO users (id, username, permissions, dateJoined, lastLoginDay) VALUES(?,?,?,?,?)", [userid, inUsername, 0, currentDate, currentDate],
+                await pool.query("INSERT INTO users (id, username, permissions, dateJoined, lastLoginDay) VALUES(?,?,?,?,?)", [client_id, inUsername, 0, currentDate, currentDate],
                     async function (err, row) {
                         if (err) {
                             console.log("Error inserting into users: %s", err);
