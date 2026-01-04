@@ -8,6 +8,7 @@ const sql = require('mysql');
 const cors = require("cors");
 const { OAuth2Client } = require('google-auth-library');
 const cookieParser = require('cookie-parser');
+const util = require("util");
 const jwt = require('jsonwebtoken');
 
 //#endregion
@@ -95,6 +96,8 @@ const authenticateToken = (req, res, next) => {
 
 //#region helper functions
 
+const promiseQuery = util.promisify(pool.query).bind(pool);
+
 function calculateXPForLevel(level) {
     if (level <= 1) return 0;
     
@@ -164,55 +167,28 @@ const handleXPLevelAndRange = async (id, updatedStat, oldStatValue, newStatValue
     // And if we level up, we need to reset the xp value then add back any that went over the level requirement
 
     let levelResults = checkIfLeveledUp(currentLevel, currentXP, xpToAdd);
-
+    let jsonOut = {error: true, msg: "async issue!"};
     if (levelResults[0]) {
         // We need to update xp, level, and range
         let calculatedRange = 100 + 50 * Math.log2(levelResults[1] + 1);
-        let jsonOut = {error: true, msg: "async issue!"};
-        await pool.query("UPDATE achievements SET level=?, xp=?, userRange=? WHERE id=?", [levelResults[1], levelResults[2], calculatedRange, id],
-            async function(err) {
-                if (err) {
-                    console.error("Error getting user: %s", err);
-                    return null;
-                } else {
-                    await pool.query("SELECT * FROM achievements WHERE id=?", [id],
-                        function(err, row) {
-                            if (err) {
-                                console.error("Error getting user: %s", err);
-                                return null;
-                            } else {                   
-                                jsonOut = {error: false, leveled: true, user: row[0]};
-                            }
-                        }
-                    );
-                }
-            }
-        );
-        return jsonOut;
+        await pool.query("UPDATE achievements SET level=?, xp=?, userRange=? WHERE id=?", [levelResults[1], levelResults[2], calculatedRange, id]);
+
+        const rows = await promiseQuery("SELECT * FROM achievements WHERE id=?", [id]);              
+
+        jsonOut = {error: false, leveled: false, user: rows[0]};
+
     } else {
+
         // We only need to update internal xp
-        let jsonOut = {error: true, msg: "async issue!"};
-        await pool.query("UPDATE achievements SET xp=xp+? WHERE id=?", [xpToAdd, id],
-            async function(err) {
-                if (err) {
-                    console.error("Error getting user: %s", err);
-                    return null;
-                } else {
-                    await pool.query("SELECT * FROM achievements WHERE id=?", [id],
-                        function(err, row) {
-                            if (err) {
-                                console.error("Error getting user: %s", err);
-                                return null;
-                            } else {                   
-                                jsonOut = {error: false, leveled: false, user: row[0]};
-                            }
-                        }
-                    );
-                }
-            }
-        );
-        return jsonOut;
+
+        await pool.query("UPDATE achievements SET xp=xp+? WHERE id=?", [xpToAdd, id]);
+
+        const rows = await promiseQuery("SELECT * FROM achievements WHERE id=?", [id]);              
+
+        jsonOut = {error: false, leveled: false, user: rows[0]};
     }
+
+    return jsonOut;
 }
 
 //#endregion
