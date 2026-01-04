@@ -175,7 +175,7 @@ const handleXPLevelAndRange = async (id, updatedStat, oldStatValue, newStatValue
 
         const rows = await promiseQuery("SELECT * FROM achievements WHERE id=?", [id]);              
 
-        jsonOut = {error: false, leveled: false, user: rows[0]};
+        jsonOut = {error: false, leveled: true, user: rows[0]};
 
     } else {
 
