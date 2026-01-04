@@ -759,15 +759,25 @@ app.post('/add_to_achievement', authenticateToken, async (req, res) => {
     }
 
     await pool.query(`UPDATE achievements SET ${inStat}=${inStat}+? WHERE id=?`, [inStatValue, inID],
-        async function(err, row) {
+        async function(err) {
             if (err) {
-                console.log("Error getting user: %s", err);
-                return res.status(400).json('Error getting user, see backend console for details');
+                console.log("Error updating achievement: %s", err);
+                return res.status(400).json('Error updating achievement, see backend console for details');
             } else {
                 // Gain appropriate xp, handle potential level + range up, and return the user
-                // Hacky fix for not actually storing the old value
-                let userUpdated = await handleXPLevelAndRange(inID, inStat, inStatValue - 1, inStatValue, row[0].level, row[0].xp, row[0].userRange);
-                return res.status(200).json(userUpdated);
+                // UPDATE doesn't return the modified row, so get that
+                await pool.query(`SELECT * FROM achievements WHERE id=?`, [inID], 
+                    async function(err, row) {
+                        if (err) {
+                            console.log("Error getting user: %s", err);
+                            return res.status(400).json('Error getting user, see backend console for details');
+                        } else {
+                            // Hacky fix for not actually storing the old value
+                            let userUpdated = await handleXPLevelAndRange(inID, inStat, inStatValue - 1, inStatValue, row[0].level, row[0].xp, row[0].userRange);
+                            return res.status(200).json(userUpdated);
+                        }
+                    }
+                )
             }
         }
     );
