@@ -169,7 +169,7 @@ const handleXPLevelAndRange = async (id, updatedStat, oldStatValue, newStatValue
     if (levelResults[0]) {
         // We need to update xp, level, and range
         let calculatedRange = 100 + 50 * Math.log2(levelResults[1] + 1);
-        await pool.query("UPDATE achievements SET level=?, xp=?, userRange=? WHERE id=?", levelResults[1], levelResults[2], calculatedRange, inID,
+        await pool.query("UPDATE achievements SET level=?, xp=?, userRange=? WHERE id=?", [levelResults[1], levelResults[2], calculatedRange, inID],
             async function(err, row) {
                 if (err) {
                     console.error("Error getting user: %s", err);
@@ -181,7 +181,7 @@ const handleXPLevelAndRange = async (id, updatedStat, oldStatValue, newStatValue
         );
     } else {
         // We only need to update internal xp
-        await pool.query("UPDATE achievements SET xp=xp+? WHERE id=?", xpToAdd, inID,
+        await pool.query("UPDATE achievements SET xp=xp+? WHERE id=?", [xpToAdd, inID],
             async function(err, row) {
                 if (err) {
                     console.error("Error getting user: %s", err);
@@ -729,7 +729,7 @@ app.post('/update_achievement', authenticateToken, async (req, res) => {
         return res.status(400).json("Must submit a new value for the stat");
     }
 
-    await pool.query("UPDATE achievements SET ?=? WHERE id=?", inStat, inStatValue, inID,
+    await pool.query("UPDATE achievements SET ?=? WHERE id=?", [inStat, inStatValue, inID],
         async function(err, row) {
             if (err) {
                 console.log("Error getting user: %s", err);
@@ -758,7 +758,7 @@ app.post('/add_to_achievement', authenticateToken, async (req, res) => {
         return res.status(400).json("Must submit a new value for the stat");
     }
 
-    await pool.query("UPDATE achievements SET ?=?+? WHERE id=?", inStat, inStat, inStatValue, inID,
+    await pool.query("UPDATE achievements SET ?=?+? WHERE id=?", [inStat, inStat, inStatValue, inID],
         async function(err, row) {
             if (err) {
                 console.log("Error getting user: %s", err);
