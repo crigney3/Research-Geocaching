@@ -808,7 +808,7 @@ app.post('/add_to_achievement', authenticateToken, async (req, res) => {
                             return res.status(400).json('Error getting user, see backend console for details');
                         } else {
                             // Hacky fix for not actually storing the old value
-                            let userUpdated = await handleXPLevelAndRange(inID, inStat, inStatValue - 1, inStatValue, row[0].level, row[0].xp, row[0].userRange);
+                            let userUpdated = handleXPLevelAndRange(inID, inStat, inStatValue - 1, inStatValue, row[0].level, row[0].xp, row[0].userRange);
                             console.log(userUpdated);
                             return res.status(200).json(userUpdated);
                         }
