@@ -26,7 +26,7 @@ const InputPage = ({
     const userLoc = useContext(ResearchContext).currentLocation;
     const currentUser = useContext(ResearchContext).currentUser;
     const reloadFacts = useContext(ResearchContext).getAllFacts;
-    const userLevelUp = useContext(ResearchContext).checkForUserLevelUp;
+    const userLevelUp = useContext(ResearchContext).checkForUserLevelup;
 
     useEffect(() => {
         categoriesToOptions();
@@ -62,7 +62,7 @@ const InputPage = ({
         }
 
         try {
-            let JSONString = JSON.stringify({title: titleValue, description: descValue, lat: inLat, lng: inLng, category: catValue.value});
+            let JSONString = JSON.stringify({title: titleValue, description: descValue, lat: inLat, lng: inLng, category: catValue.value, userID: currentUser.id});
 
             fetch(BACKEND_URL + "/add_fact", {
                 method: 'POST',

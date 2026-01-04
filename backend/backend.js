@@ -130,18 +130,22 @@ const handleXPLevelAndRange = async (id, updatedStat, oldStatValue, newStatValue
 
     if (!id) {
         console.error('Must submit a user ID for valid level calc');
+        return {error: true};
     }
 
     if (!updatedStat) {
         console.error('Must submit a stat that changed for valid level calc');
+        return {error: true};
     }
 
     if (!oldStatValue || !newStatValue) {
         console.error("Must submit a new and old value for the stat");
+        return {error: true};
     }
 
     if (!currentLevel || !currentRange || !currentXP) {
         console.error("Can't calculate new xp/level/range without knowing the current xp/level/range");
+        return {error: true};
     }
 
     // First determine whether we need to update:
@@ -175,7 +179,7 @@ const handleXPLevelAndRange = async (id, updatedStat, oldStatValue, newStatValue
                     console.error("Error getting user: %s", err);
                     return null;
                 } else {
-                    return {leveled: true, user: row[0]};
+                    return {error: false, leveled: true, user: row[0]};
                 }
             }
         );
@@ -187,7 +191,7 @@ const handleXPLevelAndRange = async (id, updatedStat, oldStatValue, newStatValue
                     console.error("Error getting user: %s", err);
                     return null;
                 } else {
-                    return {leveled: false, user: row[0]};
+                    return {error: false, leveled: false, user: row[0]};
                 }
             }
         );
@@ -400,6 +404,19 @@ app.get('/get_all_categories', async (req, res) => {
 
 app.get('/get_all_users', async (req, res) => {
     await pool.query("SELECT * FROM users", 
+        function(err, rows) {
+            if (err) {
+                console.log("Error retrieving users: %s", err);
+                return res.status(400).json('Error retrieving users, see backend console for details');
+            } else {
+                return res.status(200).json(rows);
+            }
+        }
+    );
+});
+
+app.get('/get_all_users_with_achievements', async (req, res) => {
+    await pool.query("SELECT * FROM users JOIN achievements USING (id)", 
         function(err, rows) {
             if (err) {
                 console.log("Error retrieving users: %s", err);

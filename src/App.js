@@ -99,7 +99,7 @@ function App() {
 
   const getAllUsers = useCallback(async () => {
     try {
-      await fetch(BACKEND_URL + "/get_all_users", {
+      await fetch(BACKEND_URL + "/get_all_users_with_achievements", {
           method: 'GET',
           headers: {
             'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
@@ -108,7 +108,26 @@ function App() {
           mode: 'cors'
       }).then(response => response.json())
         .then(data => {
-          setAllUsers(data);
+          let tempUsers = [];
+
+          data.forEach((user) => {
+            let tempUser = {};
+
+            tempUser.id = user.id;
+            tempUser.username = user.username;
+            tempUser.permLevel = user.permissions;
+            tempUser.dateJoined = user.dateJoined;
+            tempUser.lastLogin = user.lastLoginDay;
+            tempUser.level = user.level;
+            tempUser.xp = user.xp;
+            tempUser.daysUsed = user.daysUsed;
+            tempUser.factsPlaced = user.factsPlaced;
+            tempUser.factsViewed = user.factsViewed;
+            tempUser.range = user.userRange;
+
+            tempUsers.push(tempUser);
+          })
+          setAllUsers(tempUsers);
       });
     } catch (err) {
       console.log(err);
@@ -217,6 +236,9 @@ function App() {
             return response.json();
         }).then(data => {
           console.log(data);
+          if (data.error) {
+            console.error("Achievements failed to update - invalid data!");
+          }
           if (data.leveled) {
             let tempUser = {};
 

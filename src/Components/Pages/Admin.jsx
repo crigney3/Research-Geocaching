@@ -466,6 +466,7 @@ const AdminPage = ({
                                 <span className="user-detail">Permissions Level: {user.permissions}</span>
                                 <span className="user-detail">Date Joined: {user.dateJoined}</span>
                                 <span className="user-detail">Last Login Date: {user.lastLogin}</span>
+                                <span className="user-detail">Facts Placed: {user.factsPlaced}</span>
                             </div>
                         </div>
                     ))}
