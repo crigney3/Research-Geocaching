@@ -141,11 +141,6 @@ const handleXPLevelAndRange = async (id, updatedStat, oldStatValue, newStatValue
         return {error: true};
     }
 
-    if (!currentLevel || !currentRange || !currentXP) {
-        console.error("Can't calculate new xp/level/range without knowing the current xp/level/range");
-        return {error: true};
-    }
-
     // First determine whether we need to update:
     // 1. just xp
     // 2. xp & level & range
