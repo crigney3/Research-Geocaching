@@ -125,7 +125,7 @@ function checkIfLeveledUp(currentLevel, currentXP, xpToAdd) {
     }
 }
 
-const handleXPLevelAndRange = async (id, updatedStat, oldStatValue, newStatValue, currentLevel, currentXP, currentRange) => {
+const handleXPLevelAndRange = (id, updatedStat, oldStatValue, newStatValue, currentLevel, currentXP, currentRange) => {
     let xpToAdd = 0;
 
     if (!id) {
@@ -168,14 +168,14 @@ const handleXPLevelAndRange = async (id, updatedStat, oldStatValue, newStatValue
     if (levelResults[0]) {
         // We need to update xp, level, and range
         let calculatedRange = 100 + 50 * Math.log2(levelResults[1] + 1);
-        await pool.query("UPDATE achievements SET level=?, xp=?, userRange=? WHERE id=?", [levelResults[1], levelResults[2], calculatedRange, id],
+        pool.query("UPDATE achievements SET level=?, xp=?, userRange=? WHERE id=?", [levelResults[1], levelResults[2], calculatedRange, id],
             async function(err) {
                 if (err) {
                     console.error("Error getting user: %s", err);
                     return null;
                 } else {
-                    await pool.query("SELECT * FROM achievements WHERE id=?", [id],
-                        async function(err, row) {
+                    pool.query("SELECT * FROM achievements WHERE id=?", [id],
+                        function(err, row) {
                             if (err) {
                                 console.error("Error getting user: %s", err);
                                 return null;
@@ -189,14 +189,14 @@ const handleXPLevelAndRange = async (id, updatedStat, oldStatValue, newStatValue
         );
     } else {
         // We only need to update internal xp
-        await pool.query("UPDATE achievements SET xp=xp+? WHERE id=?", [xpToAdd, id],
-            async function(err) {
+        pool.query("UPDATE achievements SET xp=xp+? WHERE id=?", [xpToAdd, id],
+            function(err) {
                 if (err) {
                     console.error("Error getting user: %s", err);
                     return null;
                 } else {
-                    await pool.query("SELECT * FROM achievements WHERE id=?", [id],
-                        async function(err, row) {
+                    pool.query("SELECT * FROM achievements WHERE id=?", [id],
+                        function(err, row) {
                             if (err) {
                                 console.error("Error getting user: %s", err);
                                 return null;
