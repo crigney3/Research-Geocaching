@@ -758,7 +758,7 @@ app.post('/add_to_achievement', authenticateToken, async (req, res) => {
         return res.status(400).json("Must submit a new value for the stat");
     }
 
-    await pool.query("UPDATE achievements SET ?=?+? WHERE id=?", [inStat, inStat, inStatValue, inID],
+    await pool.query(`UPDATE achievements SET ${inStat}=${inStat}+? WHERE id=?`, [inStatValue, inID],
         async function(err, row) {
             if (err) {
                 console.log("Error getting user: %s", err);
