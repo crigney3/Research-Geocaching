@@ -165,10 +165,10 @@ const handleXPLevelAndRange = async (id, updatedStat, oldStatValue, newStatValue
 
     let levelResults = checkIfLeveledUp(currentLevel, currentXP, xpToAdd);
 
-    let jsonOut = {error: true};
     if (levelResults[0]) {
         // We need to update xp, level, and range
         let calculatedRange = 100 + 50 * Math.log2(levelResults[1] + 1);
+        let jsonOut = {error: true, msg: "async issue!"};
         await pool.query("UPDATE achievements SET level=?, xp=?, userRange=? WHERE id=?", [levelResults[1], levelResults[2], calculatedRange, id],
             async function(err) {
                 if (err) {
@@ -176,7 +176,7 @@ const handleXPLevelAndRange = async (id, updatedStat, oldStatValue, newStatValue
                     return null;
                 } else {
                     await pool.query("SELECT * FROM achievements WHERE id=?", [id],
-                        async function(err, row) {
+                        function(err, row) {
                             if (err) {
                                 console.error("Error getting user: %s", err);
                                 return null;
@@ -188,8 +188,10 @@ const handleXPLevelAndRange = async (id, updatedStat, oldStatValue, newStatValue
                 }
             }
         );
+        return jsonOut;
     } else {
         // We only need to update internal xp
+        let jsonOut = {error: true, msg: "async issue!"};
         await pool.query("UPDATE achievements SET xp=xp+? WHERE id=?", [xpToAdd, id],
             async function(err) {
                 if (err) {
@@ -197,7 +199,7 @@ const handleXPLevelAndRange = async (id, updatedStat, oldStatValue, newStatValue
                     return null;
                 } else {
                     await pool.query("SELECT * FROM achievements WHERE id=?", [id],
-                        async function(err, row) {
+                        function(err, row) {
                             if (err) {
                                 console.error("Error getting user: %s", err);
                                 return null;
@@ -209,9 +211,8 @@ const handleXPLevelAndRange = async (id, updatedStat, oldStatValue, newStatValue
                 }
             }
         );
+        return jsonOut;
     }
-
-    return jsonOut;
 }
 
 //#endregion
