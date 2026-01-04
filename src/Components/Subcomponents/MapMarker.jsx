@@ -12,6 +12,7 @@ const MapMarker = ({
     lat,
     lng,
     category,
+    user,
     rangeRef
 }) => {
     
@@ -73,9 +74,9 @@ const MapMarker = ({
             <AdvancedMarker ref={markerRef} position={{lat, lng}} title={title} onClick={handleFactPopup}>
                 <Pin background='var(--purple-main)' borderColor='var(--orange-main)' glyphColor='var(--white)'/>
             </AdvancedMarker>
-            {(popupEnabled) && <FactPopup anchor={marker} title={title} description={description} username={"Yakman3"} closeFact={handleFactPopup} fullscreenFact={toggleFullscreenFact}/>}
+            {(popupEnabled) && <FactPopup anchor={marker} title={title} description={description} username={user} closeFact={handleFactPopup} fullscreenFact={toggleFullscreenFact}/>}
         </div>
-        {(showFullFact) && <FactModal show={showFullFact} title={title} description={description} user={"Yakman3"} onClose={toggleFullscreenFact} />}
+        {(showFullFact) && <FactModal show={showFullFact} title={title} description={description} user={user} onClose={toggleFullscreenFact} />}
         </>
     )
 }

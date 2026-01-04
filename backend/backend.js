@@ -208,6 +208,7 @@ app.post('/add_fact', authenticateToken, async (req, res) => {
     let inLng = req.body.lng;
     let inCategory = req.body.category;
     let inUserID = req.body.userID;
+    let inUserName = req.body.username;
 
     if (!inTitle) {
         return res.status(400).json('Title cannot be blank');
@@ -230,13 +231,17 @@ app.post('/add_fact', authenticateToken, async (req, res) => {
     }
 
     if (!inUserID) {
-        return res.status(400).json('Submitting user cannot be blank');
+        return res.status(400).json('Submitting user id cannot be blank');
+    }
+
+    if (!inUserName) {
+        return res.status(400).json('Submitting username cannot be blank');
     }
 
     // Generate a uuid for this entry
     let newID = uuidv4();
 
-    await pool.query("INSERT INTO facts (id, title, description, lat, lng, category, user) VALUES(UNHEX(REPLACE(?, '-', '')),?,?,?,?,UNHEX(?),?)", [newID, inTitle, inDescription, inLat, inLng, inCategory, inUserID], 
+    await pool.query("INSERT INTO facts (id, title, description, lat, lng, category, user, username) VALUES(UNHEX(REPLACE(?, '-', '')),?,?,?,?,UNHEX(?),?,?)", [newID, inTitle, inDescription, inLat, inLng, inCategory, inUserID, inUserName], 
         function(err, rows) {
             if (err) {
                 console.log("Error inserting into facts: %s", err);

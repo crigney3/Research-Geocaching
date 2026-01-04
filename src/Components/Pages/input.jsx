@@ -62,7 +62,7 @@ const InputPage = ({
         }
 
         try {
-            let JSONString = JSON.stringify({title: titleValue, description: descValue, lat: inLat, lng: inLng, category: catValue.value, userID: currentUser.id});
+            let JSONString = JSON.stringify({title: titleValue, description: descValue, lat: inLat, lng: inLng, category: catValue.value, userID: currentUser.id, username: currentUser.username});
 
             fetch(BACKEND_URL + "/add_fact", {
                 method: 'POST',

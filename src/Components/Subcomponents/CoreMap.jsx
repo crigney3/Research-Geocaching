@@ -114,7 +114,7 @@ const CoreMap = ({
         let tempMarkers = [];
 
         factsToShow.forEach((fact) => {
-            tempMarkers.push(<MapMarker key={fact.id} id={fact.id} title={fact.title} description={fact.description} lat={fact.lat} lng={fact.lng} category={fact.category} rangeRef={rangeRef}/>);
+            tempMarkers.push(<MapMarker key={fact.id} id={fact.id} title={fact.title} description={fact.description} lat={fact.lat} lng={fact.lng} category={fact.category} user={fact.username} rangeRef={rangeRef}/>);
         })
 
         setMapMarkers(tempMarkers);
