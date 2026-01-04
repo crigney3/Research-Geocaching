@@ -170,12 +170,12 @@ const handleXPLevelAndRange = async (id, updatedStat, oldStatValue, newStatValue
         let calculatedRange = 100 + 50 * Math.log2(levelResults[1] + 1);
         await pool.query("UPDATE achievements SET level=?, xp=?, userRange=? WHERE id=?", [levelResults[1], levelResults[2], calculatedRange, id]);
         const row = await pool.query("SELECT * FROM achievements WHERE id=?", [id]);              
-        return {error: false, leveled: false, user: row[0]};
+        return {error: false, leveled: false, user: row};
     } else {
         // We only need to update internal xp
         await pool.query("UPDATE achievements SET xp=xp+? WHERE id=?", [xpToAdd, id]);
         const row = await pool.query("SELECT * FROM achievements WHERE id=?", [id]);              
-        return {error: false, leveled: false, user: row[0]};
+        return {error: false, leveled: false, user: row};
     }
 }
 
