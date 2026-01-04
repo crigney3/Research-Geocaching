@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import FactPopup from './FactPopup';
 import { FactModal } from './Modal';
 import { ResearchContext } from '../ResearchContext';
+import Cookies from 'universal-cookie';
 
 const MapMarker = ({
     id,
@@ -22,6 +23,8 @@ const MapMarker = ({
 
     const [userRange, setUserRange] = useState(100);
     const currentUser = useContext(ResearchContext).currentUser;
+    const cookieHandler = useContext(ResearchContext).cookies;
+    const userAchievement = useContext(ResearchContext).checkForUserLevelup;
 
     useEffect(() => {
         if (currentUser !== null) {
@@ -58,6 +61,12 @@ const MapMarker = ({
         if (distance <= userRange) {
             setPopupEnabled(!popupEnabled);
             console.log("Within range");
+            if (cookieHandler.get(id, {path: '/viewed'})) {
+                // Already viewed this fact in the last half hour
+            } else {
+                userAchievement("factsViewed", 1);
+                cookieHandler.set(id, 0, { maxAge: 1800, path: '/viewed' });
+            }
         } else {
             console.log("Out of range");
         }

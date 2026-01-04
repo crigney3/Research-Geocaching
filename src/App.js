@@ -12,6 +12,7 @@ import { BrowserRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { ResearchContext, LocationContext } from './Components/ResearchContext';
 import { BACKEND_URL, CLIENT_AUTH_SECRET } from './secrets';
 import { Geolocation } from '@capacitor/geolocation';
+import Notification from './Components/Subcomponents/Notification';
 
 const cookies = new Cookies();
 
@@ -35,6 +36,8 @@ function App() {
   const [currentLocation, setCurrentLocation] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
     getAllCategories();
@@ -249,6 +252,10 @@ function App() {
             tempUser.factsViewed = data.user.factsViewed;
             tempUser.range = data.user.userRange;
 
+            // Before we overwrite currentUser, check if we should fire
+            // any achievement notifications
+            fireNotifications(tempUser, true);
+
             setCurrentUser(tempUser);
           }
         });
@@ -260,6 +267,38 @@ function App() {
         //     warningLevel: 0
         // });
         // setShowModal(true);
+    }
+  }
+
+  // This fires when we need to check if there has been a notified achievement,
+  // not just an xp gain.
+  const fireNotifications = (newUserData, leveled) => {
+    let notifCounter = 0;
+    let tempNotifArray = [];
+
+    if (leveled) {
+      notifCounter++;
+      tempNotifArray.push({message: "Level up! You are now level " + newUserData.level, id: Date.now()});
+      console.log(tempNotifArray);
+    } // TODO: Add goal-based achievement checks, store goals somewhere to check against
+    else {
+      return;
+    }
+
+    if (notifCounter > 0) {
+      setShowNotifications(true);
+      setNotifications(prev => [...prev, ...tempNotifArray]);
+      // setTimeout(() => {
+      //   setShowNotifications(false);
+      //   setNotifications([]);
+      // }, 3500);
+    }
+  }
+
+  const removeNotification = (indexToRemove) => {
+    setNotifications(prev => prev.filter((_, index) => index !== indexToRemove));
+    if (notifications.length <= 1) {
+      setShowNotifications(false);
     }
   }
 
@@ -306,6 +345,9 @@ function App() {
         <ResearchContext.Provider value={researchValue}>
 
           <Navbar/>
+          {(showNotifications) && notifications.map((notif, index) => (
+            <Notification message={notif.message} isVisible={showNotifications} onHide={removeNotification} index={index} key={notif.id} />
+          ))}
           <Routes>
             {/* <Route path="/" element={<HomePage/>}>
 

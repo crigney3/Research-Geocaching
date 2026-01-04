@@ -23,7 +23,6 @@ const ProfilePage = ({
   useEffect(() => {
     if (currentUser != null) {
       setIsUserLoaded(true);
-      console.log(currentUser);
     }
   }, [currentUser]);
 
@@ -42,7 +41,7 @@ const ProfilePage = ({
   };
 
   // Calculate level progress
-  const xpPerLevel = Math.round(50 * Math.pow(1.15, currentUser.level - 1));
+  const xpPerLevel = Math.round(50 * Math.pow(1.15, currentUser.level));
   const currentLevelXP = currentUser.xp % xpPerLevel;
   const levelProgress = (currentLevelXP / xpPerLevel) * 100;
 
