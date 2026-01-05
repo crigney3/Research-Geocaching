@@ -10,8 +10,9 @@ import AdminPage from './Components/Pages/Admin';
 import Navbar from './Components/Navbar';
 import { BrowserRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { ResearchContext, LocationContext } from './Components/ResearchContext';
-import { BACKEND_URL, CLIENT_AUTH_SECRET } from './secrets';
+import { BACKEND_URL, CLIENT_AUTH_SECRET, GOOGLE_LOGIN_CLIENT_ID } from './secrets';
 import { Geolocation } from '@capacitor/geolocation';
+import { SocialLogin } from '@capgo/capacitor-social-login';
 import Notification from './Components/Subcomponents/Notification';
 
 const cookies = new Cookies();
@@ -40,6 +41,12 @@ function App() {
   const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
+    SocialLogin.initialize({
+      google: {
+        webClientId: GOOGLE_LOGIN_CLIENT_ID
+      }
+    })
+
     getAllCategories();
     getAllFacts();
     getAllUsers();

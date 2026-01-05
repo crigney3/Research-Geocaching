@@ -5,9 +5,10 @@
   "proxy": "http://localhost:3330",
   "dependencies": {
     "@capacitor/android": "^7.3.0",
-    "@capacitor/assets": "^3.0.5",
+    "@capacitor/core": "^7.4.0",
     "@capacitor/geolocation": "^7.1.2",
     "@capacitor/ios": "^7.3.0",
+    "@capgo/capacitor-social-login": "^7.2.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.2.0",
@@ -24,8 +25,8 @@
     "google-auth-library": "^10.5.0",
     "jsonwebtoken": "^9.0.3",
     "mysql": "^2.18.1",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "react-error-boundary": "^6.0.1",
     "react-router-dom": "^7.6.1",
     "react-scripts": "5.0.1",
@@ -39,7 +40,9 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "app": "npm run build && npx cap copy"
+    "app": "npm run build && npx cap copy",
+    "android": "cross-env REACT_APP_SECRET_ENV='androidSecrets' npm run build && npx cap copy android && npx cap sync android",
+    "testA": "cross-env REACT_APP_SECRET_ENV='androidSecrets' npm start"
   },
   "eslintConfig": {
     "extends": [
@@ -60,6 +63,8 @@
     ]
   },
   "devDependencies": {
-    "@types/react": "19.1.6"
+    "@capacitor/assets": "^3.0.5",
+    "@types/node": "^25.0.3",
+    "cross-env": "^10.1.0"
   }
 }
