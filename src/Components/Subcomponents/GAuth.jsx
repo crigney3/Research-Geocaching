@@ -5,9 +5,8 @@ import { ResearchContext } from '../ResearchContext';
 import { ErrorBoundary }from 'react-error-boundary';
 import { Modal } from './Modal';
 import { SocialLogin } from '@capgo/capacitor-social-login';
-
-// const secrets = await import(`../../${secretPath}`);
-// const GOOGLE_LOGIN_CLIENT_ID = secrets.GOOGLE_LOGIN_CLIENT_ID;
+import GoogleIcon from '@mui/icons-material/Google';
+import './GAuth.css';
 
 const GoogleAuth = ({
     loginState,
@@ -81,44 +80,12 @@ const handleLoginGoogle = async () => {
         action={refreshComponent}
         warningLevel={0}
         actionText="Refresh"/>}>
-          <button onClick={handleLoginGoogle}>Login</button>
-    {/* <GoogleOAuthProvider key={seed} clientId={clientId}>
-      <GoogleLogin
-        onSuccess={credentialResponse => {
-          console.log(credentialResponse);
-          let potentialNewUsername = "New_User" + Math.floor(Math.random() * 10000);
-          let JSONString = JSON.stringify({credential: credentialResponse.credential, client_id: credentialResponse.clientId, inUsername: potentialNewUsername});
-
-          fetch(BACKEND_URL + "/google_login", {
-              method: 'POST',
-              headers: {
-                  'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
-                  'Content-Type': 'application/json;charset=utf-8'
-              },
-              mode: 'cors',
-              body: JSONString
-          }).then(response => {
-              if (!response.ok) {
-                  setLoginState(0);
-                  throw new Error('Login Request Failed');
-              }
-
-              return response.json();
-          }).then(data => {
-              setLoginState(1);
-              cookieHandler.set('user', 'id_' + data.user[0].id, { path: '/' });
-              loginAsGoogleUser();
-          }).catch(error => {
-              console.error('Error: ', error);
-              setLoginState(0);
-          })
-        }}
-        onError={() => {
-          console.log('Login Failed');
-          setLoginState(0);
-        }}
-      />
-    </GoogleOAuthProvider> */}
+          <div className="google-auth-container">
+            <button onClick={handleLoginGoogle}>
+              <GoogleIcon className="google-icon" />
+              Login with Google
+            </button>
+          </div>
     </ErrorBoundary>
   );
 };

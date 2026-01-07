@@ -150,7 +150,7 @@ const CoreMap = ({
       gestureHandling: 'greedy',
       disableDoubleClickZoom: true,
       zoomControl: true,
-      zoomControlOptions: {position: window.google?.maps?.ControlPosition?.LEFT_BOTTOM},
+      zoomControlOptions: {position: 6},
       disableDefaultUI: true,
       mapId: MAP_ID,
       onClick: handleSetSelectedCoords 
