@@ -2,9 +2,27 @@ import { AdvancedMarker, Pin, InfoWindow, useAdvancedMarkerRef } from '@vis.gl/r
 import React, { useContext } from 'react';
 import { useState, useEffect } from 'react';
 import FactPopup from './FactPopup';
-import { FactModal } from './Modal';
+import { FactModal, Modal } from './Modal';
 import { ResearchContext } from '../ResearchContext';
 import Cookies from 'universal-cookie';
+
+const calculateDistance = (lat1, lng1, lat2, lng2) => {
+  const R = 6371e3; // Earth's radius in meters
+  const φ1 = lat1 * Math.PI / 180;
+  const φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180;
+  const Δλ = (lng2 - lng1) * Math.PI / 180;
+
+  const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ/2) * Math.sin(Δλ/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+  const distanceInMeters = R * c;
+  const distanceInFeet = distanceInMeters * 3.28084;
+  
+  return distanceInFeet;
+};
 
 const MapMarker = ({
     id,
@@ -14,12 +32,14 @@ const MapMarker = ({
     lng,
     category,
     user,
-    rangeRef
+    rangeRef,
+    getCurrentLocation
 }) => {
     
     const [popupEnabled, setPopupEnabled] = useState(false);
     const [markerRef, marker] = useAdvancedMarkerRef();
     const [showFullFact, setShowFullFact] = useState(false);
+    const [showOutOfRange, setShowOutOfRange] = useState(false);
 
     const [userRange, setUserRange] = useState(100);
     const currentUser = useContext(ResearchContext).currentUser;
@@ -28,9 +48,9 @@ const MapMarker = ({
 
     useEffect(() => {
         if (currentUser !== null) {
-        setUserRange(currentUser.range);
+            setUserRange(currentUser.range);
         } else {
-        setUserRange(100);
+            setUserRange(100);
         }
     }, [currentUser]);
 
@@ -44,19 +64,22 @@ const MapMarker = ({
             return;
         }
 
-        const markerRect = marker.getBoundingClientRect();
-        const rangeRect = rangeRef.current.getBoundingClientRect();
+        // const markerRect = marker.getBoundingClientRect();
+        // const rangeRect = rangeRef.current.getBoundingClientRect();
 
-        const markerCenterX = markerRect.left + markerRect.width / 2;
-        const markerCenterY = markerRect.top + markerRect.height / 2;
+        // const markerCenterX = markerRect.left + markerRect.width / 2;
+        // const markerCenterY = markerRect.top + markerRect.height / 2;
 
-        const rangeCenterX = rangeRect.left + rangeRect.width / 2;
-        const rangeCenterY = rangeRect.top + rangeRect.height / 2;
+        // const rangeCenterX = rangeRect.left + rangeRect.width / 2;
+        // const rangeCenterY = rangeRect.top + rangeRect.height / 2;
 
-        const distance = Math.sqrt(
-            Math.pow(markerCenterX - rangeCenterX, 2) + 
-            Math.pow(markerCenterY - rangeCenterY, 2)
-        );
+        // const distance = Math.sqrt(
+        //     Math.pow(markerCenterX - rangeCenterX, 2) + 
+        //     Math.pow(markerCenterY - rangeCenterY, 2)
+        // );
+
+        const userLocation = getCurrentLocation();
+        const distance = calculateDistance(userLocation.lat, userLocation.lng, lat, lng);
 
         if (distance <= userRange) {
             setPopupEnabled(!popupEnabled);
@@ -69,12 +92,17 @@ const MapMarker = ({
             }
         } else {
             console.log("Out of range");
+            setShowOutOfRange(true);
         }
         
     }
 
     const handleClose = (event) => {
         setPopupEnabled(false);
+    }
+
+    const handleRangeClose = () => {
+        setShowOutOfRange(false);
     }
 
     return (
@@ -86,6 +114,7 @@ const MapMarker = ({
             {(popupEnabled) && <FactPopup anchor={marker} title={title} description={description} username={user} closeFact={handleFactPopup} fullscreenFact={toggleFullscreenFact}/>}
         </div>
         {(showFullFact) && <FactModal show={showFullFact} title={title} description={description} user={user} onClose={toggleFullscreenFact} />}
+        {(showOutOfRange) && <Modal show={showOutOfRange} title={"Out of Range!"} message={"Get within range to view more about " + title} onClose={handleRangeClose} warningLevel={1}/>}
         </>
     )
 }

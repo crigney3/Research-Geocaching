@@ -181,7 +181,7 @@ const LoginModal = ({
                     <GoogleAuth loginState={loginState} setLoginState={setLoginState}/>
                 </div>
 
-                <p className='login-disclaimer'>This app does not store (or sell) any of the info from your google account. We don't even get your email!</p>
+                {/* <p className='login-disclaimer'>This app does not store (or sell) any of the info from your google account. We don't even get your email!</p> */}
             </div>       
         </div>
     )
