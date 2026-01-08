@@ -576,12 +576,10 @@ app.post('/google_login', authenticateToken, async (req, res) => {
             
             // Fetch the newly created user
             const [newUserRows] = await promiseQuery("SELECT * FROM users WHERE id=?", [client_id]);
-            user = newUserRows[0];
-            console.log(user);
-            console.log(newUserRows);
+            user = newUserRows;
             msg = "Authentication Successful for new user";
             
-            if (!user || !user.length) {
+            if (!user) {
                 console.log("Error: User was not created properly");
                 return res.status(400).json('Error creating user');
             }
@@ -594,7 +592,7 @@ app.post('/google_login', authenticateToken, async (req, res) => {
             
             // Fetch achievements
             const [achievementRows] = await promiseQuery("SELECT * FROM achievements WHERE id=?", [client_id]);
-            achievements = achievementRows[0];
+            achievements = achievementRows;
         }
         
         console.log("Fetched user: " + user);
