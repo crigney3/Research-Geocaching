@@ -604,15 +604,7 @@ app.post('/google_login', authenticateToken, async (req, res) => {
                 ); 
             }
 
-            // const token = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET, {
-            //     expiresIn: '1h', // Adjust expiration time as needed
-            // });
-
-            // .cookie('token', token, {
-            //   httpOnly: true,
-            //   secure: false, // Set to true in production when using HTTPS
-            //   maxAge: 3600000, // 1 hour in milliseconds
-            // })
+            console.log(user);
 
             return res
                 .status(200)
