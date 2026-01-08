@@ -12,6 +12,7 @@ import { ComponentModal, LoginModal, Modal } from './Modal';
 import InputPage from '../Pages/input.jsx';
 import { Geolocation } from '@capacitor/geolocation';
 import Select from "react-select";
+import { Preferences } from '@capacitor/preferences';
 import './Map.css';
 
 const center = {
@@ -56,6 +57,7 @@ const CoreMap = ({
     // const userLoc = useContext(LocationContext).currentLocation;
     const refreshFacts = useContext(ResearchContext).getAllFacts;
     const currentUser = useContext(ResearchContext).currentUser;
+    const setAddTutorialMode = useContext(ResearchContext).setAddTutorialMode;
 
     useEffect(() => {
         createMapMarkers();
@@ -97,6 +99,18 @@ const CoreMap = ({
         setMapMarkers(tempMarkers);
     }
 
+    const checkForFirstAdd = async () => {
+      const { value } = await Preferences.get({key: 'addTutorialComplete'});
+
+      if (value === null) {
+        // Activate the tutorial
+        setAddTutorialMode(true);
+
+        // And don't let it activate again afterwards
+        await Preferences.set({key: 'addTutorialComplete', value: 'true'});
+      }
+    }
+
     const FetchAllFactsOfCategory = (category) => {
         fetch(BACKEND_URL + "/get_all_facts_of_category", {
             method: 'GET',
@@ -126,6 +140,7 @@ const CoreMap = ({
     }
 
     const handleAddButtonClicked = () => {
+      checkForFirstAdd();
       setInputMode(true);
     }
 

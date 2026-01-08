@@ -61,6 +61,9 @@ const InputPage = ({
             return;
         }
 
+        console.log("lat: " + inLat);
+        console.log("lng: " + inLng);
+
         try {
             let JSONString = JSON.stringify({title: titleValue, description: descValue, lat: inLat, lng: inLng, category: catValue.value, userID: currentUser.id, username: currentUser.username});
 

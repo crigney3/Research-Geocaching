@@ -56,6 +56,7 @@ const Achievement =
             className="achievement-progress-fill"
             style={{
               width: `${progressPercentage}%`,
+              background: `linear-gradient(90deg, #F68B1F 0%, ${achievementColor} 30%)`
             }} 
           />
         </div>

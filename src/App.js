@@ -5,7 +5,6 @@ import MapPage from './Components/Pages/map';
 import InputPage from './Components/Pages/input';
 import ProfilePage from './Components/Pages/profile';
 import LoginPage from './Components/Pages/login';
-import HomePage from './Components/Pages/home';
 import AdminPage from './Components/Pages/Admin';
 import Navbar from './Components/Navbar';
 import { BrowserRouter, Route, Routes, useNavigate } from 'react-router-dom';
@@ -13,21 +12,55 @@ import { ResearchContext, LocationContext } from './Components/ResearchContext';
 import { BACKEND_URL, CLIENT_AUTH_SECRET, GOOGLE_LOGIN_CLIENT_ID } from './secrets';
 import { Geolocation } from '@capacitor/geolocation';
 import { SocialLogin } from '@capgo/capacitor-social-login';
+import { Preferences } from '@capacitor/preferences';
 import Notification from './Components/Subcomponents/Notification';
+import { TutorialModal } from './Components/Subcomponents/Modal';
+import BookIcon from '@mui/icons-material/Book';
+import StarRateIcon from '@mui/icons-material/StarRate';
+import CreateIcon from '@mui/icons-material/Create';
+import ZoomOutMapIcon from '@mui/icons-material/ZoomOutMap';
+import GavelIcon from '@mui/icons-material/Gavel';
 
 const cookies = new Cookies();
 
-const testUser = {
-  id: 12397142,
-  username: 'yakman3',
-  permLevel: 3,
-  level: 0,
-  xp: 0,
-  logins: 0,
-  factsViewed: 0,
-  factsPlaced: 0,
-  range: 100
-}
+const mainTutorialTitles = [
+  "Welcome to FactDrop!",
+  "Map Controls",
+  "Facts And Categories",
+  "Your Profile",
+  "Rules and Moderation",
+  "Enjoy!"
+]
+
+const mainTutorialMessages = [
+  "Thanks for downloading FactDrop! Here you can leave messages or facts for other users to find - so long as they're in range of the message in real life.",
+  "You can use your finger to scroll around on the map, but it will always move itself back to your current position. If you want to see a fact elsewhere, better get moving! You can also change the zoom level in the bottom left of your screen, and refresh the map and its facts in the top left.",
+  "When you're in range of a fact, tap its marker on the map to open a preview! If you want to Read More, press the button that says just that. You can also sort by categories by opening the category menu in the bottom middle of your screen. If you want to add a fact, press the button in the bottom right!",
+  "Actions like viewing facts, adding facts, and logging in daily earn you experience and achievements! Check out your profile at the button in the top right. P.S. No, spam viewing the same fact won't earn you xp. Neither will spam creating facts. Good try, though!",
+  "Treat this like any other open-input forum. Don't be hateful, don't post your crypto scam link, and definitely don't post your social security number. Yes, this is moderated (and if you're a moderator, you can access your mod tools through the button at the top right.)",
+  "I hope you enjoy FactDrop! If you have any feedback (or you find a bug), please email coreycoofficial@gmail.com."
+]
+
+const mainTutorialIcons = [
+  <img src='/icon-only.webp'/>, // 1: main icon
+  <ZoomOutMapIcon />, // 2: zoom
+  <CreateIcon />, // 3: pencil
+  <StarRateIcon />, // 4: star
+  <GavelIcon />, // 5: rules
+  <BookIcon /> // 6: book
+]
+
+const addTutorialTitles = [
+  "Adding Your First Fact"
+]
+
+const addTutorialMessages = [
+  "To get started adding a fact, click anywhere within your range after hitting the add button. You'll then need to write a title, the message itself, and choose a category. After that you're good to go!"
+]
+
+const addTutorialIcons = [
+  <CreateIcon />
+]
 
 function App() {
 
@@ -39,13 +72,17 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [tutorialMode, setTutorialMode] = useState(false);
+  const [addTutorialMode, setAddTutorialMode] = useState(false);
 
   useEffect(() => {
     SocialLogin.initialize({
       google: {
         webClientId: GOOGLE_LOGIN_CLIENT_ID
       }
-    })
+    });
+
+    checkForFirstRun();
 
     getAllCategories();
     getAllFacts();
@@ -55,6 +92,18 @@ function App() {
     checkForExistingUser();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const checkForFirstRun = async () => {
+    const { value } = await Preferences.get({key: 'tutorialComplete'});
+
+    if (value === null) {
+      // Activate the tutorial
+      setTutorialMode(true);
+
+      // And don't let it activate again afterwards
+      await Preferences.set({key: 'tutorialComplete', value: 'true'});
+    }
+  }
 
   const getCurrentLocation = useCallback(async () => {
     try {
@@ -295,10 +344,6 @@ function App() {
     if (notifCounter > 0) {
       setShowNotifications(true);
       setNotifications(prev => [...prev, ...tempNotifArray]);
-      // setTimeout(() => {
-      //   setShowNotifications(false);
-      //   setNotifications([]);
-      // }, 3500);
     }
   }
 
@@ -326,11 +371,11 @@ function App() {
     setCurrentUser, 
     isLoggedIn, 
     setIsLoggedIn, 
-    testUser,
     cookies,
     checkForExistingUser,
     logoutCurrentUser,
-    checkForUserLevelup
+    checkForUserLevelup,
+    setAddTutorialMode
   }), [
     allCategories, 
     allFacts,
@@ -350,6 +395,9 @@ function App() {
       
       <BrowserRouter>
         <ResearchContext.Provider value={researchValue}>
+          <TutorialModal show={tutorialMode} onClose={() => setTutorialMode(false)} pageCount={6} titles={mainTutorialTitles} descriptions={mainTutorialMessages} Icons={mainTutorialIcons}/>
+
+          <TutorialModal show={addTutorialMode} onClose={() => setAddTutorialMode(false)} pageCount={1} titles={addTutorialTitles} descriptions={addTutorialMessages} Icons={addTutorialIcons}/>
 
           <Navbar/>
           {(showNotifications) && notifications.map((notif, index) => (

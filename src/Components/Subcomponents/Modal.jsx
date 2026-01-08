@@ -1,5 +1,6 @@
 import GoogleAuth from './GAuth';
 import { useEffect, useState } from 'react';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import './Modal.css'
 
 const Modal = ({ 
@@ -187,6 +188,54 @@ const LoginModal = ({
     )
 }
 
+const TutorialModal = ({
+    show,
+    onClose,
+    titles,
+    descriptions,
+    pageCount,
+    Icons
+}) => {
+    const [currentPage, setCurrentPage] = useState(0);
+    const [onLastPage, setOnLastPage] = useState(false);
+
+    useEffect(() => {
+        if (currentPage + 1 === pageCount) {
+            setOnLastPage(true);
+        }
+    }, [currentPage]);
+
+    if (!show) return null;
+
+    const handleNextPage = () => {
+        setCurrentPage(currentPage + 1);
+    }
+
+    return (
+        <div 
+            className={`modal-overlay ${show ? 'show' : ''}`}
+        >
+            <div 
+                className="modal-container"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="modal-header">
+                    <div className='tutorial-modal-icon'>
+                        {Icons[currentPage]}
+                    </div>          
+                    <h2 className="title">{titles[currentPage]}</h2>
+                </div>
+
+                <p className="modal-message">{descriptions[currentPage]}</p>
+
+                {(!onLastPage) && <button className='modal-button tutorial-next' onClick={handleNextPage}>Next <ArrowForwardIcon/></button>}
+
+                {(onLastPage) && <button className='modal-button tutorial-complete' onClick={onClose}>Great!</button>}
+            </div>       
+        </div>
+    )
+}
+
 const InputModal = ({ 
     show, 
     title, 
@@ -298,5 +347,6 @@ export {
     FactModal,
     ComponentModal,
     LoginModal,
-    InputModal
+    InputModal,
+    TutorialModal
 } ;

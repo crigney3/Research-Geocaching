@@ -371,3 +371,51 @@
         width: 100%;
     }
 }
+
+.tutorial-modal-icon {
+    width: 96px;
+    height: 96px;
+    max-width: 96px;
+    max-height: 96px;
+    margin: 0 auto 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tutorial-modal-icon img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.tutorial-modal-icon svg {
+    width: 96px;
+    height: 96px;
+}
+
+/* Tutorial modal header - centered layout */
+.modal-container .modal-header {
+    text-align: center;
+    padding: 0;
+    border: none;
+}
+
+/* Tutorial modal title - larger and centered */
+.modal-container .modal-header .title {
+    font-size: 1.8rem;
+    text-align: center;
+    border: none;
+    padding: 0;
+    margin: 0 0 20px 0;
+}
+
+/* Green gradient button for next/final page */
+.modal-button.tutorial-next,
+.modal-button.tutorial-complete {
+    background: linear-gradient(135deg, var(--green-accent), var(--light-blue-accent));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
