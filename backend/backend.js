@@ -584,7 +584,7 @@ app.post('/google_login', authenticateToken, async (req, res) => {
                             user = row;
 
                             // We can assume from this point that a user also doesn't exist in the achievements table
-                            await pool.query("INSERT INTO achievements (id, level, xp, daysUsed, factsViewed, factsPlaced, userRange) VALUES(?, ?, ?, ?, ?, ?, ?)", [userid, 0, 0, 1, 0, 0, 100],
+                            await pool.query("INSERT INTO achievements (id, level, xp, daysUsed, factsViewed, factsPlaced, userRange) VALUES(?, ?, ?, ?, ?, ?, ?)", [client_id, 0, 0, 1, 0, 0, 100],
                                 function (err, row) {
                                     if (err) {
                                         console.log("Error inserting into achievements: %s", err);
