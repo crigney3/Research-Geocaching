@@ -583,6 +583,11 @@ app.post('/google_login', authenticateToken, async (req, res) => {
                             msg = "Authentication Successful for new user";
                             user = row;
 
+                            if(!user) {
+                                console.log("Error checking users: %s", err);
+                                return res.status(400).json('Error checking users, see backend console for details');
+                            }
+
                             // We can assume from this point that a user also doesn't exist in the achievements table
                             await pool.query("INSERT INTO achievements (id, level, xp, daysUsed, factsViewed, factsPlaced, userRange) VALUES(?, ?, ?, ?, ?, ?, ?)", [client_id, 0, 0, 1, 0, 0, 100],
                                 function (err, row) {
@@ -597,11 +602,6 @@ app.post('/google_login', authenticateToken, async (req, res) => {
                         }
                     }
                 ); 
-            }
-
-            if(!user) {
-                console.log("Error checking users: %s", err);
-                return res.status(400).json('Error checking users, see backend console for details');
             }
 
             // const token = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET, {
