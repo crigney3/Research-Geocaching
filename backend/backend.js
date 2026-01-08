@@ -551,65 +551,52 @@ app.post('/google_login', authenticateToken, async (req, res) => {
         let user;
         let achievements;
 
-        await pool.query("SELECT * FROM users WHERE id=?", client_id,
-        async function(err, row) {
-            if (err) {
-                console.log("Error checking users: %s", err);
-                return res.status(400).json('Error checking users, see backend console for details');
+        const [rows] = await pool.promise().query("SELECT * FROM users WHERE id=?", [client_id]);
+        
+        // If the user already exists, just return that.
+        if (rows && rows.length) {
+            user = rows;
+            msg = "Authentication Successful for existing user";
+        } else {
+            // New user creation
+            if (!inUsername) {
+                return res.status(400).json('Must submit a username for new user setup');
             }
-
-            // If the user already exists, just return that.
-            // If not, add them to the table and return the new data.
-            // Every new user starts with permission level 0
-            if (row && row.length) {
-                user = row;
-                msg = "Authentication Successful for existing user";
-            } else {
-                if (!inUsername) {
-                    return res.status(400).json('Must submit a username for new user setup');
-                }
-
-                if (!client_id) {
-                    return res.status(400).json('Must submit a valid token for new user setup');
-                }
-
-                const currentDate = new Date();
-                await pool.query("INSERT INTO users (id, username, permissions, dateJoined, lastLoginDay) VALUES(?,?,?,?,?)", [client_id, inUsername, 0, currentDate, currentDate],
-                    async function (err, row) {
-                        if (err) {
-                            console.log("Error inserting into users: %s", err);
-                            return res.status(400).json('Error inserting into users, see backend console for details');
-                        } else {
-                            msg = "Authentication Successful for new user";
-                            user = row;
-
-                            if(!user) {
-                                console.log("Error checking users: %s", err);
-                                return res.status(400).json('Error checking users, see backend console for details');
-                            }
-
-                            // We can assume from this point that a user also doesn't exist in the achievements table
-                            await pool.query("INSERT INTO achievements (id, level, xp, daysUsed, factsViewed, factsPlaced, userRange) VALUES(?, ?, ?, ?, ?, ?, ?)", [client_id, 0, 0, 1, 0, 0, 100],
-                                function (err, row) {
-                                    if (err) {
-                                        console.log("Error inserting into achievements: %s", err);
-                                        return res.status(400).json('Error inserting into achievements, see backend console for details');
-                                    } else {
-                                        achievements = row;
-                                    }
-                                }
-                            );
-                        }
-                    }
-                ); 
+            if (!client_id) {
+                return res.status(400).json('Must submit a valid token for new user setup');
             }
-
-            console.log(user);
-
-            return res
-                .status(200)
-                .json({ message: msg, user, achievements });
-        });
+            
+            const currentDate = new Date();
+            
+            // Insert new user
+            await pool.promise().query(
+                "INSERT INTO users (id, username, permissions, dateJoined, lastLoginDay) VALUES(?,?,?,?,?)", 
+                [client_id, inUsername, 0, currentDate, currentDate]
+            );
+            
+            // Fetch the newly created user
+            const [newUserRows] = await pool.promise().query("SELECT * FROM users WHERE id=?", [client_id]);
+            user = newUserRows;
+            msg = "Authentication Successful for new user";
+            
+            if (!user || !user.length) {
+                console.log("Error: User was not created properly");
+                return res.status(400).json('Error creating user');
+            }
+            
+            // Insert achievements for new user
+            await pool.promise().query(
+                "INSERT INTO achievements (id, level, xp, daysUsed, factsViewed, factsPlaced, userRange) VALUES(?, ?, ?, ?, ?, ?, ?)", 
+                [client_id, 0, 0, 1, 0, 0, 100]
+            );
+            
+            // Fetch achievements
+            const [achievementRows] = await pool.promise().query("SELECT * FROM achievements WHERE id=?", [client_id]);
+            achievements = achievementRows;
+        }
+        
+        console.log("Fetched user: " + user);
+        return res.status(200).json({ message: msg, user, achievements });
    } catch (err) {
         console.log(err);
         return res.status(400).json({ err });
