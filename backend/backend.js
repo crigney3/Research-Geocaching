@@ -576,7 +576,7 @@ app.post('/google_login', authenticateToken, async (req, res) => {
             
             // Fetch the newly created user
             const [newUserRows] = await promiseQuery("SELECT * FROM users WHERE id=?", [client_id]);
-            user = newUserRows[0];
+            user = newUserRows;
             msg = "Authentication Successful for new user";
             
             if (!user) {
@@ -592,7 +592,7 @@ app.post('/google_login', authenticateToken, async (req, res) => {
             
             // Fetch achievements
             const [achievementRows] = await promiseQuery("SELECT * FROM achievements WHERE id=?", [client_id]);
-            achievements = achievementRows[0];
+            achievements = achievementRows;
         }
         
         console.log("Fetched user: " + user);
