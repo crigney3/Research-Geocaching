@@ -21,8 +21,8 @@ const center = {
 }
 
 const centerSeattle = {
-  lat: 47.57033851927011,
-  lng: -122.29415420009254
+  lat: 47.62045709976152,
+  lng: -122.34932598909077
 }
 
 const containerStyle = {
@@ -227,11 +227,6 @@ const CoreMap = ({
             <AddLocationAltIcon/>
           </button>}
 
-          {/* <div className='RangeCircle' ref={rangeRef} style={{
-              width: `${circleRadius * 2}px`,
-              height: `${circleRadius * 2}px`
-          }}/> */}
-
           <button className='category-toggle-button' onClick={toggleCategoryWindow}>
             <KeyboardDoubleArrowUpIcon />
           </button>
@@ -257,7 +252,7 @@ const CoreMap = ({
 
           <ComponentModal show={addWindowOpen} onClose={toggleInputWindow} component={<InputPage inLat={selectedCoords.lat} inLng={selectedCoords.lng}/>}/>
 
-          <LoginModal show={showLogin} onClose={toggleLoginPopup}/>
+          <LoginModal show={showLogin} onClose={toggleLoginPopup} />
 
           <Modal show={showLoginRequirement} onClose={toggleLoginRequirement} title={"Not Logged In"} message={"You need to log in first!"} warningLevel={1} action={toggleLoginPopup} actionClass={'success'} actionText={"Login"}/>
 
@@ -281,7 +276,6 @@ const MapSubComponent = memo(({rangeRef, currentLocRef, children, ...props}) => 
   const dragTimeoutRef = useRef(null);
   const animationFrameRef = useRef(null);
   const releaseTimeRef = useRef(null);
-  // currentLocRef = useRef(currentLoc);
   const hasInitializedRef = useRef(false);
 
   const currentUser = useContext(ResearchContext).currentUser;

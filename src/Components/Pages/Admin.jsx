@@ -445,7 +445,7 @@ const AdminPage = ({
                     <h2 className="section-title">User Management</h2>
                     {allUsers.map((user) => (
                         <div className="fact-card" key={user.id}>
-                            {((currentUser.permissions >= user.permissions) || (currentUser.id === user.id)) && <button 
+                            {((currentUser.permissions > user.permLevel) || (currentUser.id === user.id)) && <button 
                                 className="fact-delete-btn"
                                 onClick={() => handleDeleteUser(user)}
                                 title="Delete User"
@@ -463,7 +463,7 @@ const AdminPage = ({
                             <div className="user-details">
                                 <span className="user-detail">Level: {user.level}</span>
                                 <span className="user-detail">XP: {user.xp}</span>
-                                <span className="user-detail">Permissions Level: {user.permissions}</span>
+                                <span className="user-detail">Permissions Level: {user.permLevel}</span>
                                 <span className="user-detail">Date Joined: {user.dateJoined}</span>
                                 <span className="user-detail">Last Login Date: {user.lastLogin}</span>
                                 <span className="user-detail">Facts Placed: {user.factsPlaced}</span>

@@ -150,12 +150,6 @@ const LoginModal = ({
     // 1: login successful
     const [loginState, setLoginState] = useState(-1);
 
-    useEffect(() => {
-        if (loginState == 1) {
-            onClose();
-        }
-    }, [loginState]);
-
     if (!show) return null;
 
     return (
@@ -178,11 +172,17 @@ const LoginModal = ({
                     </button>
                 </div>
 
-                <div className='modal-login'>
+                {(loginState === -1) && <div className='modal-login'>
                     <GoogleAuth loginState={loginState} setLoginState={setLoginState}/>
-                </div>
+                </div>}
 
-                {/* <p className='login-disclaimer'>This app does not store (or sell) any of the info from your google account. We don't even get your email!</p> */}
+                {(loginState === 0) && <div className='modal-login'>
+                    <button className='modal-button error' onClick={onClose}>Error Logging in!</button>
+                </div>}
+
+                {(loginState === 1) && <div className='modal-login'>
+                    <button className='modal-button success' onClick={onClose}>Logged in!</button>
+                </div>}
             </div>       
         </div>
     )

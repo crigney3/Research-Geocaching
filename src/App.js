@@ -230,13 +230,14 @@ function App() {
 
         return response.json();
       }).then(data => {
+        console.log(data[0]);
         tempUser.id = data[0].id;
         tempUser.username = data[0].username;
         tempUser.permLevel = data[0].permissions;
         tempUser.dateJoined = data[0].dateJoined;
         tempUser.lastLogin = data[0].lastLoginDay;
       }).catch(error => {
-            console.error('Error: ', error);
+        console.error('Error: ', error);
       });
 
       await fetch(BACKEND_URL + "/get_user_all_achievements_by_id?id=" + cookies.get('user').replace('id_', ''), {
@@ -253,6 +254,7 @@ function App() {
 
         return response.json();
       }).then(data => {
+        console.log(data[0]);
         tempUser.level = data[0].level;
         tempUser.xp = data[0].xp;
         tempUser.daysUsed = data[0].daysUsed;
@@ -260,7 +262,7 @@ function App() {
         tempUser.factsPlaced = data[0].factsPlaced;
         tempUser.range = data[0].userRange;
       }).catch(error => {
-            console.error('Error: ', error);
+        console.error('Error: ', error);
       });
 
       setCurrentUser(tempUser);
