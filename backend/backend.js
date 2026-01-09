@@ -551,7 +551,8 @@ app.post('/google_login', authenticateToken, async (req, res) => {
         let user;
         let achievements;
 
-        const [rows] = await promiseQuery("SELECT * FROM users WHERE id=?", [client_id]);
+        const rows = await promiseQuery("SELECT * FROM users WHERE id=?", [client_id]);
+        console.log(rows);
         
         // If the user already exists, just return that.
         if (rows && rows.length) {
@@ -575,7 +576,7 @@ app.post('/google_login', authenticateToken, async (req, res) => {
             );
             
             // Fetch the newly created user
-            const [newUserRows] = await promiseQuery("SELECT * FROM users WHERE id=?", [client_id]);
+            const newUserRows = await promiseQuery("SELECT * FROM users WHERE id=?", [client_id]);
             user = newUserRows;
             msg = "Authentication Successful for new user";
             
@@ -591,7 +592,7 @@ app.post('/google_login', authenticateToken, async (req, res) => {
             );
             
             // Fetch achievements
-            const [achievementRows] = await promiseQuery("SELECT * FROM achievements WHERE id=?", [client_id]);
+            const achievementRows = await promiseQuery("SELECT * FROM achievements WHERE id=?", [client_id]);
             achievements = achievementRows;
         }
         
