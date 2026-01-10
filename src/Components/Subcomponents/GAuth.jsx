@@ -12,19 +12,11 @@ const GoogleAuth = ({
     loginState,
     setLoginState
 }) => {
- const [clientId, setClientID] = useState(0);
  const cookieHandler = useContext(ResearchContext).cookies;
  const loginAsGoogleUser = useContext(ResearchContext).checkForExistingUser;
 
- const secretPath = process.env.REACT_APP_SECRET_ENV || 'secrets';
-
  const [errorRenderShow, setErrorRenderShow] = useState(false);
  const [seed, setSeed] = useState(1);
-
- useEffect(() => {
-  console.log(`../../${secretPath}`);
-  import(`../../${secretPath}`).then(secrets => setClientID(secrets.GOOGLE_LOGIN_CLIENT_ID)).catch(err => console.error("Bad import! ", err));
- }, [secretPath]);
 
  const handleErrorRenderClose = () => {
     setErrorRenderShow(false);

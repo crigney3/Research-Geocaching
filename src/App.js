@@ -9,12 +9,12 @@ import AdminPage from './Components/Pages/Admin';
 import Navbar from './Components/Navbar';
 import { BrowserRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { ResearchContext, LocationContext } from './Components/ResearchContext';
-import { BACKEND_URL, CLIENT_AUTH_SECRET, GOOGLE_LOGIN_CLIENT_ID } from './secrets';
+import { BACKEND_URL, CLIENT_AUTH_SECRET, GOOGLE_LOGIN_CLIENT_ID, GOOGLE_LOGIN_IOS_ID } from './secrets';
 import { Geolocation } from '@capacitor/geolocation';
 import { SocialLogin } from '@capgo/capacitor-social-login';
 import { Preferences } from '@capacitor/preferences';
 import Notification from './Components/Subcomponents/Notification';
-import { TutorialModal } from './Components/Subcomponents/Modal';
+import { Modal, TutorialModal } from './Components/Subcomponents/Modal';
 import BookIcon from '@mui/icons-material/Book';
 import StarRateIcon from '@mui/icons-material/StarRate';
 import CreateIcon from '@mui/icons-material/Create';
@@ -62,6 +62,8 @@ const addTutorialIcons = [
   <CreateIcon />
 ]
 
+const secretPath = process.env.REACT_APP_SECRET_ENV || 'secrets';
+
 function App() {
 
   const [allCategories, setAllCategories] = useState([]);
@@ -76,11 +78,18 @@ function App() {
   const [addTutorialMode, setAddTutorialMode] = useState(false);
 
   useEffect(() => {
-    SocialLogin.initialize({
-      google: {
-        webClientId: GOOGLE_LOGIN_CLIENT_ID
-      }
-    });
+    async function importClientID() {
+      const { GOOGLE_LOGIN_CLIENT_ID } = await import(`./${secretPath}`);
+      console.log(GOOGLE_LOGIN_CLIENT_ID);
+
+      await SocialLogin.initialize({
+        google: {
+          webClientId: GOOGLE_LOGIN_CLIENT_ID,
+          iOSClientId: GOOGLE_LOGIN_IOS_ID
+        }
+      });
+    }
+    importClientID();
 
     checkForFirstRun();
 
@@ -92,6 +101,10 @@ function App() {
     checkForExistingUser();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    
+  }, [secretPath]);
 
   const checkForFirstRun = async () => {
     const { value } = await Preferences.get({key: 'tutorialComplete'});
@@ -230,7 +243,6 @@ function App() {
 
         return response.json();
       }).then(data => {
-        console.log(data[0]);
         tempUser.id = data[0].id;
         tempUser.username = data[0].username;
         tempUser.permLevel = data[0].permissions;
@@ -254,7 +266,6 @@ function App() {
 
         return response.json();
       }).then(data => {
-        console.log(data[0]);
         tempUser.level = data[0].level;
         tempUser.xp = data[0].xp;
         tempUser.daysUsed = data[0].daysUsed;
@@ -287,12 +298,6 @@ function App() {
                 // We don't generally inform the user of achievement tracking
             } else {
                 console.error("Something went wrong updating achievements! " + response)
-                // setModalConfig({
-                //     title: 'Achievement Update Failed',
-                //     message: 'There was an error updating your achievements. Level/XP may not reflect your updated ' + statString + '. Response code: ' + response.status,
-                //     warningLevel: 0
-                // });
-                // setShowModal(true);
             }
             return response.json();
         }).then(data => {
@@ -319,12 +324,6 @@ function App() {
         });
     } catch(err) {
       console.error(err);
-        // setModalConfig({
-        //     title: 'Unexpected error!',
-        //     message: err,
-        //     warningLevel: 0
-        // });
-        // setShowModal(true);
     }
   }
 
