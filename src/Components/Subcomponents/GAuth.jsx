@@ -1,5 +1,4 @@
 import {useContext, useEffect, useState} from 'react';
-import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
 import { BACKEND_URL, CLIENT_AUTH_SECRET } from '../../secrets';
 import { ResearchContext } from '../ResearchContext';
 import { ErrorBoundary }from 'react-error-boundary';

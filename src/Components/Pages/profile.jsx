@@ -30,21 +30,6 @@ const ProfilePage = ({
     return null;
   }
 
-  const getPermissionString = (permLevel) => {
-    switch (permLevel) {
-      case 0: return 'student';
-      case 1: return 'professor';
-      case 2: return 'administrator';
-      case 3: return 'dev';
-      default: return 'user';
-    }
-  };
-
-  // Calculate level progress
-  const xpPerLevel = Math.round(50 * Math.pow(1.15, currentUser.level));
-  const currentLevelXP = currentUser.xp % xpPerLevel;
-  const levelProgress = (currentLevelXP / xpPerLevel) * 100;
-
   const achievements = [
     {
       title: "First Steps",
@@ -175,6 +160,21 @@ const ProfilePage = ({
       image: <BoltIcon/>
     },
   ];
+
+  const getPermissionString = (permLevel) => {
+    switch (permLevel) {
+      case 0: return 'student';
+      case 1: return 'professor';
+      case 2: return 'administrator';
+      case 3: return 'dev';
+      default: return 'user';
+    }
+  };
+
+  // Calculate level progress
+  const xpPerLevel = Math.round(50 * Math.pow(1.15, currentUser.level));
+  const currentLevelXP = currentUser.xp % xpPerLevel;
+  const levelProgress = (currentLevelXP / xpPerLevel) * 100;
 
   const handleNewUsername = (newName) => {
     fetch(BACKEND_URL + "/change_username", {

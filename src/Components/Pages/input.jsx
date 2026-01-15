@@ -22,6 +22,7 @@ const InputPage = ({
     const currentUser = useContext(ResearchContext).currentUser;
     const reloadFacts = useContext(ResearchContext).getAllFacts;
     const userLevelUp = useContext(ResearchContext).checkForUserLevelup;
+    const cookies = useContext(ResearchContext).cookies;
 
     useEffect(() => {
         categoriesToOptions();
@@ -56,8 +57,15 @@ const InputPage = ({
             return;
         }
 
-        console.log("lat: " + inLat);
-        console.log("lng: " + inLng);
+        if (getFactLimiterArrayLength() > 3) {
+            setModalConfig({
+                title: 'Too Many Fact Submissions!',
+                message: "You've submitted a lot of facts in the last 30 minutes. Try again later!",
+                warningLevel: 1
+            });
+            setShowModal(true);
+            return;
+        }
 
         try {
             let JSONString = JSON.stringify({title: titleValue, description: descValue, lat: inLat, lng: inLng, category: catValue.value, userID: currentUser.id, username: currentUser.username});
@@ -82,9 +90,13 @@ const InputPage = ({
                     setTitleValue('');
                     setDescValue('');
                     setCatValue(null);
+
                     // Also reload facts
                     reloadFacts();
                     updatePlacedAchievement();
+
+                    // And update the overload list
+                    addToFactLimiterArray('fact');
                 } else {
                     setModalConfig({
                         title: 'Submission Failed',
@@ -123,6 +135,64 @@ const InputPage = ({
     const handleCheckedChange = (event) => {
         setTestChecked(!testChecked);
     }
+
+    const removeExpiredAdditions = (items) => {
+        const now = Date.now();
+        return items.filter(item => {
+            const expiryTime = item.timestamp + (30 * 60 * 1000);
+            return now < expiryTime;
+        });
+    };
+
+    const addToFactLimiterArray = (element) => {
+        // Get existing array or initialize empty array
+        let cookieArray = cookies.get('adds') || [];
+        
+        // Remove expired items before adding new one
+        cookieArray = removeExpiredAdditions(cookieArray);
+        
+        // Add new item with timestamp
+        const newItem = {
+            data: element,
+            timestamp: Date.now()
+        };
+        
+        cookieArray.push(newItem);
+        
+        // Set cookie with expiration (set to expire after 30 minutes from now)
+        // This is a safety measure, but individual items have their own expiry logic
+        const cookieExpiry = new Date();
+        cookieExpiry.setMinutes(cookieExpiry.getMinutes() + 30);
+        
+        cookies.set('adds', cookieArray, { 
+            path: '/',
+            expires: cookieExpiry
+        });
+    };
+
+    const getFactLimiterArrayLength = () => {
+        // Get existing array or initialize empty array
+        let cookieArray = cookies.get('adds') || [];
+        
+        // Remove expired items
+        cookieArray = removeExpiredAdditions(cookieArray);
+        
+        // Update the cookie with cleaned array if items were removed
+        if (cookieArray.length > 0) {
+            const cookieExpiry = new Date();
+            cookieExpiry.setMinutes(cookieExpiry.getMinutes() + 30);
+            
+            cookies.set('adds', cookieArray, { 
+            path: '/',
+            expires: cookieExpiry
+            });
+        } else {
+            // Remove cookie if array is empty
+            cookies.remove('adds', { path: '/' });
+        }
+        
+        return cookieArray.length;
+    };
 
     const categoriesToOptions = () => {
         let tempCat = [];
