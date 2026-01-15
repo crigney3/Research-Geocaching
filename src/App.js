@@ -76,6 +76,7 @@ function App() {
   const [notifications, setNotifications] = useState([]);
   const [tutorialMode, setTutorialMode] = useState(false);
   const [addTutorialMode, setAddTutorialMode] = useState(false);
+  const [showFailModal, setShowFailModal] = useState(false);
 
   useEffect(() => {
     async function importClientID() {
@@ -91,6 +92,8 @@ function App() {
     }
     importClientID();
 
+    checkPermissions();
+
     checkForFirstRun();
 
     getAllCategories();
@@ -105,6 +108,31 @@ function App() {
   useEffect(() => {
     
   }, [secretPath]);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      checkForSigninDay();
+    }
+  }, [isLoggedIn]);
+
+  const checkPermissions = async () => {
+    const status = await Geolocation.checkPermissions();
+
+    if (status.location === 'granted') {
+      return; // Clear to continue
+    } else if (status.location === 'denied' || status.location === 'prompt') {
+      // Try prompting for permissions, any status other than granted
+      // Is a fail state for the app
+      const status2 = await Geolocation.requestPermissions({ permissions: 'location'});
+
+      if (status2 === 'granted') {
+        return; //resume normal flow
+      }
+    }
+
+    // If we haven't returned yet we're in a fail state. Inform the user of this
+    setShowFailModal(true);
+  }
 
   const checkForFirstRun = async () => {
     const { value } = await Preferences.get({key: 'tutorialComplete'});
@@ -223,6 +251,26 @@ function App() {
     return title;
   }, []);
 
+  const checkForSigninDay = async () => {
+    const currentDate = new Date();
+    const { value } = await Preferences.get({key: 'lastLoginDay'});
+
+    if (value === null) {
+      // App is on first run, create a key with today
+      await Preferences.set({key: 'lastLoginDay', value: currentDate.getUTCDate()});
+      console.log(currentDate.getUTCDate());
+    }
+
+    // If it's a different day than the stored date, update the date and achievements
+    // This only runs if checkForExistingUser finds a user so it should be fine
+    // It also runs on new login
+    if (value !== new Date().getUTCDate) {
+      await Preferences.set({key: 'lastLoginDay', value: currentDate.getUTCDate()});
+
+      checkForUserLevelup('daysUsed', 1);
+    }
+  }
+
   const checkForExistingUser = useCallback(async () => {
     if (cookies.get('user')) {
       // We already have a login session, fetch data based on that
@@ -250,6 +298,7 @@ function App() {
         tempUser.lastLogin = data[0].lastLoginDay;
       }).catch(error => {
         console.error('Error: ', error);
+        throw new Error(error);
       });
 
       await fetch(BACKEND_URL + "/get_user_all_achievements_by_id?id=" + cookies.get('user').replace('id_', ''), {
@@ -274,9 +323,11 @@ function App() {
         tempUser.range = data[0].userRange;
       }).catch(error => {
         console.error('Error: ', error);
+        throw new Error(error);
       });
 
       setCurrentUser(tempUser);
+      setIsLoggedIn(true);
     }
   }, []);
 
@@ -357,6 +408,7 @@ function App() {
 
   const logoutCurrentUser = () => {
     setCurrentUser(null);
+    setIsLoggedIn(false);
   }
 
   const researchValue = useMemo(() => ({
@@ -399,6 +451,8 @@ function App() {
           <TutorialModal show={tutorialMode} onClose={() => setTutorialMode(false)} pageCount={6} titles={mainTutorialTitles} descriptions={mainTutorialMessages} Icons={mainTutorialIcons}/>
 
           <TutorialModal show={addTutorialMode} onClose={() => setAddTutorialMode(false)} pageCount={1} titles={addTutorialTitles} descriptions={addTutorialMessages} Icons={addTutorialIcons}/>
+
+          <Modal show={showFailModal} onClose={() => setShowFailModal(false)} title={"GPS Error!"} message={"This app requires location permissions. Without them, you're stuck at the Space Needle forever."} warningLevel={0}/>
 
           <Navbar/>
           {(showNotifications) && notifications.map((notif, index) => (

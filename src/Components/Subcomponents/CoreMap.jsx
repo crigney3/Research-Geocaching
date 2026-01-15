@@ -54,7 +54,6 @@ const CoreMap = ({
 
     const map = useMap();
 
-    // const userLoc = useContext(LocationContext).currentLocation;
     const refreshFacts = useContext(ResearchContext).getAllFacts;
     const currentUser = useContext(ResearchContext).currentUser;
     const setAddTutorialMode = useContext(ResearchContext).setAddTutorialMode;
@@ -376,6 +375,13 @@ const MapSubComponent = memo(({rangeRef, currentLocRef, children, ...props}) => 
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     };
   }, [map]);
+
+  useEffect(() => {
+    if (!map) return;
+    if (isUserDragging) return;
+
+    map.panTo({ lat: currentLoc.lat, lng: currentLoc.lng });
+  }, [currentLoc]);
 
   const startReturnAnimation = () => {
     if (!map) return;

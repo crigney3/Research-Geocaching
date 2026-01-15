@@ -118,7 +118,7 @@
     bottom: 0;
     left: 0;
     right: 0;
-    height: 33.34vh;
+    height: 75.0vh;
     background: white;
     border-radius: 20px 20px 0 0;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
@@ -187,82 +187,91 @@
     cursor: pointer;
     transition: border-color 0.2s ease;
 }
-
 .react-select-category-dropdown:focus {
     outline: none;
     border-color: var(--purple-main, #4C2683);
 }
-
 .react-select__control {
-  border: 2px solid #4C2683 !important;
-  border-radius: 15px !important;
-  padding: 8px !important;
-  font-size: 1rem !important;
-  background: white !important;
-  box-shadow: none !important;
+    border: 2px solid #4C2683 !important;
+    border-radius: 15px !important;
+    padding: 8px !important;
+    font-size: 1rem !important;
+    background: white !important;
+    box-shadow: none !important;
 }
-
 .react-select__control:hover {
-  border-color: #4C2683 !important;
+    border-color: #4C2683 !important;
 }
-
 .react-select__control--is-focused {
-  border-color: #F68B1F !important;
-  box-shadow: 0 0 0 3px rgba(246, 139, 31, 0.2) !important;
+    border-color: #F68B1F !important;
+    box-shadow: 0 0 0 3px rgba(246, 139, 31, 0.2) !important;
 }
-
 /* Value container */
 .react-select__value-container {
-  padding: 0 8px !important;
+    padding: 0 8px !important;
 }
-
 /* Single value (selected option text) */
 .react-select__single-value {
-  color: #4C2683 !important;
-  font-weight: 500 !important;
+    color: #4C2683 !important;
+    font-weight: 500 !important;
 }
-
 /* Placeholder */
 .react-select__placeholder {
-  color: #7A99AC !important;
+    color: #7A99AC !important;
 }
-
 /* Indicator separator */
 .react-select__indicator-separator {
-  background-color: #4C2683 !important;
+    background-color: #4C2683 !important;
 }
-
 /* Dropdown indicator */
 .react-select__dropdown-indicator {
-  color: #4C2683 !important;
+    color: #4C2683 !important;
+    pointer-events: auto !important; /* Ensure dropdown works on mobile */
 }
-
+/* Hide clear indicator (X button) */
+.react-select__clear-indicator {
+    display: none !important;
+}
 /* Menu (dropdown container) */
 .react-select__menu {
-  border-radius: 12px !important;
-  overflow: hidden !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
-  border: 1px solid rgba(76, 38, 131, 0.2) !important;
-  z-index: 9999 !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid rgba(76, 38, 131, 0.2) !important;
+    z-index: 9999 !important;
+    margin-top: 4px !important;
+    margin-bottom: 4px !important;
+    width: 75% !important; /* 25% less wide than default */
+    left: 50% !important; /* Center the menu */
+    transform: translateX(-50%) !important; /* Center alignment */
+    position: absolute !important;
 }
-
-/* Options */
+/* Menu list (scrollable container) */
+.react-select__menu-list {
+    max-height: 250px !important; /* Enable scrolling */
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important; /* Smooth scrolling on iOS */
+}
+/* Options - reduced height/padding */
 .react-select__option {
-  color: #4C2683 !important;
-  background-color: white !important;
-  padding: 12px 16px !important;
-  cursor: pointer !important;
+    color: #4C2683 !important;
+    background-color: white !important;
+    padding: 8px 16px !important; /* Reduced from 12px to 8px */
+    cursor: pointer !important;
+    touch-action: manipulation !important; /* Improve mobile tap response */
 }
-
 .react-select__option--is-focused {
-  background-color: rgba(76, 38, 131, 0.1) !important;
+    background-color: rgba(76, 38, 131, 0.1) !important;
 }
-
 .react-select__option--is-selected {
-  background-color: #F68B1F !important;
+    background-color: #F68B1F !important;
 }
-
 .react-select__option:hover {
-  background-color: rgba(246, 139, 31, 0.1) !important;
-  color: #4C2683 !important;
+    background-color: rgba(246, 139, 31, 0.1) !important;
+    color: #4C2683 !important;
+}
+/* Ensure mobile-friendly interactions */
+.react-select__control,
+.react-select__option {
+    -webkit-tap-highlight-color: transparent !important; /* Remove tap highlight on mobile */
 }

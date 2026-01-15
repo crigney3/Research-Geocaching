@@ -5,11 +5,6 @@ import { BACKEND_URL, CLIENT_AUTH_SECRET } from '../../secrets';
 import './input.css';
 import { Modal } from '../Subcomponents/Modal';
 
-const UETestLoc = {
-    lat: 37.97336898429983,
-    lng: -87.53240843750176
-}
-
 const InputPage = ({
     inLat,
     inLng
@@ -201,74 +196,74 @@ const InputPage = ({
         })
     };
 
+    const handleInputFocus = (e) => {
+        setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+    };
+
     return (
         <div className='InputPage'>
-            <form className="full-form" onSubmit={handleSubmit}>
-                <div className="top-row">
-                    <div className="title-container">
-                        <div className="form-group">
-                            <label className="section-title">
-                                Title
-                            </label>
-                            <input 
-                                id="title" 
-                                type="text" 
-                                className="form-input title-input"
-                                placeholder="Enter title..."
-                                value={titleValue} 
-                                onChange={handleTitleChange} 
-                            />
+            <div className="full-form-wrapper" onSubmit={handleSubmit}>
+                <div className="full-form">
+                    <div className="top-row">
+                        <div className="title-container">
+                            <div className="form-group">
+                                <label className="section-title">
+                                    Title
+                                </label>
+                                <input 
+                                    id="title" 
+                                    type="text" 
+                                    className="form-input title-input"
+                                    placeholder="Enter title..."
+                                    value={titleValue} 
+                                    onChange={handleTitleChange}
+                                    onFocus={handleInputFocus}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="select-container">
+                            <div className="form-group">
+                                <label className="section-title">
+                                    Category
+                                </label>
+                                <Select
+                                    name="catSelector"
+                                    options={categoryOptions}
+                                    onChange={handleCatChange}
+                                    styles={customSelectStyles}
+                                    placeholder="Select category..."
+                                    value={catValue}
+                                    maxMenuHeight={250}
+                                />
+                            </div>
                         </div>
                     </div>
 
-                    <div className="select-container">
+                    <div className="description-container">
+                        <h2 className="section-title">Description</h2>
                         <div className="form-group">
-                            <label className="section-title">
-                                Category
-                            </label>
-                            <Select
-                                name="catSelector"
-                                options={categoryOptions}
-                                onChange={handleCatChange}
-                                styles={customSelectStyles}
-                                placeholder="Select category..."
-                                value={catValue}
-                                maxMenuHeight={250}
+                            <textarea
+                                id="desc"
+                                className="form-input description-input"
+                                placeholder="Enter a detailed description..."
+                                value={descValue}
+                                onChange={handleDescChange}
+                                onFocus={handleInputFocus}
                             />
                         </div>
                     </div>
                 </div>
-
-                <div className="description-container">
-                    <h2 className="section-title">Description</h2>
-                    <div className="form-group">
-                        <textarea
-                            id="desc"
-                            className="form-input description-input"
-                            placeholder="Enter a detailed description..."
-                            value={descValue}
-                            onChange={handleDescChange}
-                        />
-                    </div>
-                </div>
-
-                {/* <div className="test-checkbox">
-                    <input 
-                        type="checkbox" 
-                        checked={testChecked} 
-                        onChange={handleCheckedChange}
-                    />
-                    <label>Test checkbox (will be removed in production)</label>
-                </div> */}
 
                 <button 
                     className="floating-submit"
-                    type="submit"
+                    onClick={handleSubmit}
+                    type="button"
                     title="Submit"
                 >
                     ✓
                 </button>
-            </form>
+            </div>
 
             <Modal show={showModal} onClose={handleModalClose} title={modalConfig.title} message={modalConfig.message} warningLevel={modalConfig.warningLevel} />
         </div>
