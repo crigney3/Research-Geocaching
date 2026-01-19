@@ -6,6 +6,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import EditIcon from '@mui/icons-material/Edit';
 import { Modal, InputModal } from "../Subcomponents/Modal";
 import './Admin.css';
+import { json } from "node:stream/consumers";
 
 const AdminPage = ({
 
@@ -18,6 +19,7 @@ const AdminPage = ({
     const [showModal, setShowModal] = useState(false);
     const [modalConfig, setModalConfig] = useState({ title: '', message: '', action: null });
     const [selectedUser, setSelectedUser] = useState(null);
+    const [publicCategory, setPublicCategory] = useState(false);
 
     const allCategories = useContext(ResearchContext).allCategories;
     const allFacts = useContext(ResearchContext).allFacts;
@@ -207,6 +209,10 @@ const AdminPage = ({
         setNewCatName(event.target.value);
     }
 
+    const handleCategoryVisibilityChange = () => {
+
+    }
+
     const handleRemoveCat = async (event) => {
         let localCat = catValue;
         console.log(localCat);
@@ -328,6 +334,8 @@ const AdminPage = ({
             return;
         }
 
+        let jsonString = JSON.stringify({title: newCatName, ownerID: currentUser.id, privacy: !publicCategory});
+
         try {
             await fetch(BACKEND_URL + "/add_category", {
                 method: 'POST',
@@ -336,7 +344,7 @@ const AdminPage = ({
                   'Content-Type': 'application/json;charset=utf-8'
                 },
                 mode: 'cors',
-                body: JSON.stringify({title: newCatName})
+                body: jsonString
             }).then(response => {
                 if (response.ok) {
                     reloadCategories();
@@ -382,7 +390,7 @@ const AdminPage = ({
             />
 
             <div className="AdminContent">
-                <div className="category-section">
+                {(currentUser.permLevel >= 2) && <div className="category-section">
                     <h2 className="section-title">Category Management</h2>
                     <CustomSelect options={categoryOptions} onChange={handleCatChange}/>
                     <div className="category-buttons">
@@ -399,7 +407,7 @@ const AdminPage = ({
                             Remove All Facts In Selected Category
                         </button>
                     </div>
-                </div>
+                </div>}
 
                 <div className="input-section">
                     <h2 className="section-title">Add New Category</h2>
@@ -410,6 +418,11 @@ const AdminPage = ({
                         value={newCatName}
                         onChange={handleNewCatNameChange}
                     />
+                    {(currentUser.permLevel >= 2) && <input 
+                        type="checkbox"
+                        className="category-checkbox"
+                        checked={publicCategory}
+                        onChange={handleCategoryVisibilityChange}/>}
                     <button 
                         className="add-btn" 
                         onClick={handleNewCategoryAdd}
@@ -418,7 +431,7 @@ const AdminPage = ({
                     </button>
                 </div>
 
-                <div className="all-facts">
+                {(currentUser.permLevel >= 2) && <div className="all-facts">
                     <h2 className="section-title">All Facts</h2>
                     {allFacts.map((fact) => (
                         <div className="fact-card" key={fact.id}>
@@ -438,7 +451,7 @@ const AdminPage = ({
                             </div>
                         </div>
                     ))}
-                </div>
+                </div>}
 
                 {(currentUser != null) && (currentUser.permLevel >= 2) &&
                 <div className="user-section">
@@ -472,6 +485,7 @@ const AdminPage = ({
                     ))}
                 </div>}
 
+                {(currentUser.permLevel >= 2) &&
                 <div className="floating-buttons">
                     <button 
                         className="floating-btn remove-all-facts" 
@@ -485,7 +499,7 @@ const AdminPage = ({
                     >
                         Remove All Categories
                     </button>
-                </div>
+                </div>}
             </div>
 
             <Modal show={showModal} onClose={handleModalCancel} title={modalConfig.title} message={modalConfig.message} warningLevel={modalConfig.warningLevel} action={modalConfig.action}/>

@@ -261,6 +261,8 @@ app.post('/add_fact', authenticateToken, async (req, res) => {
 
 app.post('/add_category', authenticateToken, async (req, res) => {
     let categoryTitle = req.body.title;
+    let categoryPrivacy = req.body.privacy;
+    let categoryOwner = req.body.ownerID;
 
     if (!categoryTitle) {
         return res.status(400).json('Title cannot be blank');
@@ -269,16 +271,24 @@ app.post('/add_category', authenticateToken, async (req, res) => {
     // Generate a uuid for this category
     let newID = uuidv4();
 
-    await pool.query("INSERT INTO categories (id, title) VALUES(UNHEX(REPLACE(?, '-', '')),?)", [newID, categoryTitle], 
-        function(err, rows) {
-            if (err) {
-                console.log("Error inserting into categories: %s", err);
-                return res.status(400).json('Error inserting into categories, see backend console for details');
-            } else {
-                return res.status(200).json('Category successfully inserted');
+    try {
+        if (categoryPrivacy) {
+            if (!categoryOwner) {
+                return res.status(400).json('Private categories require an owner id');
             }
+
+            await promiseQuery("INSERT INTO categories (id, title, private, owner) VALUES(UNHEX(REPLACE(?, '-', '')),?,?,?)", [newID, categoryTitle, true, categoryOwner]);
+
+            return res.status(200).json('Added private category');
+        } else {
+            await promiseQuery("INSERT INTO categories (id, title, private) VALUES(UNHEX(REPLACE(?, '-', '')),?,?)", [newID, categoryTitle, false]);
+
+            return res.status(200).json('Added category');
         }
-    );
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json(error);
+    }
 });
 //#endregion
 

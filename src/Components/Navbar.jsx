@@ -63,7 +63,7 @@ const Navbar = ({
                         <Link to="/">Home</Link>
                     </div> */}
 
-                    {(currentUser != null) && (currentUser.permLevel >= 2) &&
+                    {(currentUser != null) &&
                     <div className="AdminButton">
                         <Link to="/admin" onClick={toggleNavbarState}>Admin</Link>
                     </div>}
