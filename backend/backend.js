@@ -10,6 +10,7 @@ const { OAuth2Client } = require('google-auth-library');
 const cookieParser = require('cookie-parser');
 const util = require("util");
 const jwt = require('jsonwebtoken');
+const { useJsApiLoader } = require('@react-google-maps/api');
 
 //#endregion
 
@@ -278,6 +279,7 @@ app.post('/add_category', authenticateToken, async (req, res) => {
             }
 
             await promiseQuery("INSERT INTO categories (id, title, private, owner) VALUES(UNHEX(REPLACE(?, '-', '')),?,?,?)", [newID, categoryTitle, true, categoryOwner]);
+            await promiseQuery(`UPDATE users SET private_access_array = JSON_ARRAY_APPEND(COALESCE(private_access_array, JSON_ARRAY()), '$', ?) WHERE id = ?`, [newId, categoryOwner]);
 
             return res.status(200).json('Added private category');
         } else {
@@ -287,7 +289,29 @@ app.post('/add_category', authenticateToken, async (req, res) => {
         }
     } catch (err) {
         console.log(err);
-        return res.status(500).json(error);
+        return res.status(500).json(err);
+    }
+});
+
+app.post('/add_user_to_private_category', authenticateToken, async (req, res) => {
+    let inID = req.body.userID;
+    let inCatID = req.body.catID;
+
+    if (!inID) {
+        return res.status(400).json('Must submit an ID for valid user addition');
+    }
+
+    if (!inCatID) {
+        return res.status(400).json('Must submit a category ID for valid user addition');
+    }
+
+    try {
+        await promiseQuery(`UPDATE users SET private_access_array = JSON_ARRAY_APPEND(COALESCE(private_access_array, JSON_ARRAY()), '$', ?) WHERE id = ?`, [inCatID, inID]);
+
+        return res.status(200);
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json(err);
     }
 });
 //#endregion
@@ -320,11 +344,13 @@ app.post('/remove_category_by_id', authenticateToken, async (req, res) => {
     }
 
     await pool.query("DELETE FROM categories WHERE id=UNHEX(?) ", [inID], 
-        function(err, rows) {
+        async function(err, rows) {
             if (err) {
                 console.log("Error removing category: %s", err);
                 return res.status(400).json('Error removing category, see backend console for details');
             } else {
+                // Search through ALL users and remove this category from their array if it exists
+                await promiseQuery(`UPDATE users SET private_access_array = JSON_REMOVE(private_access_array, JSON_UNQUOTE(JSON_SEARCH(private_access_array, 'one', ?)))`, [inID]);
                 return res.status(200).json('Category successfully removed');
             }
         }
@@ -348,6 +374,27 @@ app.post('/remove_user_by_id', authenticateToken, async (req, res) => {
             }
         }
     );
+});
+
+app.post('/remove_user_from_private_category', authenticateToken, async (req, res) => {
+    let inID = req.body.userID;
+    let inCatID = req.body.catID;
+
+    if (!inID) {
+        return res.status(400).json('Must submit an ID for valid user addition');
+    }
+
+    if (!inCatID) {
+        return res.status(400).json('Must submit a category ID for valid user addition');
+    }
+
+    try {
+        await promiseQuery(`UPDATE users SET private_access_array = JSON_REMOVE(private_access_array, JSON_UNQUOTE(JSON_SEARCH(private_access_array, 'one', ?))) WHERE id = ?`, [inCatID, inID]);
+        return res.status(200);
+    } catch (err) {
+        console.log(err);
+        return res.status(400).json(err);
+    }
 });
 
 app.post('/remove_all_facts_in_category', authenticateToken, async (req, res) => {
@@ -376,6 +423,8 @@ app.post('/remove_all_categories', authenticateToken, async (req, res) => {
                 console.log("Error removing category: %s", err);
                 return res.status(400).json('Error removing category, see backend console for details');
             } else {
+                // Also remove all category keys from users
+                promiseQuery("UPDATE users SET private_access_array=NULL");
                 return res.status(200).json('Category successfully removed');
             }
         }
@@ -421,6 +470,31 @@ app.get('/get_all_categories', async (req, res) => {
             }
         }
     );
+});
+
+app.get('/get_all_user_allowed_categories', async (req, res) => {
+    let userID = req.body.id;
+
+    if (!userID) {
+        return res.status(400).json("userID is required to fetch relevant categories");
+    }
+    
+    // This query gets all the categories a user has access to, then joins
+    // With all public categories.
+    try {
+        const categories = await promiseQuery(`
+            SELECT c.*, HEX(c.id) AS id 
+            FROM categories c
+            LEFT JOIN users u ON u.id = ?
+            WHERE (c.private IS NULL OR c.private = 0)
+                OR JSON_CONTAINS(u.private_access_array, JSON_QUOTE(c.id))
+        `, [userID]);
+
+        return res.status(200).json(categories);
+    } catch (err) {
+        console.log(err);
+        return res.status(400).json(err);
+    }
 });
 
 app.get('/get_all_users', async (req, res) => {
