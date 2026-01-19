@@ -34,6 +34,7 @@ const handleLoginGoogle = async () => {
     const credentialResponse = res.result;
     // handle the response
     console.log(credentialResponse);
+    // TODO: set up email from response
     let potentialNewUsername = "New_User" + Math.floor(Math.random() * 10000);
     let JSONString = JSON.stringify({credential: credentialResponse.idToken, client_id: credentialResponse.profile.id, inUsername: potentialNewUsername});
 

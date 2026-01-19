@@ -296,13 +296,20 @@ app.post('/add_category', authenticateToken, async (req, res) => {
 app.post('/add_user_to_private_category', authenticateToken, async (req, res) => {
     let inID = req.body.userID;
     let inCatID = req.body.catID;
+    let inEmail = req.body.email;
 
-    if (!inID) {
-        return res.status(400).json('Must submit an ID for valid user addition');
+    if (!inID && !inEmail) {
+        return res.status(400).json('Must submit an ID or email for valid user addition');
     }
 
     if (!inCatID) {
         return res.status(400).json('Must submit a category ID for valid user addition');
+    }
+
+    // If we don't have an id, get it from users with the email
+    if (!inID) {
+        const rows = await promiseQuery(`SELECT id FROM users WHERE email=?`, [inEmail]);
+        inID = rows[0].id;
     }
 
     try {
@@ -379,13 +386,20 @@ app.post('/remove_user_by_id', authenticateToken, async (req, res) => {
 app.post('/remove_user_from_private_category', authenticateToken, async (req, res) => {
     let inID = req.body.userID;
     let inCatID = req.body.catID;
+    let inEmail = req.body.email;
 
-    if (!inID) {
-        return res.status(400).json('Must submit an ID for valid user addition');
+    if (!inID && !inEmail) {
+        return res.status(400).json('Must submit an ID or an email for valid user addition');
     }
 
     if (!inCatID) {
         return res.status(400).json('Must submit a category ID for valid user addition');
+    }
+
+    // If we don't have an id, get it from users with the email
+    if (!inID) {
+        const rows = await promiseQuery(`SELECT id FROM users WHERE email=?`, [inEmail]);
+        inID = rows[0].id;
     }
 
     try {
@@ -605,6 +619,7 @@ app.post('/google_login', authenticateToken, async (req, res) => {
     let credential = req.body.credential;
     let client_id = req.body.client_id;
     let inUsername = req.body.inUsername;
+    let inEmail = req.body.email;
 
     try {
         // const ticket = await oauthClient.verifyIdToken({
@@ -634,13 +649,16 @@ app.post('/google_login', authenticateToken, async (req, res) => {
             if (!client_id) {
                 return res.status(400).json('Must submit a valid token for new user setup');
             }
+            if (!inEmail) {
+                return res.status(400).json("Must submit an email or a bunch of stuff breaks");
+            }
             
             const currentDate = new Date();
             
             // Insert new user
             await promiseQuery(
-                "INSERT INTO users (id, username, permissions, dateJoined, lastLoginDay) VALUES(?,?,?,?,?)", 
-                [client_id, inUsername, 0, currentDate, currentDate]
+                "INSERT INTO users (id, username, permissions, dateJoined, lastLoginDay, email) VALUES(?,?,?,?,?,?)", 
+                [client_id, inUsername, 0, currentDate, currentDate, inEmail]
             );
             
             // Fetch the newly created user
