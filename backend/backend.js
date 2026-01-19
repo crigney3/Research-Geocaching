@@ -725,7 +725,7 @@ app.post('/set_achievement_complete', authenticateToken, async (req, res) => {
         let user;
         let achievements;
 
-        const rows = await promiseQuery(`UPDATE achievements SET ${sanitizeColumnName(inStat)} WHERE id=?`, [inID]);
+        const rows = await promiseQuery(`UPDATE achievements SET ${sanitizeColumnName(inStat)}=1 WHERE id=?`, [inID]);
         achievements = rows[0];
 
         return res.status(200).json({ message: msg, achievements });

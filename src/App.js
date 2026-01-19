@@ -382,8 +382,35 @@ function App() {
 
   const checkForUserLevelup = (statString, valueToAdd) => {
     // Run the fetch to achievements here, then if we did level up update currentUser data
+    // Also update completions, based on the full list of acheivements and statString
     try {
         let JSONString = JSON.stringify({id: currentUser.id, stat: statString, statValue: valueToAdd});
+
+        achievements.forEach(achievement => {
+          if (achievement.statBase == statString && !achievement.completed) {
+            if (currentUser[statString] + valueToAdd >= achievement.target) {
+              // We completed an achievement - fire a notification if the achievement
+              // data updates successfully
+              fetch(BACKEND_URL + "/set_achievement_complete", {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
+                    'Content-Type': 'application/json;charset=utf-8'
+                  },
+                  mode: 'cors',
+                  body: JSONString
+              }).then(response => {
+                  if (response.ok) {
+                      // Achievement was updated, fire a notification
+                      fireNotifications(currentUser, false, true, achievement.title);
+                  } else {
+                      console.error("Something went wrong updating achievements! " + response)
+                  }
+                  return response.json();
+              });
+            }
+          }
+        });
 
         fetch(BACKEND_URL + "/add_to_achievement", {
             method: 'POST',
@@ -429,7 +456,7 @@ function App() {
 
   // This fires when we need to check if there has been a notified achievement,
   // not just an xp gain.
-  const fireNotifications = (newUserData, leveled) => {
+  const fireNotifications = (newUserData, leveled, achievement, achievementName) => {
     let notifCounter = 0;
     let tempNotifArray = [];
 
@@ -437,7 +464,9 @@ function App() {
       notifCounter++;
       tempNotifArray.push({message: "Level up! You are now level " + newUserData.level, id: Date.now()});
       console.log(tempNotifArray);
-    } // TODO: Add goal-based achievement checks, store goals somewhere to check against
+    } else if (achievement) {
+      tempNotifArray.push({message: "New Achievement: " + achievementName + "!"})
+    }
     else {
       return;
     }
