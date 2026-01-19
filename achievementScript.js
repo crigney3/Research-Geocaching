@@ -1,6 +1,6 @@
 import mysql from 'mysql';
 import { promisify } from 'util';
-import achievements from './src/AchievementData';
+import achievements from '../src/AchievementData';
 import { DB_HOST, DB_PASSWORD, DB_USER, DB_PORT } from './src/secrets';
 
 // Database configuration
