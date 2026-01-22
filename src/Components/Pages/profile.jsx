@@ -32,7 +32,7 @@ const ProfilePage = ({
   const [isUserLoaded, setIsUserLoaded] = useState(false);
 
   useEffect(() => {
-    if (currentUser != null) {
+    if (currentUser != null && currentUser.achievementKeys != null) {
       setIsUserLoaded(true);
       convertAchievementData();
     }
@@ -146,6 +146,7 @@ const ProfilePage = ({
             current={achievement.current}
             target={achievement.target}
             difficulty={achievement.difficulty}
+            completed={achievement.completed}
           />
         ))}
       </div>

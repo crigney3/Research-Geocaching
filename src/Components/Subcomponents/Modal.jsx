@@ -143,13 +143,10 @@ const ComponentModal = ({
 
 const LoginModal = ({
     show,
-    onClose
+    onClose,
+    loginState,
+    setLoginState
 }) => {
-    // -1: not attempted
-    // 0: login failed
-    // 1: login successful
-    const [loginState, setLoginState] = useState(-1);
-
     if (!show) return null;
 
     return (

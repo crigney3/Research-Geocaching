@@ -45,11 +45,11 @@
 }
 
 .achievement-trophy.bronze {
-    color: var(--bronze);
+    color: #E8A87C;
 }
 
 .achievement-trophy.silver {
-    color: var(--silver);
+    color: #E8E8E8;
 }
 
 .achievement-trophy.gold {
@@ -57,7 +57,7 @@
 }
 
 .achievement-trophy.diamond {
-    color: var(--diamond);
+    color: #87CEEB;
 }
 
 .achievement-trophy.default {

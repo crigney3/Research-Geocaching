@@ -18,6 +18,11 @@ const Navbar = ({
     const [overlayClass, setOverlayClass] = useState("Overlay");
     const [showLoginRequirement, setShowLoginRequirement] = useState(false);
 
+    // -1: not attempted/logged out
+    // 0: login failed
+    // 1: login successful
+    const [loginState, setLoginState] = useState(-1);
+
     const cookieHandler = useContext(ResearchContext).cookies;
     const currentUser = useContext(ResearchContext).currentUser;
     const logoutCurrentUser = useContext(ResearchContext).logoutCurrentUser;
@@ -46,6 +51,7 @@ const Navbar = ({
         cookieHandler.remove('user', { path: '/' });
         logoutCurrentUser();
         setShowLogout(false);
+        setLoginState(-1);
     }
 
     useEffect(() => {
@@ -59,10 +65,6 @@ const Navbar = ({
 
             <div className="Navbar-Container">
                 <div className={navbarClass} id="navbar">
-                    {/* <div className="HomeButton">
-                        <Link to="/">Home</Link>
-                    </div> */}
-
                     {(currentUser != null) &&
                     <div className="AdminButton">
                         <Link to="/admin" onClick={toggleNavbarState}>Admin</Link>
@@ -72,12 +74,6 @@ const Navbar = ({
                         {(currentUser == null) && <a onClick={toggleLoginPopup}>Login</a>}
                         {(currentUser != null) && <a onClick={toggleLogoutPopup}>Logout</a>}
                     </div>
-                    
-
-                    {// Deprecated, add button on map page replaces this
-                    /* <div className="InputButton">
-                        <Link to="/input" onClick={toggleNavbarState}>Input</Link>
-                    </div> */}
 
                     <div className="MapButton">
                         <Link to="/" onClick={toggleNavbarState}>Map</Link>
@@ -94,7 +90,7 @@ const Navbar = ({
                 <MenuIcon id="navbarHamburger"></MenuIcon>
             </button>
 
-            <LoginModal show={showLogin} onClose={toggleLoginPopup}/>
+            <LoginModal show={showLogin} onClose={toggleLoginPopup} loginState={loginState} setLoginState={setLoginState}/>
 
             <Modal show={showLoginRequirement} onClose={toggleLoginRequirement} title={"Not Logged In"} message={"You need to log in first!"} warningLevel={1} action={toggleLoginPopup} actionClass={'success'} actionText={"Login"}/>
 

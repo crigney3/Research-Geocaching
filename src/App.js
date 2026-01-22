@@ -99,7 +99,6 @@ function App() {
   useEffect(() => {
     async function importClientID() {
       const { GOOGLE_LOGIN_CLIENT_ID } = await import(`./${secretPath}`);
-      console.log(GOOGLE_LOGIN_CLIENT_ID);
 
       await SocialLogin.initialize({
         google: {
@@ -282,8 +281,10 @@ function App() {
     // If it's a different day than the stored date, update the date and achievements
     // This only runs if checkForExistingUser finds a user so it should be fine
     // It also runs on new login
-    if (value !== new Date().getUTCDate) {
+    if (value != new Date().getUTCDate()) {
       await Preferences.set({key: 'lastLoginDay', value: currentDate.getUTCDate()});
+
+      console.log("new day");
 
       checkForUserLevelup('daysUsed', 1);
     }
@@ -293,7 +294,6 @@ function App() {
     if (cookies.get('user')) {
       // We already have a login session, fetch data based on that
       let tempUser = {};
-      console.log(cookies.get('user').replace('id_', ''));
 
       await fetch(BACKEND_URL + "/get_user_by_id?id=" + cookies.get('user').replace('id_', ''), {
           method: 'GET',
@@ -412,8 +412,6 @@ function App() {
             }
           }
         });
-
-        console.log(achievements);
 
         fetch(BACKEND_URL + "/add_to_achievement", {
             method: 'POST',
