@@ -36,7 +36,7 @@ const handleLoginGoogle = async () => {
     console.log(credentialResponse);
     // TODO: set up email from response
     let potentialNewUsername = "New_User" + Math.floor(Math.random() * 10000);
-    let JSONString = JSON.stringify({credential: credentialResponse.idToken, client_id: credentialResponse.profile.id, inUsername: potentialNewUsername});
+    let JSONString = JSON.stringify({credential: credentialResponse.idToken, client_id: credentialResponse.profile.id, inUsername: potentialNewUsername, email: credentialResponse.profile.email});
 
     fetch(BACKEND_URL + "/google_login", {
         method: 'POST',

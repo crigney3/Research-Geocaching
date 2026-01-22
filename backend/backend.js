@@ -279,7 +279,7 @@ app.post('/add_category', authenticateToken, async (req, res) => {
             }
 
             await promiseQuery("INSERT INTO categories (id, title, private, owner) VALUES(UNHEX(REPLACE(?, '-', '')),?,?,?)", [newID, categoryTitle, true, categoryOwner]);
-            await promiseQuery(`UPDATE users SET private_access_array = JSON_ARRAY_APPEND(COALESCE(private_access_array, JSON_ARRAY()), '$', ?) WHERE id = ?`, [newId, categoryOwner]);
+            await promiseQuery(`UPDATE users SET private_access_array = JSON_ARRAY_APPEND(COALESCE(private_access_array, JSON_ARRAY()), '$', ?) WHERE id = ?`, [newID, categoryOwner]);
 
             return res.status(200).json('Added private category');
         } else {

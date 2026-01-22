@@ -389,6 +389,7 @@ function App() {
         achievements.forEach(achievement => {
           if (achievement.statBase == statString && !achievement.completed) {
             if (currentUser[statString] + valueToAdd >= achievement.target) {
+              let achievementJSON = JSON.stringify({id: currentUser.id, stat: achievement.title});
               // We completed an achievement - fire a notification if the achievement
               // data updates successfully
               fetch(BACKEND_URL + "/set_achievement_complete", {
@@ -398,7 +399,7 @@ function App() {
                     'Content-Type': 'application/json;charset=utf-8'
                   },
                   mode: 'cors',
-                  body: JSONString
+                  body: achievementJSON
               }).then(response => {
                   if (response.ok) {
                       // Achievement was updated, fire a notification
@@ -411,6 +412,8 @@ function App() {
             }
           }
         });
+
+        console.log(achievements);
 
         fetch(BACKEND_URL + "/add_to_achievement", {
             method: 'POST',
