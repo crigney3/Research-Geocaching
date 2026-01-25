@@ -54,6 +54,8 @@ const CoreMap = ({
 
     const map = useMap();
 
+    const loginState = useContext(ResearchContext).loginState;
+    const setLoginState = useContext(ResearchContext).setLoginState;
     const refreshFacts = useContext(ResearchContext).getAllFacts;
     const currentUser = useContext(ResearchContext).currentUser;
     const setAddTutorialMode = useContext(ResearchContext).setAddTutorialMode;
@@ -251,7 +253,7 @@ const CoreMap = ({
 
           <ComponentModal show={addWindowOpen} onClose={toggleInputWindow} component={<InputPage inLat={selectedCoords.lat} inLng={selectedCoords.lng}/>}/>
 
-          <LoginModal show={showLogin} onClose={toggleLoginPopup} />
+          <LoginModal show={showLogin} onClose={toggleLoginPopup} loginState={loginState} setLoginState={setLoginState}/>
 
           <Modal show={showLoginRequirement} onClose={toggleLoginRequirement} title={"Not Logged In"} message={"You need to log in first!"} warningLevel={1} action={toggleLoginPopup} actionClass={'success'} actionText={"Login"}/>
 

@@ -96,6 +96,11 @@ function App() {
   const [addTutorialMode, setAddTutorialMode] = useState(false);
   const [showFailModal, setShowFailModal] = useState(false);
 
+  // -1: not attempted/logged out
+  // 0: login failed
+  // 1: login successful
+  const [loginState, setLoginState] = useState(-1);
+
   useEffect(() => {
     async function importClientID() {
       const { GOOGLE_LOGIN_CLIENT_ID } = await import(`./${secretPath}`);
@@ -275,7 +280,8 @@ function App() {
     if (value === null) {
       // App is on first run, create a key with today
       await Preferences.set({key: 'lastLoginDay', value: currentDate.getUTCDate()});
-      console.log(currentDate.getUTCDate());
+      
+      checkForUserLevelup('daysUsed', 1);
     }
 
     // If it's a different day than the stored date, update the date and achievements
@@ -288,6 +294,39 @@ function App() {
 
       checkForUserLevelup('daysUsed', 1);
     }
+  }
+
+  const checkForUserOwnedCategories = async () => {
+    let tempCategories = null;
+
+    await fetch(BACKEND_URL + "/get_all_owned_categories?id=" + cookies.get('user').replace('id_', ''), {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
+          'Content-Type': 'application/json;charset=utf-8'
+        },
+        mode: 'cors'
+    }).then(response => {
+      if(!response.ok) {
+        console.error('Getting user with cookie ID failed');
+        return null;
+      }
+
+      return response.json();
+    }).then(data => {
+      console.log(data);
+
+      if (data == null) {
+        return null;
+      }
+
+      tempCategories = data;
+    }).catch(error => {
+      console.error('Error: ', error);
+      return null;
+    });
+
+    return tempCategories;
   }
 
   const checkForExistingUser = useCallback(async () => {
@@ -318,6 +357,8 @@ function App() {
         console.error('Error: ', error);
         throw new Error(error);
       });
+
+      tempUser.ownedCategories = await checkForUserOwnedCategories();
 
       await fetch(BACKEND_URL + "/get_user_all_stats_by_id?id=" + cookies.get('user').replace('id_', ''), {
           method: 'GET',
@@ -507,7 +548,9 @@ function App() {
     checkForExistingUser,
     logoutCurrentUser,
     checkForUserLevelup,
-    setAddTutorialMode
+    setAddTutorialMode,
+    loginState,
+    setLoginState
   }), [
     allCategories, 
     allFacts,

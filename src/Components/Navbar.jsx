@@ -18,14 +18,11 @@ const Navbar = ({
     const [overlayClass, setOverlayClass] = useState("Overlay");
     const [showLoginRequirement, setShowLoginRequirement] = useState(false);
 
-    // -1: not attempted/logged out
-    // 0: login failed
-    // 1: login successful
-    const [loginState, setLoginState] = useState(-1);
-
     const cookieHandler = useContext(ResearchContext).cookies;
     const currentUser = useContext(ResearchContext).currentUser;
     const logoutCurrentUser = useContext(ResearchContext).logoutCurrentUser;
+    const loginState = useContext(ResearchContext).loginState;
+    const setLoginState = useContext(ResearchContext).setLoginState;
 
     const navigate = useNavigate();
 
@@ -49,9 +46,12 @@ const Navbar = ({
     const logoutUser = () => {
         navigate("/");
         cookieHandler.remove('user', { path: '/' });
-        logoutCurrentUser();
-        setShowLogout(false);
-        setLoginState(-1);
+        
+        setTimeout(() => {
+            setShowLogout(false);
+            setLoginState(-1);
+            logoutCurrentUser();
+        }, 500);
     }
 
     useEffect(() => {
