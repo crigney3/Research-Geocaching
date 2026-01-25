@@ -611,6 +611,63 @@ app.get('/get_all_facts_of_category', async (req, res) => {
     );
 });
 
+app.get('/get_all_owned_categories', async (req, res) => {
+    let inID = req.query.id;
+
+    if (!inID) {
+        return res.status(400).json('Must submit an ID for valid access');
+    }
+
+    await pool.query(`SELECT * FROM categories WHERE owner=?`, [inID], 
+        function(err, rows) {
+            if (err) {
+                console.log("Error retrieving categories: %s", err);
+                return res.status(400).json('Error retrieving categories, see backend console for details');
+            } else {
+                return res.status(200).json(rows);
+            }
+        }
+    );
+});
+
+app.get('/get_all_facts_of_owned_categories', async (req, res) => {
+    let inID = req.query.id;
+
+    if (!inID) {
+        return res.status(400).json('Must submit an ID for valid access');
+    }
+
+    await pool.query(`SELECT f.* FROM facts f INNER JOIN categories c ON f.category=c.id WHERE c.owner=?`, [inID], 
+        function(err, rows) {
+            if (err) {
+                console.log("Error retrieving facts: %s", err);
+                return res.status(400).json('Error retrieving facts, see backend console for details');
+            } else {
+                return res.status(200).json(rows);
+            }
+        }
+    );
+});
+
+app.get('/get_all_users_of_owned_categories', async (req, res) => {
+    let inID = req.query.id;
+
+    if (!inID) {
+        return res.status(400).json('Must submit an ID for valid access');
+    }
+
+    await pool.query(`SELECT DISTINCT u.* FROM users u INNER JOIN categories c ON JSON_CONTAINS(u.private_access_array, CAST(c.id AS JSON), '$') WHERE c.owner=?`, [inID], 
+        function(err, rows) {
+            if (err) {
+                console.log("Error retrieving facts: %s", err);
+                return res.status(400).json('Error retrieving facts, see backend console for details');
+            } else {
+                return res.status(200).json(rows);
+            }
+        }
+    );
+});
+
 //#endregion
 
 //#region user-management
