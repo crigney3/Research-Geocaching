@@ -555,117 +555,92 @@ app.get('/get_all_users_with_achievements', async (req, res) => {
 
 app.get('/get_fact_by_id', async (req, res) => {
     let inID = req.query.id;
-
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid access');
     }
     
-    await pool.query("SELECT * FROM facts WHERE id=UNHEX(?)", [inID], 
-        function(err, rows) {
-            if (err) {
-                console.log("Error retrieving fact: %s", err);
-                return res.status(400).json('Error retrieving fact, see backend console for details');
-            } else {
-                return res.status(200).json(rows);
-            }
-        }
-    );
+    try {
+        const rows = await promiseQuery("SELECT * FROM facts WHERE id=UNHEX(?)", [inID]);
+        return res.status(200).json(rows);
+    } catch (err) {
+        console.log("Error retrieving fact: %s", err);
+        return res.status(400).json('Error retrieving fact, see backend console for details');
+    }
 });
 
 app.get('/get_category_by_id', async (req, res) => {
     let inID = req.query.id;
-
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid access');
     }
     
-    await pool.query("SELECT * FROM categories WHERE id=UNHEX(?)", [inID], 
-        function(err, rows) {
-            if (err) {
-                console.log("Error retrieving category: %s", err);
-                return res.status(400).json('Error retrieving category, see backend console for details');
-            } else {
-                return res.status(200).json(rows);
-            }
-        }
-    );
+    try {
+        const rows = await promiseQuery("SELECT * FROM categories WHERE id=UNHEX(?)", [inID]);
+        return res.status(200).json(rows);
+    } catch (err) {
+        console.log("Error retrieving category: %s", err);
+        return res.status(400).json('Error retrieving category, see backend console for details');
+    }
 });
-
 
 app.get('/get_all_facts_of_category', async (req, res) => {
     let inID = req.body.category;
-
     if (!inID) {
         return res.status(400).json('Must submit an Category for valid access');
     }
     
-    await pool.query("SELECT * FROM facts WHERE category=UNHEX(?)", [inID], 
-        function(err, rows) {
-            if (err) {
-                console.log("Error retrieving facts: %s", err);
-                return res.status(400).json('Error retrieving facts, see backend console for details');
-            } else {
-                return res.status(200).json(rows);
-            }
-        }
-    );
+    try {
+        const rows = await promiseQuery("SELECT * FROM facts WHERE category=UNHEX(?)", [inID]);
+        return res.status(200).json(rows);
+    } catch (err) {
+        console.log("Error retrieving facts: %s", err);
+        return res.status(400).json('Error retrieving facts, see backend console for details');
+    }
 });
 
 app.get('/get_all_owned_categories', async (req, res) => {
     let inID = req.query.id;
-
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid access');
     }
-
-    await pool.query(`SELECT * FROM categories WHERE owner=?`, [inID], 
-        function(err, rows) {
-            if (err) {
-                console.log("Error retrieving categories: %s", err);
-                return res.status(400).json('Error retrieving categories, see backend console for details');
-            } else {
-                return res.status(200).json(rows);
-            }
-        }
-    );
+    
+    try {
+        const rows = await promiseQuery("SELECT * FROM categories WHERE owner=?", [inID]);
+        return res.status(200).json(rows);
+    } catch (err) {
+        console.log("Error retrieving categories: %s", err);
+        return res.status(400).json('Error retrieving categories, see backend console for details');
+    }
 });
 
 app.get('/get_all_facts_of_owned_categories', async (req, res) => {
     let inID = req.query.id;
-
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid access');
     }
-
-    await pool.query(`SELECT f.* FROM facts f INNER JOIN categories c ON f.category=c.id WHERE c.owner=?`, [inID], 
-        function(err, rows) {
-            if (err) {
-                console.log("Error retrieving facts: %s", err);
-                return res.status(400).json('Error retrieving facts, see backend console for details');
-            } else {
-                return res.status(200).json(rows);
-            }
-        }
-    );
+    
+    try {
+        const rows = await promiseQuery("SELECT f.* FROM facts f INNER JOIN categories c ON f.category=c.id WHERE c.owner=?", [inID]);
+        return res.status(200).json(rows);
+    } catch (err) {
+        console.log("Error retrieving facts: %s", err);
+        return res.status(400).json('Error retrieving facts, see backend console for details');
+    }
 });
 
 app.get('/get_all_users_of_owned_categories', async (req, res) => {
     let inID = req.query.id;
-
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid access');
     }
-
-    await pool.query(`SELECT DISTINCT u.* FROM users u INNER JOIN categories c ON JSON_CONTAINS(u.private_access_array, CAST(c.id AS JSON), '$') WHERE c.owner=?`, [inID], 
-        function(err, rows) {
-            if (err) {
-                console.log("Error retrieving facts: %s", err);
-                return res.status(400).json('Error retrieving facts, see backend console for details');
-            } else {
-                return res.status(200).json(rows);
-            }
-        }
-    );
+    
+    try {
+        const rows = await promiseQuery("SELECT DISTINCT u.* FROM users u INNER JOIN categories c ON JSON_CONTAINS(u.private_access_array, CAST(c.id AS JSON), '$') WHERE c.owner=?", [inID]);
+        return res.status(200).json(rows);
+    } catch (err) {
+        console.log("Error retrieving facts: %s", err);
+        return res.status(400).json('Error retrieving facts, see backend console for details');
+    }
 });
 
 //#endregion
