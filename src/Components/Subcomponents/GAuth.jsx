@@ -57,7 +57,7 @@ const handleLoginGoogle = async () => {
         const expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + 1); 
         setLoginState(1);
-        cookieHandler.set('user', 'id_' + data.user[0].id, { sameSite: 'none', path: '/', expires: expiryDate, secure: true });
+        cookieHandler.set('user', 'id_' + data.user[0].id, { sameSite: 'lax', path: '/', expires: expiryDate, secure: true });
         loginAsGoogleUser();
     }).catch(error => {
         console.error('Error: ', error);

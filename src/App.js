@@ -330,13 +330,20 @@ function App() {
   }
 
   const checkForExistingUser = useCallback(async () => {
-    console.log(cookies);
-    console.log(cookies.get('user'));
-    if (cookies.get('user')) {
+    let userID = cookies.get('user');
+
+    if (userID == null) {
+      // iOS moment
+      console.log(cookies);
+      userID = cookies.cookies?.user;
+      console.log(userID);
+    }
+
+    if (userID != null) {
       // We already have a login session, fetch data based on that
       let tempUser = {};
 
-      await fetch(BACKEND_URL + "/get_user_by_id?id=" + cookies.get('user').replace('id_', ''), {
+      await fetch(BACKEND_URL + "/get_user_by_id?id=" + userID.replace('id_', ''), {
           method: 'GET',
           headers: {
             'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
@@ -363,7 +370,7 @@ function App() {
 
       tempUser.ownedCategories = await checkForUserOwnedCategories();
 
-      await fetch(BACKEND_URL + "/get_user_all_stats_by_id?id=" + cookies.get('user').replace('id_', ''), {
+      await fetch(BACKEND_URL + "/get_user_all_stats_by_id?id=" + userID.replace('id_', ''), {
           method: 'GET',
           headers: {
             'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
@@ -388,7 +395,7 @@ function App() {
         throw new Error(error);
       });
 
-      await fetch(BACKEND_URL + "/get_user_all_achievements_by_id?id=" + cookies.get('user').replace('id_', ''), {
+      await fetch(BACKEND_URL + "/get_user_all_achievements_by_id?id=" + userID.replace('id_', ''), {
           method: 'GET',
           headers: {
             'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
