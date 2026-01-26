@@ -330,6 +330,8 @@ function App() {
   }
 
   const checkForExistingUser = useCallback(async () => {
+    console.log(cookies);
+    console.log(cookies.get('user'));
     if (cookies.get('user')) {
       // We already have a login session, fetch data based on that
       let tempUser = {};
@@ -353,6 +355,7 @@ function App() {
         tempUser.permLevel = data[0].permissions;
         tempUser.dateJoined = data[0].dateJoined;
         tempUser.lastLogin = data[0].lastLoginDay;
+        tempUser.privateCategoryAccess = data[0].private_access_array;
       }).catch(error => {
         console.error('Error: ', error);
         throw new Error(error);

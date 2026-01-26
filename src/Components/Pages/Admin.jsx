@@ -19,6 +19,7 @@ const AdminPage = ({
     const [modalConfig, setModalConfig] = useState({ title: '', message: '', action: null });
     const [selectedUser, setSelectedUser] = useState(null);
     const [publicCategory, setPublicCategory] = useState(false);
+    const [allUsersOfOwnedCategories, setAllUsersOfOwnedCategories] = useState([]);
 
     const allCategories = useContext(ResearchContext).allCategories;
     const allFacts = useContext(ResearchContext).allFacts;
@@ -430,8 +431,27 @@ const AdminPage = ({
                     </button>
                 </div>
 
-                {(currentUser.permLevel >= 2) && <div className="all-facts">
-                    <h2 className="section-title">All Facts</h2>
+                {(currentUser.ownedCategories != null) && <div className="category-section">
+                    <h2 className="section-title">Private Category Management</h2>
+                    <CustomSelect options={categoryOptions} onChange={handleCatChange}/>
+                    <div className="category-buttons">
+                        <button 
+                            className="category-btn remove-cat-btn" 
+                            onClick={handleRemoveCat}
+                        >
+                            Remove Selected Category
+                        </button>
+                        <button 
+                            className="category-btn remove-facts-cat-btn" 
+                            onClick={handleRemoveAllFactsOfCat}
+                        >
+                            Remove All Facts In Selected Category
+                        </button>
+                    </div>
+                </div>}
+
+                {(currentUser.ownedCategories != null) && <div className="all-facts">
+                    <h2 className="section-title">Private Categories - Facts</h2>
                     {allFacts.map((fact) => (
                         <div className="fact-card" key={fact.id}>
                             <button 
@@ -447,6 +467,31 @@ const AdminPage = ({
                                 <span className="fact-detail">Lat: {fact.lat}, Lng: {fact.lng}</span>
                                 <span className="fact-detail">User: {fact.username}</span>
                                 <span className="fact-detail">Category: {getCatTitle(fact.category, allCategories)}</span>
+                            </div>
+                        </div>
+                    ))}
+                </div>}
+
+                {(currentUser != null) && (currentUser.ownedCategories != null) &&
+                <div className="user-section">
+                    <h2 className="section-title">User Management</h2>
+                    {allUsersOfOwnedCategories.map((user) => (
+                        <div className="fact-card" key={user.id}>
+                            <h3 className="user-title">{user.username}</h3>
+                            <button
+                                className="user-namechange-btn"
+                                onClick={() => toggleShowUsernameModal(user)}
+                                title="Force change username"
+                            >
+                                <EditIcon size={16} />
+                            </button>
+                            <div className="user-details">
+                                <span className="user-detail">Level: {user.level}</span>
+                                <span className="user-detail">XP: {user.xp}</span>
+                                <span className="user-detail">Permissions Level: {user.permLevel}</span>
+                                <span className="user-detail">Date Joined: {user.dateJoined}</span>
+                                <span className="user-detail">Last Login Date: {user.lastLogin}</span>
+                                <span className="user-detail">Facts Placed: {user.factsPlaced}</span>
                             </div>
                         </div>
                     ))}
