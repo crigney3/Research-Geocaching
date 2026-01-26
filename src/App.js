@@ -187,13 +187,12 @@ function App() {
     } else if (status.location === 'denied' || status.location === 'prompt') {
       // Try prompting for permissions, any status other than granted
       // Is a fail state for the app
-      const status2 = await Geolocation.requestPermissions({ permissions: 'location'});
-
-      if (status2 === 'granted') {
+      const status2 = await Geolocation.requestPermissions({ permissions: ['location']});
+      if (status2.location === 'granted') {
         return; //resume normal flow
       }
     }
-
+    
     // If we haven't returned yet we're in a fail state. Inform the user of this
     setShowFailModal(true);
   }
