@@ -18,7 +18,7 @@ const Navbar = ({
     const [overlayClass, setOverlayClass] = useState("Overlay");
     const [showLoginRequirement, setShowLoginRequirement] = useState(false);
 
-    const cookieHandler = useContext(ResearchContext).cookies;
+    const removeCookie = useContext(ResearchContext).removeWithExpiry;
     const currentUser = useContext(ResearchContext).currentUser;
     const logoutCurrentUser = useContext(ResearchContext).logoutCurrentUser;
     const loginState = useContext(ResearchContext).loginState;
@@ -45,7 +45,7 @@ const Navbar = ({
 
     const logoutUser = () => {
         navigate("/");
-        cookieHandler.remove('user', { path: '/' });
+        removeCookie('user');
         
         setTimeout(() => {
             setShowLogout(false);

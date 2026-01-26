@@ -18,11 +18,12 @@ const InputPage = ({
     const [modalConfig, setModalConfig] = useState({ title: '', message: '', warningLevel: 0 });
 
     const allCategories = useContext(ResearchContext).allCategories;
-    const userLoc = useContext(ResearchContext).currentLocation;
     const currentUser = useContext(ResearchContext).currentUser;
     const reloadFacts = useContext(ResearchContext).getAllFacts;
     const userLevelUp = useContext(ResearchContext).checkForUserLevelup;
-    const cookies = useContext(ResearchContext).cookies;
+    const setCookie = useContext(ResearchContext).setWithExpiry;
+    const getCookie = useContext(ResearchContext).getWithExpiry;
+    const removeCookie = useContext(ResearchContext).removeWithExpiry;
 
     useEffect(() => {
         categoriesToOptions();
@@ -146,7 +147,7 @@ const InputPage = ({
 
     const addToFactLimiterArray = (element) => {
         // Get existing array or initialize empty array
-        let cookieArray = cookies.get('adds') || [];
+        let cookieArray = getCookie('adds') || [];
         
         // Remove expired items before adding new one
         cookieArray = removeExpiredAdditions(cookieArray);
@@ -164,15 +165,12 @@ const InputPage = ({
         const cookieExpiry = new Date();
         cookieExpiry.setMinutes(cookieExpiry.getMinutes() + 30);
         
-        cookies.set('adds', cookieArray, { 
-            path: '/',
-            expires: cookieExpiry
-        });
+        setCookie('adds', cookieArray, 30, 1000 * 60);
     };
 
     const getFactLimiterArrayLength = () => {
         // Get existing array or initialize empty array
-        let cookieArray = cookies.get('adds') || [];
+        let cookieArray = getCookie('adds') || [];
         
         // Remove expired items
         cookieArray = removeExpiredAdditions(cookieArray);
@@ -182,13 +180,10 @@ const InputPage = ({
             const cookieExpiry = new Date();
             cookieExpiry.setMinutes(cookieExpiry.getMinutes() + 30);
             
-            cookies.set('adds', cookieArray, { 
-            path: '/',
-            expires: cookieExpiry
-            });
+            setCookie('adds', cookieArray, 30, 1000 * 60);
         } else {
             // Remove cookie if array is empty
-            cookies.remove('adds', { path: '/' });
+            removeCookie('adds');
         }
         
         return cookieArray.length;

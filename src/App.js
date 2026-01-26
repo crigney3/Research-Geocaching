@@ -1,5 +1,4 @@
 import './App.css';
-import Cookies from 'universal-cookie';
 import { useCallback, useEffect, useState, useMemo } from "react";
 import MapPage from './Components/Pages/map';
 import InputPage from './Components/Pages/input';
@@ -21,8 +20,6 @@ import StarRateIcon from '@mui/icons-material/StarRate';
 import CreateIcon from '@mui/icons-material/Create';
 import ZoomOutMapIcon from '@mui/icons-material/ZoomOutMap';
 import GavelIcon from '@mui/icons-material/Gavel';
-
-const cookies = new Cookies();
 
 const mainTutorialTitles = [
   "Welcome to FactDrop!",
@@ -136,6 +133,51 @@ function App() {
       checkForSigninDay();
     }
   }, [isLoggedIn]);
+
+  const setWithExpiry = async (key, value, expiryTime = null, expiryMult = null) => {
+    const data = {
+      value: value,
+      expiry: expiryTime ? Date.now() + (expiryTime * expiryMult) : null
+    };
+    
+    await Preferences.set({
+      key: key,
+      value: JSON.stringify(data)
+    });
+  }
+
+  const getWithExpiry = async (key) => {
+    const { value } = await Preferences.get({ key: key });
+    
+    if (!value) {
+      return null;
+    }
+    
+    try {
+      const data = JSON.parse(value);
+      
+      // Check if has expiry and if it's expired
+      if (data.expiry && Date.now() > data.expiry) {
+        // Expired - remove it
+        await Preferences.remove({ key: key });
+        return null;
+      }
+      
+      return data.value;
+    } catch (error) {
+      console.error(`Error parsing preference "${key}":`, error);
+      return null;
+    }
+  }
+
+  const hasValidStoredValue = async (key) => {
+    const value = await getWithExpiry(key);
+    return value !== null;
+  }
+
+  const removeWithExpiry = async (key) => {
+    await Preferences.remove({ key: key});
+  }
 
   const checkPermissions = async () => {
     const status = await Geolocation.checkPermissions();
@@ -299,7 +341,7 @@ function App() {
   const checkForUserOwnedCategories = async () => {
     let tempCategories = null;
 
-    await fetch(BACKEND_URL + "/get_all_owned_categories?id=" + cookies.get('user').replace('id_', ''), {
+    await fetch(BACKEND_URL + "/get_all_owned_categories?id=" + getWithExpiry('user'), {
         method: 'GET',
         headers: {
           'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
@@ -330,20 +372,15 @@ function App() {
   }
 
   const checkForExistingUser = useCallback(async () => {
-    let userID = cookies.get('user');
+    let userID = await getWithExpiry('user');
 
-    if (userID == null) {
-      // iOS moment
-      console.log(cookies);
-      userID = cookies.cookies?.user;
-      console.log(userID);
-    }
+    console.log(userID);
 
     if (userID != null) {
       // We already have a login session, fetch data based on that
       let tempUser = {};
 
-      await fetch(BACKEND_URL + "/get_user_by_id?id=" + userID.replace('id_', ''), {
+      await fetch(BACKEND_URL + "/get_user_by_id?id=" + userID, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
@@ -370,7 +407,7 @@ function App() {
 
       tempUser.ownedCategories = await checkForUserOwnedCategories();
 
-      await fetch(BACKEND_URL + "/get_user_all_stats_by_id?id=" + userID.replace('id_', ''), {
+      await fetch(BACKEND_URL + "/get_user_all_stats_by_id?id=" + userID, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
@@ -395,7 +432,7 @@ function App() {
         throw new Error(error);
       });
 
-      await fetch(BACKEND_URL + "/get_user_all_achievements_by_id?id=" + userID.replace('id_', ''), {
+      await fetch(BACKEND_URL + "/get_user_all_achievements_by_id?id=" + userID, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
@@ -554,13 +591,15 @@ function App() {
     setCurrentUser, 
     isLoggedIn, 
     setIsLoggedIn, 
-    cookies,
     checkForExistingUser,
     logoutCurrentUser,
     checkForUserLevelup,
     setAddTutorialMode,
     loginState,
-    setLoginState
+    setLoginState,
+    setWithExpiry,
+    getWithExpiry,
+    removeWithExpiry
   }), [
     allCategories, 
     allFacts,

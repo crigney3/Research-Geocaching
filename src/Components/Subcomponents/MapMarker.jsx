@@ -43,7 +43,8 @@ const MapMarker = ({
 
     const [userRange, setUserRange] = useState(100);
     const currentUser = useContext(ResearchContext).currentUser;
-    const cookieHandler = useContext(ResearchContext).cookies;
+    const setCookie = useContext(ResearchContext).setWithExpiry;
+    const getCookie = useContext(ResearchContext).getWithExpiry;
     const userAchievement = useContext(ResearchContext).checkForUserLevelup;
 
     useEffect(() => {
@@ -64,31 +65,17 @@ const MapMarker = ({
             return;
         }
 
-        // const markerRect = marker.getBoundingClientRect();
-        // const rangeRect = rangeRef.current.getBoundingClientRect();
-
-        // const markerCenterX = markerRect.left + markerRect.width / 2;
-        // const markerCenterY = markerRect.top + markerRect.height / 2;
-
-        // const rangeCenterX = rangeRect.left + rangeRect.width / 2;
-        // const rangeCenterY = rangeRect.top + rangeRect.height / 2;
-
-        // const distance = Math.sqrt(
-        //     Math.pow(markerCenterX - rangeCenterX, 2) + 
-        //     Math.pow(markerCenterY - rangeCenterY, 2)
-        // );
-
         const userLocation = getCurrentLocation();
         const distance = calculateDistance(userLocation.lat, userLocation.lng, lat, lng);
 
         if (distance <= userRange) {
             setPopupEnabled(!popupEnabled);
             console.log("Within range");
-            if (cookieHandler.get(id, {path: '/viewed'})) {
+            if (getCookie(id)) {
                 // Already viewed this fact in the last half hour
             } else {
                 userAchievement("factsViewed", 1);
-                cookieHandler.set(id, 0, { maxAge: 1800, path: '/viewed' });
+                setCookie(id, 0, 30, 1000 * 60);
             }
         } else {
             console.log("Out of range");

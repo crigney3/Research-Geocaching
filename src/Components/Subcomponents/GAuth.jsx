@@ -11,7 +11,7 @@ const GoogleAuth = ({
     loginState,
     setLoginState
 }) => {
- const cookieHandler = useContext(ResearchContext).cookies;
+ const setPreference = useContext(ResearchContext).setWithExpiry;
  const loginAsGoogleUser = useContext(ResearchContext).checkForExistingUser;
 
  const [errorRenderShow, setErrorRenderShow] = useState(false);
@@ -57,7 +57,7 @@ const handleLoginGoogle = async () => {
         const expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + 1); 
         setLoginState(1);
-        cookieHandler.set('user', 'id_' + data.user[0].id, { sameSite: 'lax', path: '/', expires: expiryDate, secure: true });
+        setPreference('user', data.user[0].id, 3, 86400000);
         loginAsGoogleUser();
     }).catch(error => {
         console.error('Error: ', error);
