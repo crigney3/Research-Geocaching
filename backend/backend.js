@@ -605,7 +605,7 @@ app.get('/get_all_owned_categories', async (req, res) => {
     }
     
     try {
-        const rows = await promiseQuery("SELECT * FROM categories WHERE owner=?", [inID]);
+        const rows = await promiseQuery("SELECT HEX(id) as id, title, owner, private FROM categories WHERE owner=?", [inID]);
         return res.status(200).json(rows);
     } catch (err) {
         console.log("Error retrieving categories: %s", err);
