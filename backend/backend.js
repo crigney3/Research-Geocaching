@@ -487,7 +487,7 @@ app.get('/get_all_categories', async (req, res) => {
 });
 
 app.get('/get_all_user_allowed_categories', async (req, res) => {
-    let userID = req.body.id;
+    let userID = req.query.id;
 
     if (!userID) {
         return res.status(400).json("userID is required to fetch relevant categories");
