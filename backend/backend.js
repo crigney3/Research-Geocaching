@@ -620,7 +620,7 @@ app.get('/get_all_facts_of_owned_categories', async (req, res) => {
     }
     
     try {
-        const rows = await promiseQuery("SELECT f.*, HEX(f.category) as category FROM facts f INNER JOIN categories c ON f.category=c.id WHERE c.owner=?", [inID]);
+        const rows = await promiseQuery("SELECT HEX(f.id) as id, f.title, f.description, f.lat, f.lng, HEX(f.category), f.username, f.user as category FROM facts f INNER JOIN categories c ON f.category=c.id WHERE c.owner=?", [inID]);
         return res.status(200).json(rows);
     } catch (err) {
         console.log("Error retrieving facts: %s", err);
