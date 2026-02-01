@@ -14,6 +14,7 @@ const AdminPage = ({
     const [catValue, setCatValue] = useState(0);
     const [categoryOptions, setCategoryOptions] = useState([]);
     const [newCatName, setNewCatName] = useState("");
+    const [newUserEmail, setNewUserEmail] = useState("");
     const [showUsernameModal, setShowUsernameModal] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [modalConfig, setModalConfig] = useState({ title: '', message: '', action: null });
@@ -362,6 +363,68 @@ const AdminPage = ({
         setShowModal(false);
     };
 
+    const handleUserInputChange = (event) => {
+        setNewUserEmail(event.target.value);
+    }
+
+    const handleRemoveUserFromCategory = async () => {
+        if (currentUser == null ||
+            catValue == 0 ||
+            newUserEmail == ""
+        ) {
+            return;
+        }
+
+        let jsonString = JSON.stringify({catID: catValue, email: newUserEmail});
+
+        try {
+            await fetch(BACKEND_URL + "/remove_user_from_private_category", {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
+                  'Content-Type': 'application/json;charset=utf-8'
+                },
+                mode: 'cors',
+                body: jsonString
+            }).then(response => {
+                if (response.ok) {
+                    reloadUsers();
+                }
+            });
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+    const handleAddUserToCategory = async () => {
+        if (currentUser == null ||
+            catValue == 0 ||
+            newUserEmail == ""
+        ) {
+            return;
+        }
+
+        let jsonString = JSON.stringify({catID: catValue, email: newUserEmail});
+
+        try {
+            await fetch(BACKEND_URL + "/add_user_to_private_category", {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
+                  'Content-Type': 'application/json;charset=utf-8'
+                },
+                mode: 'cors',
+                body: jsonString
+            }).then(response => {
+                if (response.ok) {
+                    reloadUsers();
+                }
+            });
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
     const toggleShowUsernameModal = (user) => {
         setShowUsernameModal(!showUsernameModal);
         setSelectedUser(user);
@@ -451,6 +514,30 @@ const AdminPage = ({
                             Remove All Facts In Selected Category
                         </button>
                     </div>
+                    <div className="category-user-add">
+                        <input 
+                            type="text" 
+                            className="category-input"
+                            placeholder="Enter user's email..."
+                            value={newUserEmail}
+                            onChange={handleUserInputChange}
+                        />
+                        <div className="category-user-buttons">
+                            <button 
+                                className="category-user-btn remove-user-btn"
+                                onClick={handleRemoveUserFromCategory}
+                            >
+                                Remove User
+                            </button>
+
+                            <button 
+                                className="category-user-btn add-user-btn"
+                                onClick={handleAddUserToCategory}
+                            >
+                                Add User
+                            </button>
+                        </div>
+                    </div>
                 </div>}
 
                 {(currentUser.ownedCategories != null) && <div className="all-facts">
@@ -481,13 +568,6 @@ const AdminPage = ({
                     {allUsersOfOwnedCategories.map((user) => (
                         <div className="fact-card" key={user.id}>
                             <h3 className="user-title">{user.username}</h3>
-                            <button
-                                className="user-namechange-btn"
-                                onClick={() => toggleShowUsernameModal(user)}
-                                title="Force change username"
-                            >
-                                <EditIcon size={16} />
-                            </button>
                             <div className="user-details">
                                 <span className="user-detail">Level: {user.level}</span>
                                 <span className="user-detail">XP: {user.xp}</span>

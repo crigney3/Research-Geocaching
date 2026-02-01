@@ -270,6 +270,7 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+    padding-bottom: 15px;
 }
 
 .category-btn {
@@ -296,6 +297,34 @@
 .category-btn:active {
     transform: translateY(2px);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.category-user-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.category-user-btn {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.remove-user-btn {
+    background: linear-gradient(135deg, #E04E39, #802416);
+    color: white;
+}
+
+.add-user-btn {
+    background: linear-gradient(135deg, #91D6AC, #5FB87E);
+    color: white;
 }
 
 .user-section {
