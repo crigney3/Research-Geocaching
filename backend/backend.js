@@ -658,6 +658,26 @@ app.get('/get_all_facts_of_access', async (req, res) => {
     }
 });
 
+app.get('/get_all_public_facts', async (req, res) => {
+    try {
+        const rows = await promiseQuery("SELECT f.* FROM facts f INNER JOIN categories c ON f.category = c.id WHERE c.private = FALSE OR c.private IS NULL");
+        return res.status(200).json(rows);
+    } catch (err) {
+        console.log("Error retrieving facts: %s", err);
+        return res.status(400).json('Error retrieving facts, see backend console for details');
+    }
+});
+
+app.get('/get_all_public_categories', async (req, res) => {
+    try {
+        const rows = await promiseQuery("SELECT * FROM categories WHERE private = FALSE OR private IS NULL");
+        return res.status(200).json(rows);
+    } catch (err) {
+        console.log("Error retrieving facts: %s", err);
+        return res.status(400).json('Error retrieving facts, see backend console for details');
+    }
+});
+
 //#endregion
 
 //#region user-management
