@@ -21,14 +21,15 @@ const AdminPage = ({
     const [publicCategory, setPublicCategory] = useState(false);
     const [allUsersOfOwnedCategories, setAllUsersOfOwnedCategories] = useState([]);
 
-    const allCategories = useContext(ResearchContext).allCategories;
-    const allFacts = useContext(ResearchContext).allFacts;
-    const allUsers = useContext(ResearchContext).allUsers;
+    const context = useContext(ResearchContext);
+    const currentUser = context.currentUser;
+    const allCategories = currentUser.permLevel >= 2 ? context.allCategories : context.allOwnedCategories;
+    const allFacts = currentUser.permLevel >= 2 ? context.allFacts : context.allFactsOfOwnedCategories;
+    const allUsers = currentUser.permLevel >= 2 ? context.allUsers : context.allUsersOfOwnedCategories;
+    const reloadFacts = currentUser.permLevel >= 2 ? context.getAllFacts : context.getAllFactsOfOwnedCategories;
+    const reloadCategories = currentUser.permLevel >= 2 ? context.getAllCategories : context.getAllOwnedCategories;
+    const reloadUsers = currentUser.permLevel >= 2 ? context.getAllUsers : context.getAllUsersOfOwnedCategories;
     const getCatTitle = useContext(ResearchContext).getCategoryTitleFromID;
-    const reloadFacts = useContext(ResearchContext).getAllFacts;
-    const reloadCategories = useContext(ResearchContext).getAllCategories;
-    const reloadUsers = useContext(ResearchContext).getAllUsers;
-    const currentUser = useContext(ResearchContext).currentUser;
 
     const customSelectStyles = {
         control: (provided, state) => ({
@@ -203,6 +204,7 @@ const AdminPage = ({
 
     const handleCatChange = (option) => {
         setCatValue(option);
+        console.log(option);
     }
 
     const handleNewCatNameChange = (event) => {
@@ -371,6 +373,7 @@ const AdminPage = ({
                 options={categoryOptions}
                 onChange={handleCatChange}
                 styles={customSelectStyles}
+                value={catValue}
                 className="react-select-container"
                 classNamePrefix="react-select"
                 maxMenuHeight={250}
@@ -433,7 +436,7 @@ const AdminPage = ({
 
                 {(currentUser.ownedCategories != null) && <div className="category-section">
                     <h2 className="section-title">Private Category Management</h2>
-                    <CustomSelect options={categoryOptions} onChange={handleCatChange}/>
+                    <CustomSelect/>
                     <div className="category-buttons">
                         <button 
                             className="category-btn remove-cat-btn" 

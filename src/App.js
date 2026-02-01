@@ -82,8 +82,13 @@ const secretPath = process.env.REACT_APP_SECRET_ENV || 'secrets';
 function App() {
 
   const [allCategories, setAllCategories] = useState([]);
+  const [allAccessibleCategories, setAllAccessibleCategories] = useState([]);
+  const [allOwnedCategories, setAllOwnedCategories] = useState([]);
   const [allFacts, setAllFacts] = useState([]);
+  const [allFactsOfOwnedCategories, setAllFactsOfOwnedCategories] = useState([]);
+  const [allAccessibleFacts, setAllAccessibleFacts] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
+  const [allUsersOfOwnedCategories, setAllUsersOfOwnedCategories] = useState([]);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -116,7 +121,9 @@ function App() {
     checkForFirstRun();
 
     getAllCategories();
+    getAllUserAllowedCategories();
     getAllFacts();
+    getAllFactsOfAccess();
     getAllUsers();
     getCurrentLocation();
     
@@ -133,6 +140,16 @@ function App() {
       checkForSigninDay();
     }
   }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (currentUser != null) {
+      getAllUserAllowedCategories();
+      getAllFactsOfAccess();
+      getAllOwnedCategories();
+      getAllFactsOfOwnedCategories();
+      getAllUsersOfOwnedCategories();
+    }
+  }, [currentUser]);
 
   const setWithExpiry = async (key, value, expiryTime = null, expiryMult = null) => {
     const data = {
@@ -192,7 +209,7 @@ function App() {
         return; //resume normal flow
       }
     }
-    
+
     // If we haven't returned yet we're in a fail state. Inform the user of this
     setShowFailModal(true);
   }
@@ -339,8 +356,9 @@ function App() {
 
   const checkForUserOwnedCategories = async () => {
     let tempCategories = null;
+    let userID = await getWithExpiry('user');
 
-    await fetch(BACKEND_URL + "/get_all_owned_categories?id=" + getWithExpiry('user'), {
+    await fetch(BACKEND_URL + "/get_all_owned_categories?id=" + userID, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
@@ -372,8 +390,6 @@ function App() {
 
   const checkForExistingUser = useCallback(async () => {
     let userID = await getWithExpiry('user');
-
-    console.log(userID);
 
     if (userID != null) {
       // We already have a login session, fetch data based on that
@@ -577,10 +593,240 @@ function App() {
     setIsLoggedIn(false);
   }
 
+  const getAllFactsOfAccess = async () => {
+    let tempFacts = null;
+    let userID = await getWithExpiry('user');
+
+    if (currentUser != null) {
+      await fetch(BACKEND_URL + "/get_all_facts_of_access?id=" + userID, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
+            'Content-Type': 'application/json;charset=utf-8'
+          },
+          mode: 'cors'
+      }).then(response => {
+        if(!response.ok) {
+          console.error('Getting facts with cookie ID failed');
+          return null;
+        }
+
+        return response.json();
+      }).then(data => {
+        console.log(data);
+
+        if (data == null) {
+          return null;
+        }
+
+        tempFacts = data;
+      }).catch(error => {
+        console.error('Error: ', error);
+        return null;
+      });
+    } else {
+      await fetch(BACKEND_URL + "/get_all_public_facts", {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
+          'Content-Type': 'application/json;charset=utf-8'
+        },
+        mode: 'cors'
+      }).then(response => {
+        if(!response.ok) {
+          console.error('Getting public facts failed');
+          return null;
+        }
+
+        return response.json();
+      }).then(data => {
+
+        if (data == null) {
+          return null;
+        }
+
+        tempFacts = data;
+      }).catch(error => {
+        console.error('Error: ', error);
+        return null;
+      });
+    }
+
+    setAllAccessibleFacts(tempFacts);
+  }
+
+  const getAllFactsOfOwnedCategories = async () => {
+    let tempFacts = null;
+    let userID = await getWithExpiry('user');
+
+    await fetch(BACKEND_URL + "/get_all_facts_of_owned_categories?id=" + userID, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
+          'Content-Type': 'application/json;charset=utf-8'
+        },
+        mode: 'cors'
+    }).then(response => {
+      if(!response.ok) {
+        console.error('Getting user with cookie ID failed');
+        return null;
+      }
+
+      return response.json();
+    }).then(data => {
+
+      if (data == null) {
+        return null;
+      }
+
+      tempFacts = data;
+    }).catch(error => {
+      console.error('Error: ', error);
+      return null;
+    });
+
+    console.log(tempFacts);
+
+    setAllFactsOfOwnedCategories(tempFacts);
+  }
+
+  const getAllUsersOfOwnedCategories = async () => {
+    let tempUsers = null;
+    let userID = await getWithExpiry('user');
+
+    await fetch(BACKEND_URL + "/get_all_users_of_owned_categories?id=" + userID, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
+          'Content-Type': 'application/json;charset=utf-8'
+        },
+        mode: 'cors'
+    }).then(response => {
+      if(!response.ok) {
+        console.error('Getting user with cookie ID failed');
+        return null;
+      }
+
+      return response.json();
+    }).then(data => {
+
+      if (data == null) {
+        return null;
+      }
+
+      tempUsers = data;
+    }).catch(error => {
+      console.error('Error: ', error);
+      return null;
+    });
+
+    setAllUsersOfOwnedCategories(tempUsers);
+  }
+
+  const getAllOwnedCategories = async () => {
+    let tempCategories = null;
+    let userID = await getWithExpiry('user');
+
+    await fetch(BACKEND_URL + "/get_all_owned_categories?id=" + userID, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
+          'Content-Type': 'application/json;charset=utf-8'
+        },
+        mode: 'cors'
+    }).then(response => {
+      if(!response.ok) {
+        console.error('Getting user with cookie ID failed');
+        return null;
+      }
+
+      return response.json();
+    }).then(data => {
+
+      if (data == null) {
+        return null;
+      }
+
+      tempCategories = data;
+    }).catch(error => {
+      console.error('Error: ', error);
+      return null;
+    });
+
+    setAllOwnedCategories(tempCategories);
+  }
+
+  const getAllUserAllowedCategories = async () => {
+    let tempCategories = null;
+    let userID = await getWithExpiry('user');
+
+    if (currentUser != null) {
+      await fetch(BACKEND_URL + "/get_all_user_allowed_categories?id=" + userID, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
+            'Content-Type': 'application/json;charset=utf-8'
+          },
+          mode: 'cors'
+      }).then(response => {
+        if(!response.ok) {
+          console.error('Getting user with cookie ID failed');
+          return null;
+        }
+
+        return response.json();
+      }).then(data => {
+
+        if (data == null) {
+          return null;
+        }
+
+        tempCategories = data;
+      }).catch(error => {
+        console.error('Error: ', error);
+        return null;
+      });
+    } else {
+      await fetch(BACKEND_URL + "/get_all_public_categories", {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
+            'Content-Type': 'application/json;charset=utf-8'
+          },
+          mode: 'cors'
+      }).then(response => {
+        if(!response.ok) {
+          console.error('Getting user with cookie ID failed');
+          return null;
+        }
+
+        return response.json();
+      }).then(data => {
+        console.log(data);
+
+        if (data == null) {
+          return null;
+        }
+
+        tempCategories = data;
+      }).catch(error => {
+        console.error('Error: ', error);
+        return null;
+      });
+    }
+
+    setAllAccessibleCategories(tempCategories);
+  }
+
   const researchValue = useMemo(() => ({
-    allCategories, 
+    allCategories,
+    allAccessibleCategories,
+    allOwnedCategories, 
     allFacts,
+    allAccessibleFacts,
+    allFactsOfOwnedCategories,
     allUsers,
+    allUsersOfOwnedCategories,
     getCategoryTitleFromID,
     getAllCategories, 
     getAllFacts,
@@ -598,11 +844,21 @@ function App() {
     setLoginState,
     setWithExpiry,
     getWithExpiry,
-    removeWithExpiry
+    removeWithExpiry,
+    getAllUsersOfOwnedCategories,
+    getAllFactsOfOwnedCategories,
+    getAllFactsOfAccess,
+    getAllUserAllowedCategories,
+    getAllOwnedCategories
   }), [
     allCategories, 
+    allAccessibleCategories,
+    allOwnedCategories, 
     allFacts,
+    allAccessibleFacts,
+    allFactsOfOwnedCategories,
     allUsers,
+    allUsersOfOwnedCategories,
     getCategoryTitleFromID,
     getAllCategories, 
     getAllFacts,
@@ -610,7 +866,12 @@ function App() {
     getCurrentLocation, 
     currentUser, 
     isLoggedIn, 
-    checkForExistingUser
+    checkForExistingUser,
+    getAllUsersOfOwnedCategories,
+    getAllFactsOfOwnedCategories,
+    getAllFactsOfAccess,
+    getAllUserAllowedCategories,
+    getAllOwnedCategories
   ]);
 
   return (
