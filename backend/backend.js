@@ -501,7 +501,7 @@ app.get('/get_all_user_allowed_categories', async (req, res) => {
             FROM categories c
             LEFT JOIN users u ON u.id = ?
             WHERE (c.private IS NULL OR c.private = 0)
-                OR JSON_CONTAINS(u.private_access_array, JSON_QUOTE(c.id))
+                OR JSON_CONTAINS(u.private_access_array, JSON_QUOTE(HEX(c.id)))
         `, [userID]);
 
         return res.status(200).json(categories);
