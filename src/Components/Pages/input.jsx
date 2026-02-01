@@ -138,6 +138,10 @@ const InputPage = ({
     }
 
     const removeExpiredAdditions = (items) => {
+        if (!items || !Array.isArray(items)) {
+            return [];
+        }
+
         const now = Date.now();
         return items.filter(item => {
             const expiryTime = item.timestamp + (30 * 60 * 1000);

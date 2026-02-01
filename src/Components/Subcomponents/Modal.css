@@ -216,7 +216,7 @@
 
 /* Scrollable description for content longer than ~200 characters */
 .popup-description.long-content {
-    max-height: 120px;
+    max-height: 80%;
     overflow-y: auto;
     border-top: 1px solid rgba(76, 38, 131, 0.1);
     padding-top: 16px;
