@@ -643,6 +643,21 @@ app.get('/get_all_users_of_owned_categories', async (req, res) => {
     }
 });
 
+app.get('/get_all_facts_of_access', async (req, res) => {
+    let inID = req.query.id;
+    if (!inID) {
+        return res.status(400).json('Must submit an ID for valid access');
+    }
+    
+    try {
+        const rows = await promiseQuery("SELECT DISTINCT f.* FROM facts f INNER JOIN categories c ON f.category = c.id WHERE (c.private = FALSE OR c.private IS NULL) OR EXISTS (SELECT 1 FROM users u WHERE u.id = ? AND JSON_CONTAINS(u.private_access_array, CAST(c.id AS JSON), '$'))", [inID]);
+        return res.status(200).json(rows);
+    } catch (err) {
+        console.log("Error retrieving facts: %s", err);
+        return res.status(400).json('Error retrieving facts, see backend console for details');
+    }
+});
+
 //#endregion
 
 //#region user-management
