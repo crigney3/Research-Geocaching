@@ -33,9 +33,9 @@ const containerStyle = {
 const CoreMap = ({
 
 }) => {
-    const allFacts = useContext(ResearchContext).allFacts;
+    const allFacts = useContext(ResearchContext).allAccessibleFacts;
     const [factsToShow, setFactsToShow] = useState([]);
-    const allCategories = useContext(ResearchContext).allCategories;
+    const allCategories = useContext(ResearchContext).allAccessibleCategories;
     const [currentCategoryFacts, setCurrentCategoryFacts] = useState([]);
     const [currentCategory, setCurrentCategory] = useState(null);
     const [categoryOptions, setCategoryOptions] = useState([]);
@@ -280,6 +280,7 @@ const MapSubComponent = memo(({rangeRef, currentLocRef, children, ...props}) => 
   const hasInitializedRef = useRef(false);
 
   const currentUser = useContext(ResearchContext).currentUser;
+  const hasLocationPermissions = useContext(ResearchContext).hasLocationPermissions;
 
   const calculateCircleRadius = () => {
     if (!map) return 0;
@@ -330,6 +331,10 @@ const MapSubComponent = memo(({rangeRef, currentLocRef, children, ...props}) => 
   }, [userLoc]);
 
   useEffect(() => {
+    if (!hasLocationPermissions) {
+      return;
+    }
+
     // Watch our position so it updates constantly
     const callbackID = Geolocation.watchPosition({
         enableHighAccuracy: true,
@@ -339,8 +344,8 @@ const MapSubComponent = memo(({rangeRef, currentLocRef, children, ...props}) => 
       setUserLoc(coords);
     });
 
-    return () => Geolocation.clearWatch(callbackID);
-  }, []);
+    return () => Geolocation.clearWatch({id: callbackID});
+  }, [hasLocationPermissions]);
 
   useEffect(() => {
     if (!map) return;

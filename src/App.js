@@ -90,6 +90,7 @@ function App() {
   const [allUsers, setAllUsers] = useState([]);
   const [allUsersOfOwnedCategories, setAllUsersOfOwnedCategories] = useState([]);
   const [currentLocation, setCurrentLocation] = useState(null);
+  const [hasLocationPermissions, setHasLocationPermissions] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -200,12 +201,14 @@ function App() {
     const status = await Geolocation.checkPermissions();
 
     if (status.location === 'granted') {
+      setHasLocationPermissions(true);
       return; // Clear to continue
     } else if (status.location === 'denied' || status.location === 'prompt') {
       // Try prompting for permissions, any status other than granted
       // Is a fail state for the app
       const status2 = await Geolocation.requestPermissions({ permissions: ['location']});
       if (status2.location === 'granted') {
+        setHasLocationPermissions(true);
         return; //resume normal flow
       }
     }
@@ -598,6 +601,20 @@ function App() {
     let userID = await getWithExpiry('user');
 
     if (currentUser != null) {
+      if (currentUser.permLevel >= 2) {
+        await fetch(BACKEND_URL + "/get_all_facts", {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
+              'Content-Type': 'application/json;charset=utf-8'
+            },
+            mode: 'cors'
+        }).then(response => response.json())
+          .then(data => {
+            tempFacts = data;
+            setAllFacts(data);
+        });
+      }
       await fetch(BACKEND_URL + "/get_all_facts_of_access?id=" + userID, {
           method: 'GET',
           headers: {
@@ -761,6 +778,20 @@ function App() {
     let userID = await getWithExpiry('user');
 
     if (currentUser != null) {
+      if (currentUser.permLevel >= 2) {
+        await fetch(BACKEND_URL + "/get_all_categories", {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
+              'Content-Type': 'application/json;charset=utf-8'
+            },
+            mode: 'cors'
+        }).then(response => response.json())
+          .then(data => {
+            tempCategories = data;
+            setAllCategories(data);
+        });
+      }
       await fetch(BACKEND_URL + "/get_all_user_allowed_categories?id=" + userID, {
           method: 'GET',
           headers: {
@@ -849,7 +880,8 @@ function App() {
     getAllFactsOfOwnedCategories,
     getAllFactsOfAccess,
     getAllUserAllowedCategories,
-    getAllOwnedCategories
+    getAllOwnedCategories,
+    hasLocationPermissions
   }), [
     allCategories, 
     allAccessibleCategories,
@@ -871,7 +903,8 @@ function App() {
     getAllFactsOfOwnedCategories,
     getAllFactsOfAccess,
     getAllUserAllowedCategories,
-    getAllOwnedCategories
+    getAllOwnedCategories,
+    hasLocationPermissions
   ]);
 
   return (
