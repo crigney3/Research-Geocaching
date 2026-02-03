@@ -500,9 +500,9 @@ app.get('/get_all_user_allowed_categories', async (req, res) => {
             SELECT c.*, HEX(c.id) AS id 
             FROM categories c
             LEFT JOIN users u ON u.id = ?
-            WHERE (c.private IS NULL OR c.private = 0)
+            WHERE (c.private IS NULL OR c.private = 0) OR c.owner = ?
                 OR JSON_CONTAINS(u.private_access_array, JSON_QUOTE(HEX(c.id)))
-        `, [userID]);
+        `, [userID, userID]);
 
         return res.status(200).json(categories);
     } catch (err) {
@@ -650,7 +650,7 @@ app.get('/get_all_facts_of_access', async (req, res) => {
     }
     
     try {
-        const rows = await promiseQuery("SELECT DISTINCT f.* FROM facts f INNER JOIN categories c ON f.category = c.id WHERE (c.private = FALSE OR c.private IS NULL) OR EXISTS (SELECT 1 FROM users u WHERE u.id = ? AND JSON_CONTAINS(u.private_access_array, CAST(c.id AS JSON), '$'))", [inID]);
+        const rows = await promiseQuery("SELECT DISTINCT f.* FROM facts f INNER JOIN categories c ON f.category = c.id WHERE (c.private = FALSE OR c.private IS NULL) OR c.owner = ? OR EXISTS (SELECT 1 FROM users u WHERE u.id = ? AND JSON_CONTAINS(u.private_access_array, CAST(c.id AS JSON), '$'))", [inID, inID]);
         return res.status(200).json(rows);
     } catch (err) {
         console.log("Error retrieving facts: %s", err);
