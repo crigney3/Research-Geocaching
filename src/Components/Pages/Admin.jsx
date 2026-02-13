@@ -224,8 +224,8 @@ const AdminPage = ({
         setNewCatName(event.target.value);
     }
 
-    const handleCategoryVisibilityChange = () => {
-
+    const handleCategoryVisibilityChange = (e) => {
+        setPublicCategory(e.target.checked);
     }
 
     const handleRemoveCat = async (event) => {
@@ -548,6 +548,12 @@ const AdminPage = ({
 
                 <div className="input-section">
                     <h2 className="section-title">Add New Category</h2>
+                    <div className="category-input-container">
+                    {(currentUser != null) && (currentUser.permLevel >= 2) && <input 
+                        type="checkbox"
+                        className="category-checkbox"
+                        checked={publicCategory}
+                        onChange={handleCategoryVisibilityChange}/>}
                     <input 
                         type="text" 
                         className="category-input"
@@ -555,11 +561,7 @@ const AdminPage = ({
                         value={newCatName}
                         onChange={handleNewCatNameChange}
                     />
-                    {(currentUser != null) && (currentUser.permLevel >= 2) && <input 
-                        type="checkbox"
-                        className="category-checkbox"
-                        checked={publicCategory}
-                        onChange={handleCategoryVisibilityChange}/>}
+                    </div>
                     <button 
                         className="add-btn" 
                         onClick={handleNewCategoryAdd}

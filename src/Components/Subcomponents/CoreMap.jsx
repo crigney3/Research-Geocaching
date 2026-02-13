@@ -4,6 +4,7 @@ import { useState, useCallback, useContext, useEffect, useRef, memo, useMemo, Ch
 import MapMarker from './MapMarker';
 import KeyboardDoubleArrowUpIcon from '@mui/icons-material/KeyboardDoubleArrowUp';
 import KeyboardDoubleArrowDownIcon from '@mui/icons-material/KeyboardDoubleArrowDown';
+import LockIcon from '@mui/icons-material/Lock';
 import { LocationContext, ResearchContext } from '../ResearchContext';
 import NavigationIcon from '@mui/icons-material/Navigation';
 import AddLocationAltIcon from '@mui/icons-material/AddLocationAlt';
@@ -15,11 +16,6 @@ import Select from "react-select";
 import { Preferences } from '@capacitor/preferences';
 import './Map.css';
 
-const center = {
-    lat: 37.97336898429983,
-    lng: -87.53240843750176
-}
-
 const centerSeattle = {
   lat: 47.62045709976152,
   lng: -122.34932598909077
@@ -29,6 +25,24 @@ const containerStyle = {
   width: '400px',
   height: '400px',
 }
+
+const calculateDistance = (lat1, lng1, lat2, lng2) => {
+  const R = 6371e3; // Earth's radius in meters
+  const φ1 = lat1 * Math.PI / 180;
+  const φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180;
+  const Δλ = (lng2 - lng1) * Math.PI / 180;
+
+  const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ/2) * Math.sin(Δλ/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+  const distanceInMeters = R * c;
+  const distanceInFeet = distanceInMeters * 3.28084;
+  
+  return distanceInFeet;
+};
 
 const CoreMap = ({
 
@@ -44,6 +58,7 @@ const CoreMap = ({
     const [addWindowOpen, setAddWindowOpen] = useState(false);
     const [inputMode, setInputMode] = useState(false);
     const [showLoginRequirement, setShowLoginRequirement] = useState(false);
+    const [showRangeError, setShowRangeError] = useState(false);
     const [showLogin, setShowLogin] = useState(false);
 
     const [selectedCoords, setSelectedCoords] = useState({lat: 0, lng: 0});
@@ -147,7 +162,16 @@ const CoreMap = ({
 
     const handleSetSelectedCoords = useCallback((e) => {
       if (inputMode) {
-        setSelectedCoords({lat: e.detail.latLng.lat, lng: e.detail.latLng.lng});
+        console.log(currentLocRef.current);
+        console.log(e.detail.latLng);
+        if (calculateDistance(currentLocRef.current.lat, currentLocRef.current.lng, e.detail.latLng.lat, e.detail.latLng.lng) <= rangeRef.current) {
+          setSelectedCoords({lat: e.detail.latLng.lat, lng: e.detail.latLng.lng});
+        } else {
+          // That's out of range, show an error modal
+          // This check is extremely jank on desktop due to the low precision of desktop GPS
+          setShowRangeError(true);
+        }
+        
       }
     }, [inputMode]);
 
@@ -180,7 +204,7 @@ const CoreMap = ({
         let tempCat = [];
 
         allCategories.forEach((cat) => {
-            tempCat.push({value: cat.id, label:cat.title});
+            tempCat.push({value: cat.id, label:cat.title, private: cat.private});
         });
 
         setCategoryOptions(tempCat);
@@ -191,19 +215,57 @@ const CoreMap = ({
       setCategoryWindowOpen(false);
     }
 
-    const CategorySelect = ({ options, onChange }) => (
+    const CategorySelect = ({ options, onChange }) => {
+      
+      const customCategoryStyles = {
+        option: (provided, state) => {
+          const bgColor = state.data.private 
+          ? 'rgba(76, 38, 131, 0.5)' 
+          : 'rgba(246, 139, 31, 0.5)';
+
+          return {
+          ...provided,
+          backgroundColor: '#FFFFFF',
+          color: '#000000',
+          padding: '12px 16px',
+          cursor: 'pointer',
+        }},
+        singleValue: (provided, state) => ({
+          ...provided,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          width: '100%',
+        })
+      };
+
+      const normalizedOptions = options.map(option => ({
+        ...option,
+        private: option.private ?? false
+      }));
+
+      const formatOptionLabel = (option) => (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', gap: "8px" }}>
+          <span>{option.label}</span>
+          {option.private && <LockIcon style={{ fontSize: '16px', opacity: 0.7 }} />}
+        </div>
+      );
+
+      return (
       <div className="react-select-container">
           <Select 
-              options={options}
+              options={normalizedOptions}
               onChange={onChange}
               className="react-select-category-dropdown"
               classNamePrefix="react-select"
               maxMenuHeight={250}
               isSearchable={false}
-              value={{label: (currentCategory) && currentCategory.label}}
+              styles={customCategoryStyles}
+              value={currentCategory && { label: currentCategory.label, private: currentCategory.private ?? false}}
+              formatOptionLabel={formatOptionLabel}
           />
       </div>
-    );
+    )};
 
     const toggleCategoryWindow = () => {
       setCategoryWindowOpen(!categoryWindowOpen);
@@ -256,6 +318,8 @@ const CoreMap = ({
           <LoginModal show={showLogin} onClose={toggleLoginPopup} loginState={loginState} setLoginState={setLoginState}/>
 
           <Modal show={showLoginRequirement} onClose={toggleLoginRequirement} title={"Not Logged In"} message={"You need to log in first!"} warningLevel={1} action={toggleLoginPopup} actionClass={'success'} actionText={"Login"}/>
+
+          <Modal show={showRangeError} onClose={() => {setShowRangeError(false)}} title={"Out of range!"} message={"Try picking a spot within your range."} warningLevel={1}/>
 
           <div style={{position: 'relative'}}>
             <MapSubComponent rangeRef={rangeRef} currentLocRef={currentLocRef} {...memoMapProps}>
@@ -331,6 +395,7 @@ const MapSubComponent = memo(({rangeRef, currentLocRef, children, ...props}) => 
   }, [userLoc]);
 
   useEffect(() => {
+    console.log(hasLocationPermissions);
     if (!hasLocationPermissions) {
       return;
     }

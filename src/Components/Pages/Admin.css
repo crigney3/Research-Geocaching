@@ -161,15 +161,30 @@
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+.category-input-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.category-checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #4C2683;
+    flex-shrink: 0;
+}
+
 .category-input {
-    width: calc(100% - 34px);
+    width: 100%;
     padding: 15px;
     border: 2px solid #91D6AC;
     border-radius: 15px;
     background: white;
     font-size: 1rem;
     color: #4C2683;
-    margin-bottom: 15px;
+    margin-bottom: 0;
     outline: none;
     transition: all 0.3s ease;
 }

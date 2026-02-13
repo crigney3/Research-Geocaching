@@ -199,21 +199,43 @@ function App() {
 
   const checkPermissions = async () => {
     const status = await Geolocation.checkPermissions();
-
+    
     if (status.location === 'granted') {
       setHasLocationPermissions(true);
-      return; // Clear to continue
-    } else if (status.location === 'denied' || status.location === 'prompt') {
-      // Try prompting for permissions, any status other than granted
-      // Is a fail state for the app
-      const status2 = await Geolocation.requestPermissions({ permissions: ['location']});
-      if (status2.location === 'granted') {
+      return;
+    }
+    
+    // Request permissions - this will show the native dialog
+    const requestResult = await Geolocation.requestPermissions({ 
+      permissions: ['location'] 
+    });
+    
+    // Check the result of the request
+    if (requestResult.location === 'granted') {
+      setHasLocationPermissions(true);
+      return;
+    }
+    
+    // If still 'prompt', try actually getting position to verify
+    // This is the key: temporary perms will allow getCurrentPosition to succeed
+    if (requestResult.location === 'prompt') {
+      try {
+        await Geolocation.getCurrentPosition({
+          timeout: 5000,
+          enableHighAccuracy: false
+        });
+        // If we got here, we have functional location access (likely temporary)
         setHasLocationPermissions(true);
-        return; //resume normal flow
+        return;
+      } catch (error) {
+        console.log('Position request failed:', error);
+        // Actually denied or user dismissed prompt
+        setShowFailModal(true);
+        return;
       }
     }
-
-    // If we haven't returned yet we're in a fail state. Inform the user of this
+  
+    // Explicit denial
     setShowFailModal(true);
   }
 
@@ -336,22 +358,22 @@ function App() {
 
   const checkForSigninDay = async () => {
     const currentDate = new Date();
+    const currentDateString = currentDate.toISOString().split('T')[0];
     const { value } = await Preferences.get({key: 'lastLoginDay'});
 
     if (value === null) {
       // App is on first run, create a key with today
-      await Preferences.set({key: 'lastLoginDay', value: currentDate.getUTCDate()});
+      await Preferences.set({key: 'lastLoginDay', value: currentDateString});
       
       checkForUserLevelup('daysUsed', 1);
+      return;
     }
 
     // If it's a different day than the stored date, update the date and achievements
     // This only runs if checkForExistingUser finds a user so it should be fine
     // It also runs on new login
-    if (value != new Date().getUTCDate()) {
-      await Preferences.set({key: 'lastLoginDay', value: currentDate.getUTCDate()});
-
-      console.log("new day");
+    if (value !== currentDateString) {
+      await Preferences.set({key: 'lastLoginDay', value: currentDateString});
 
       checkForUserLevelup('daysUsed', 1);
     }
@@ -376,7 +398,6 @@ function App() {
 
       return response.json();
     }).then(data => {
-      console.log(data);
 
       if (data == null) {
         return null;
@@ -486,76 +507,72 @@ function App() {
     }
   }, []);
 
-  const checkForUserLevelup = (statString, valueToAdd) => {
+  const checkForUserLevelup = async (statString, valueToAdd) => {
     // Run the fetch to achievements here, then if we did level up update currentUser data
     // Also update completions, based on the full list of acheivements and statString
     try {
-        let JSONString = JSON.stringify({id: currentUser.id, stat: statString, statValue: valueToAdd});
+      let JSONString = JSON.stringify({id: currentUser.id, stat: statString, statValue: valueToAdd});
 
-        achievements.forEach(achievement => {
-          if (achievement.statBase == statString && !achievement.completed) {
-            if (currentUser[statString] + valueToAdd >= achievement.target) {
-              let achievementJSON = JSON.stringify({id: currentUser.id, stat: achievement.title});
-              // We completed an achievement - fire a notification if the achievement
-              // data updates successfully
-              fetch(BACKEND_URL + "/set_achievement_complete", {
-                  method: 'POST',
-                  headers: {
-                    'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
-                    'Content-Type': 'application/json;charset=utf-8'
-                  },
-                  mode: 'cors',
-                  body: achievementJSON
-              }).then(response => {
-                  if (response.ok) {
-                      // Achievement was updated, fire a notification
-                      fireNotifications(currentUser, false, true, achievement.title);
-                  } else {
-                      console.error("Something went wrong updating achievements! " + response)
-                  }
-                  return response.json();
-              });
-            }
+      // First, update the stat
+      const response = await fetch(BACKEND_URL + "/add_to_achievement", {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
+            'Content-Type': 'application/json;charset=utf-8'
+          },
+          mode: 'cors',
+          body: JSONString
+      });
+
+      const data = await response.json();
+      
+      if (data.error) {
+          console.error("Achievements failed to update - invalid data!");
+          return;
+      }
+
+      // check achievements AFTER the stat is updated
+      const newStatValue = currentUser[statString] + valueToAdd;
+      
+      achievements.forEach(achievement => {
+        if (achievement.statBase === statString && !achievement.completed) {
+          if (newStatValue >= achievement.target) {
+            let achievementJSON = JSON.stringify({id: currentUser.id, stat: achievement.title});
+            
+            fetch(BACKEND_URL + "/set_achievement_complete", {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
+                  'Content-Type': 'application/json;charset=utf-8'
+                },
+                mode: 'cors',
+                body: achievementJSON
+            }).then(response => {
+                if (response.ok) {
+                    fireNotifications(currentUser, false, true, achievement.title);
+                } else {
+                    console.error("Something went wrong updating achievements! " + response);
+                }
+                return response.json();
+            });
           }
-        });
+        }
+      });
 
-        fetch(BACKEND_URL + "/add_to_achievement", {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
-              'Content-Type': 'application/json;charset=utf-8'
-            },
-            mode: 'cors',
-            body: JSONString
-        }).then(response => {
-            if (response.ok) {
-                // We don't generally inform the user of achievement tracking
-            } else {
-                console.error("Something went wrong updating achievements! " + response)
-            }
-            return response.json();
-        }).then(data => {
-          console.log(data);
-          if (data.error) {
-            console.error("Achievements failed to update - invalid data!");
-          }
-          if (data.leveled) {
-            let tempUser = {};
+      // Handle level up notification
+      if (data.leveled) {
+          let tempUser = {
+              level: data.user.level,
+              xp: data.user.xp,
+              daysUsed: data.user.daysUsed,
+              factsPlaced: data.user.factsPlaced,
+              factsViewed: data.user.factsViewed,
+              range: data.user.userRange
+          };
 
-            tempUser.level = data.user.level;
-            tempUser.xp = data.user.xp;
-            tempUser.daysUsed = data.user.daysUsed;
-            tempUser.factsPlaced = data.user.factsPlaced;
-            tempUser.factsViewed = data.user.factsViewed;
-            tempUser.range = data.user.userRange;
-
-            // Before we overwrite currentUser, check if we should fire
-            // any achievement notifications
-            fireNotifications(tempUser, true);
-
-            setCurrentUser(tempUser);
-          }
-        });
+          fireNotifications(tempUser, true);
+          setCurrentUser(tempUser);
+      }
     } catch(err) {
       console.error(err);
     }
@@ -630,7 +647,6 @@ function App() {
 
         return response.json();
       }).then(data => {
-        console.log(data);
 
         if (data == null) {
           return null;
@@ -701,8 +717,6 @@ function App() {
       console.error('Error: ', error);
       return null;
     });
-
-    console.log(tempFacts);
 
     setAllFactsOfOwnedCategories(tempFacts);
   }
@@ -833,8 +847,6 @@ function App() {
 
         return response.json();
       }).then(data => {
-        console.log(data);
-
         if (data == null) {
           return null;
         }
@@ -916,7 +928,7 @@ function App() {
 
           <TutorialModal show={addTutorialMode} onClose={() => setAddTutorialMode(false)} pageCount={1} titles={addTutorialTitles} descriptions={addTutorialMessages} Icons={addTutorialIcons}/>
 
-          <Modal show={showFailModal} onClose={() => setShowFailModal(false)} title={"GPS Error!"} message={"This app requires location permissions. Without them, you're stuck at the Space Needle forever."} warningLevel={0}/>
+          <Modal show={showFailModal} onClose={() => setShowFailModal(false)} title={"GPS Error!"} message={"This app requires location permissions. Without them, you're stuck at the Space Needle forever."} warningLevel={0} action={checkPermissions}/>
 
           <Navbar/>
           {(showNotifications) && notifications.map((notif, index) => (
