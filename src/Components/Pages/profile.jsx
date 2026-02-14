@@ -4,6 +4,7 @@ import { ResearchContext } from '../ResearchContext';
 import Achievement from '../Subcomponents/Achievement';
 import { BACKEND_URL, CLIENT_AUTH_SECRET } from '../../secrets';
 import { InputModal } from '../Subcomponents/Modal';
+import EditIcon from '@mui/icons-material/Edit';
 import achievements from '../../AchievementData';
 
 function sanitizeColumnName(title) {
@@ -32,7 +33,9 @@ const ProfilePage = ({
   const [isUserLoaded, setIsUserLoaded] = useState(false);
 
   useEffect(() => {
+    console.log(currentUser);
     if (currentUser != null && currentUser.achievementKeys != null) {
+      console.log(currentUser);
       setIsUserLoaded(true);
       convertAchievementData();
     }
@@ -109,6 +112,7 @@ const ProfilePage = ({
       <div className="profile-header">
         <h1 className="profile-username" onClick={() => setShowUsernameModal(true)}>
           {currentUser.username}
+          <EditIcon/>
         </h1>
         
         <div>

@@ -53,11 +53,11 @@ const handleLoginGoogle = async () => {
         }
 
         return response.json();
-    }).then(data => {
+    }).then(async (data) => {
         const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + 1); 
+        await expiryDate.setDate(expiryDate.getDate() + 1); 
         setLoginState(1);
-        setPreference('user', data.user[0].id, 3, 86400000);
+        await setPreference('user', data.user[0].id, 3, 86400000);
         loginAsGoogleUser();
     }).catch(error => {
         console.error('Error: ', error);

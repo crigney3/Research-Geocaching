@@ -189,6 +189,19 @@
     transition: all 0.3s ease;
 }
 
+.category-input-email {
+    width: 90%;
+    padding: 15px;
+    border: 2px solid var(--orange-main);
+    border-radius: 15px;
+    background: white;
+    font-size: 1rem;
+    color: #4C2683;
+    margin-bottom: 0;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
 .category-input:focus {
     border-color: #F2C75C;
     box-shadow: 0 0 0 3px rgba(242, 199, 92, 0.2);

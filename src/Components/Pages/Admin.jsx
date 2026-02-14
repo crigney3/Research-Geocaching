@@ -590,7 +590,7 @@ const AdminPage = ({
                     <div className="category-user-add">
                         <input 
                             type="text" 
-                            className="category-input"
+                            className="category-input-email"
                             placeholder="Enter user's email..."
                             value={newUserEmail}
                             onChange={handleUserInputChange}
@@ -642,7 +642,7 @@ const AdminPage = ({
                     ))}
                 </div>}
 
-                {(currentUser != null) && (currentUser != null) && (currentUser.ownedCategories != null) &&
+                {(currentUser != null) && (currentUser.ownedCategories != null) &&
                 <div className="user-section">
                     <h2 className="section-title">User Management</h2>
                     {allUsersOfOwnedCategories.map((user) => (
@@ -660,12 +660,12 @@ const AdminPage = ({
                     ))}
                 </div>}
 
-                {(currentUser != null) && (currentUser != null) && (currentUser.permLevel >= 2) &&
+                {(currentUser != null) && (currentUser.permLevel >= 2) &&
                 <div className="user-section">
                     <h2 className="section-title">User Management</h2>
                     {allUsers.map((user) => (
                         <div className="fact-card" key={user.id}>
-                            {(currentUser != null) && ((currentUser.permissions > user.permLevel) || (currentUser.id === user.id)) && <button 
+                            {(currentUser != null) && ((currentUser.permLevel > user.permLevel) || (currentUser.id === user.id)) && <button 
                                 className="fact-delete-btn"
                                 onClick={() => handleDeleteUser(user)}
                                 title="Delete User"
