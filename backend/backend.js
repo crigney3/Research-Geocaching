@@ -806,6 +806,26 @@ app.post('/change_permissions', authenticateToken, async (req, res) => {
     );
 });
 
+app.post('/change_last_login_day', authenticateToken, async (req, res) => {
+    let inID = req.body.id;
+    let newDay = req.body.lastLoginDay;
+
+    if (!inID) {
+        return res.status(400).json('Must submit a user ID for valid access');
+    }
+
+    await pool.query("UPDATE users SET lastLoginDay=? WHERE id=?", [newDay, inID],
+        async function(err, row) {
+            if (err) {
+                console.log("Error getting user: %s", err);
+                return res.status(400).json('Error getting user, see backend console for details');
+            } else {
+                return res.status(200).json({msg: 'lastLoginDay updated', user: row});
+            }
+        }
+    );
+});
+
 app.post('/update_achievement', authenticateToken, async (req, res) => {
     let inID = req.body.id;
     let inStat = req.body.stat;
