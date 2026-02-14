@@ -721,11 +721,12 @@ app.post('/google_login', authenticateToken, async (req, res) => {
             }
             
             const currentDate = new Date();
+            const currentDateString = currentDate.toISOString().split('T')[0];
             
             // Insert new user
             await promiseQuery(
                 "INSERT INTO users (id, username, permissions, dateJoined, lastLoginDay, email) VALUES(?,?,?,?,?,?)", 
-                [client_id, inUsername, 0, currentDate, currentDate, inEmail]
+                [client_id, inUsername, 0, currentDateString, currentDateString, inEmail]
             );
             
             // Fetch the newly created user
