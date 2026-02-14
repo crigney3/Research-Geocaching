@@ -126,7 +126,6 @@ function App() {
     getAllFacts();
     getAllFactsOfAccess();
     getAllUsers();
-    getCurrentLocation();
     
     checkForExistingUser();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -363,6 +362,8 @@ function App() {
 
     if (value === null) {
       // App is on first run, create a key with today
+      // We don't need to update the lastLoginDay on the db
+      // Because it's handled on user creation
       await Preferences.set({key: 'lastLoginDay', value: currentDateString});
       
       checkForUserLevelup('daysUsed', 1);
@@ -375,8 +376,25 @@ function App() {
     if (value !== currentDateString) {
       await Preferences.set({key: 'lastLoginDay', value: currentDateString});
 
+      updateLoginDay(currentDateString);
       checkForUserLevelup('daysUsed', 1);
     }
+  }
+
+  const updateLoginDay = async (dateString) => {
+    let JSONString = JSON.stringify({id: currentUser.id, lastLoginDay: dateString});
+
+    const response = await fetch(BACKEND_URL + "/change_last_login_day", {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
+        'Content-Type': 'application/json;charset=utf-8'
+      },
+      mode: 'cors',
+      body: JSONString
+    }).catch(error => {
+      console.error(error);
+    });
   }
 
   const checkForUserOwnedCategories = async () => {
