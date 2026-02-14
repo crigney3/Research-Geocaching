@@ -162,9 +162,7 @@ const CoreMap = ({
 
     const handleSetSelectedCoords = useCallback((e) => {
       if (inputMode) {
-        console.log(currentLocRef.current);
-        console.log(e.detail.latLng);
-        if (calculateDistance(currentLocRef.current.lat, currentLocRef.current.lng, e.detail.latLng.lat, e.detail.latLng.lng) <= rangeRef.current) {
+        if (calculateDistance(currentLocRef.current.lat, currentLocRef.current.lng, e.detail.latLng.lat, e.detail.latLng.lng) <= currentUser.range) {
           setSelectedCoords({lat: e.detail.latLng.lat, lng: e.detail.latLng.lng});
         } else {
           // That's out of range, show an error modal

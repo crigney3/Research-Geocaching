@@ -368,16 +368,14 @@ function App() {
       
       checkForUserLevelup('daysUsed', 1);
       return;
-    }
+    } else {
+      // If it's a different day than the stored date, update the date and achievements
+      if (value !== currentDateString) {
+        await Preferences.set({key: 'lastLoginDay', value: currentDateString});
 
-    // If it's a different day than the stored date, update the date and achievements
-    // This only runs if checkForExistingUser finds a user so it should be fine
-    // It also runs on new login
-    if (value !== currentDateString) {
-      await Preferences.set({key: 'lastLoginDay', value: currentDateString});
-
-      updateLoginDay(currentDateString);
-      checkForUserLevelup('daysUsed', 1);
+        updateLoginDay(currentDateString);
+        checkForUserLevelup('daysUsed', 1);
+      }
     }
   }
 
@@ -946,16 +944,13 @@ function App() {
 
           <TutorialModal show={addTutorialMode} onClose={() => setAddTutorialMode(false)} pageCount={1} titles={addTutorialTitles} descriptions={addTutorialMessages} Icons={addTutorialIcons}/>
 
-          <Modal show={showFailModal} onClose={() => setShowFailModal(false)} title={"GPS Error!"} message={"This app requires location permissions. Without them, you're stuck at the Space Needle forever."} warningLevel={0} action={checkPermissions}/>
+          <Modal show={showFailModal} onClose={() => setShowFailModal(false)} title={"GPS Error!"} message={"This app requires location permissions. Without them, you're stuck at the Space Needle forever."} warningLevel={0} action={checkPermissions} actionText={"Try Again"}/>
 
           <Navbar/>
           {(showNotifications) && notifications.map((notif, index) => (
             <Notification message={notif.message} isVisible={showNotifications} onHide={removeNotification} index={index} key={notif.id} />
           ))}
           <Routes>
-            {/* <Route path="/" element={<HomePage/>}>
-
-            </Route> */}
             <Route path='/' element={<MapPage/>}>
 
             </Route>
