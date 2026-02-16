@@ -6,7 +6,7 @@
     background-attachment: fixed;
     position: relative;
     padding: 20px;
-    padding-top: 40px;
+    padding-top: 8vh;
     font-family: 'Arial', sans-serif;
 }
 
@@ -94,8 +94,23 @@
     box-shadow: 0 2px 8px rgba(224, 78, 57, 0.3);
 }
 
-.fact-delete-btn:active {
-    transform: scale(0.95);
+.fact-read-more-btn {
+    position: absolute;
+    top: 15px;
+    right: 55px;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, var(--purple-main, #4C2683) 0%, var(--blue-accent, #34657F) 100%);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(76, 38, 131, 0.3);
 }
 
 .fact-title {
@@ -103,6 +118,9 @@
     font-size: 1.1rem;
     font-weight: bold;
     margin-bottom: 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .fact-description {
@@ -110,6 +128,13 @@
     font-size: 0.9rem;
     margin-bottom: 8px;
     line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    white-space: normal;
 }
 
 .fact-details {
@@ -136,15 +161,43 @@
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+.category-input-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.category-checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #4C2683;
+    flex-shrink: 0;
+}
+
 .category-input {
-    width: calc(100% - 34px);
+    width: 100%;
     padding: 15px;
     border: 2px solid #91D6AC;
     border-radius: 15px;
     background: white;
     font-size: 1rem;
     color: #4C2683;
-    margin-bottom: 15px;
+    margin-bottom: 0;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.category-input-email {
+    width: 90%;
+    padding: 15px;
+    border: 2px solid var(--orange-main);
+    border-radius: 15px;
+    background: white;
+    font-size: 1rem;
+    color: #4C2683;
+    margin-bottom: 0;
     outline: none;
     transition: all 0.3s ease;
 }
@@ -270,6 +323,7 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+    padding-bottom: 15px;
 }
 
 .category-btn {
@@ -296,6 +350,89 @@
 .category-btn:active {
     transform: translateY(2px);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.category-user-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.category-user-btn {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.remove-user-btn {
+    background: linear-gradient(135deg, #E04E39, #802416);
+    color: white;
+}
+
+.add-user-btn {
+    background: linear-gradient(135deg, #91D6AC, #5FB87E);
+    color: white;
+}
+
+.user-section {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.user-namechange-btn {
+    position: absolute;
+    top: 15px;
+    right: 55px;
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #91D6AC, #F2C75C);
+    border: none;
+    border-radius: 50%;
+    color: #4C2683;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(145, 214, 172, 0.3);
+}
+
+.user-namechange-btn:active {
+    transform: scale(0.95);
+}
+
+.user-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 0.8rem;
+    color: #7A99AC;
+}
+
+.user-detail {
+    background: rgba(145, 214, 172, 0.2);
+    padding: 4px 8px;
+    border-radius: 8px;
+}
+
+.user-title {
+    color: #4C2683;
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin-bottom: 18px;
 }
 
 @media (max-width: 480px) {

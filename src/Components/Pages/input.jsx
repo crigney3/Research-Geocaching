@@ -1,14 +1,9 @@
 import { useContext, useEffect, useState } from 'react';
-import ResearchContext from '../ResearchContext';
+import { ResearchContext } from '../ResearchContext';
 import Select from 'react-select';
-import { BACKEND_URL } from '../../secrets';
+import { BACKEND_URL, CLIENT_AUTH_SECRET } from '../../secrets';
 import './input.css';
 import { Modal } from '../Subcomponents/Modal';
-
-const UETestLoc = {
-    lat: 37.97336898429983,
-    lng: -87.53240843750176
-}
 
 const InputPage = ({
     inLat,
@@ -23,8 +18,12 @@ const InputPage = ({
     const [modalConfig, setModalConfig] = useState({ title: '', message: '', warningLevel: 0 });
 
     const allCategories = useContext(ResearchContext).allCategories;
-    const userLoc = useContext(ResearchContext).currentLocation;
+    const currentUser = useContext(ResearchContext).currentUser;
     const reloadFacts = useContext(ResearchContext).getAllFacts;
+    const userLevelUp = useContext(ResearchContext).checkForUserLevelup;
+    const setCookie = useContext(ResearchContext).setWithExpiry;
+    const getCookie = useContext(ResearchContext).getWithExpiry;
+    const removeCookie = useContext(ResearchContext).removeWithExpiry;
 
     useEffect(() => {
         categoriesToOptions();
@@ -59,12 +58,23 @@ const InputPage = ({
             return;
         }
 
+        if (getFactLimiterArrayLength() > 3) {
+            setModalConfig({
+                title: 'Too Many Fact Submissions!',
+                message: "You've submitted a lot of facts in the last 30 minutes. Try again later!",
+                warningLevel: 1
+            });
+            setShowModal(true);
+            return;
+        }
+
         try {
-            let JSONString = JSON.stringify({title: titleValue, description: descValue, lat: inLat, lng: inLng, category: catValue.value});
+            let JSONString = JSON.stringify({title: titleValue, description: descValue, lat: inLat, lng: inLng, category: catValue.value, userID: currentUser.id, username: currentUser.username});
 
             fetch(BACKEND_URL + "/add_fact", {
                 method: 'POST',
                 headers: {
+                  'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
                   'Content-Type': 'application/json;charset=utf-8'
                 },
                 mode: 'cors',
@@ -81,8 +91,13 @@ const InputPage = ({
                     setTitleValue('');
                     setDescValue('');
                     setCatValue(null);
+
                     // Also reload facts
                     reloadFacts();
+                    updatePlacedAchievement();
+
+                    // And update the overload list
+                    addToFactLimiterArray('fact');
                 } else {
                     setModalConfig({
                         title: 'Submission Failed',
@@ -102,6 +117,10 @@ const InputPage = ({
         }
     }
 
+    const updatePlacedAchievement = () => {
+        userLevelUp('factsPlaced', 1);
+    }
+
     const handleCatChange = (option) => {
         setCatValue(option);
     }
@@ -117,6 +136,62 @@ const InputPage = ({
     const handleCheckedChange = (event) => {
         setTestChecked(!testChecked);
     }
+
+    const removeExpiredAdditions = (items) => {
+        if (!items || !Array.isArray(items)) {
+            return [];
+        }
+
+        const now = Date.now();
+        return items.filter(item => {
+            const expiryTime = item.timestamp + (30 * 60 * 1000);
+            return now < expiryTime;
+        });
+    };
+
+    const addToFactLimiterArray = (element) => {
+        // Get existing array or initialize empty array
+        let cookieArray = getCookie('adds') || [];
+        
+        // Remove expired items before adding new one
+        cookieArray = removeExpiredAdditions(cookieArray);
+        
+        // Add new item with timestamp
+        const newItem = {
+            data: element,
+            timestamp: Date.now()
+        };
+        
+        cookieArray.push(newItem);
+        
+        // Set cookie with expiration (set to expire after 30 minutes from now)
+        // This is a safety measure, but individual items have their own expiry logic
+        const cookieExpiry = new Date();
+        cookieExpiry.setMinutes(cookieExpiry.getMinutes() + 30);
+        
+        setCookie('adds', cookieArray, 30, 1000 * 60);
+    };
+
+    const getFactLimiterArrayLength = () => {
+        // Get existing array or initialize empty array
+        let cookieArray = getCookie('adds') || [];
+        
+        // Remove expired items
+        cookieArray = removeExpiredAdditions(cookieArray);
+        
+        // Update the cookie with cleaned array if items were removed
+        if (cookieArray.length > 0) {
+            const cookieExpiry = new Date();
+            cookieExpiry.setMinutes(cookieExpiry.getMinutes() + 30);
+            
+            setCookie('adds', cookieArray, 30, 1000 * 60);
+        } else {
+            // Remove cookie if array is empty
+            removeCookie('adds');
+        }
+        
+        return cookieArray.length;
+    };
 
     const categoriesToOptions = () => {
         let tempCat = [];
@@ -190,74 +265,74 @@ const InputPage = ({
         })
     };
 
+    const handleInputFocus = (e) => {
+        setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+    };
+
     return (
         <div className='InputPage'>
-            <form className="full-form" onSubmit={handleSubmit}>
-                <div className="top-row">
-                    <div className="title-container">
-                        <div className="form-group">
-                            <label className="section-title">
-                                Title
-                            </label>
-                            <input 
-                                id="title" 
-                                type="text" 
-                                className="form-input title-input"
-                                placeholder="Enter title..."
-                                value={titleValue} 
-                                onChange={handleTitleChange} 
-                            />
+            <div className="full-form-wrapper" onSubmit={handleSubmit}>
+                <div className="full-form">
+                    <div className="top-row">
+                        <div className="title-container">
+                            <div className="form-group">
+                                <label className="section-title">
+                                    Title
+                                </label>
+                                <input 
+                                    id="title" 
+                                    type="text" 
+                                    className="form-input title-input"
+                                    placeholder="Enter title..."
+                                    value={titleValue} 
+                                    onChange={handleTitleChange}
+                                    onFocus={handleInputFocus}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="select-container">
+                            <div className="form-group">
+                                <label className="section-title">
+                                    Category
+                                </label>
+                                <Select
+                                    name="catSelector"
+                                    options={categoryOptions}
+                                    onChange={handleCatChange}
+                                    styles={customSelectStyles}
+                                    placeholder="Select category..."
+                                    value={catValue}
+                                    maxMenuHeight={250}
+                                />
+                            </div>
                         </div>
                     </div>
 
-                    <div className="select-container">
+                    <div className="description-container">
+                        <h2 className="section-title">Description</h2>
                         <div className="form-group">
-                            <label className="section-title">
-                                Category
-                            </label>
-                            <Select
-                                name="catSelector"
-                                options={categoryOptions}
-                                onChange={handleCatChange}
-                                styles={customSelectStyles}
-                                placeholder="Select category..."
-                                value={catValue}
-                                maxMenuHeight={250}
+                            <textarea
+                                id="desc"
+                                className="form-input description-input"
+                                placeholder="Enter a detailed description..."
+                                value={descValue}
+                                onChange={handleDescChange}
+                                onFocus={handleInputFocus}
                             />
                         </div>
                     </div>
                 </div>
-
-                <div className="description-container">
-                    <h2 className="section-title">Description</h2>
-                    <div className="form-group">
-                        <textarea
-                            id="desc"
-                            className="form-input description-input"
-                            placeholder="Enter a detailed description..."
-                            value={descValue}
-                            onChange={handleDescChange}
-                        />
-                    </div>
-                </div>
-
-                {/* <div className="test-checkbox">
-                    <input 
-                        type="checkbox" 
-                        checked={testChecked} 
-                        onChange={handleCheckedChange}
-                    />
-                    <label>Test checkbox (will be removed in production)</label>
-                </div> */}
 
                 <button 
                     className="floating-submit"
-                    type="submit"
+                    onClick={handleSubmit}
+                    type="button"
                     title="Submit"
                 >
                     ✓
                 </button>
-            </form>
+            </div>
 
             <Modal show={showModal} onClose={handleModalClose} title={modalConfig.title} message={modalConfig.message} warningLevel={modalConfig.warningLevel} />
         </div>

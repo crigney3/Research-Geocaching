@@ -1,107 +1,124 @@
-import { useContext } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import './profile.css';
-import ResearchContext from '../ResearchContext';
+import { ResearchContext } from '../ResearchContext';
 import Achievement from '../Subcomponents/Achievement';
+import { BACKEND_URL, CLIENT_AUTH_SECRET } from '../../secrets';
+import { InputModal } from '../Subcomponents/Modal';
+import EditIcon from '@mui/icons-material/Edit';
+import achievements from '../../AchievementData';
 
-import DirectionsWalkIcon from '@mui/icons-material/DirectionsWalk';
-import BookIcon from '@mui/icons-material/Book';
-import StarRateIcon from '@mui/icons-material/StarRate';
-import CreateIcon from '@mui/icons-material/Create';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import EventRepeatIcon from '@mui/icons-material/EventRepeat';
+function sanitizeColumnName(title) {
+  // Remove all non-alphanumeric characters (keeps only letters and numbers)
+  let sanitized = title.replace(/[^a-zA-Z0-9]/g, '');
+  
+  // Ensure it starts with a letter (MySQL requirement)
+  if (!/^[a-zA-Z]/.test(sanitized)) {
+    sanitized = 'achievement_' + sanitized;
+  }
+  
+  // Limit length to 64 characters (MySQL column name limit)
+  if (sanitized.length > 64) {
+    sanitized = sanitized.substring(0, 64);
+  }
+  
+  return sanitized;
+}
 
 const ProfilePage = ({
 
 }) => {
-  const testUser = useContext(ResearchContext).testUser;
+  const currentUser = useContext(ResearchContext).currentUser;
+  const reloadUser = useContext(ResearchContext).checkForExistingUser;
+  const [showUsernameModal, setShowUsernameModal] = useState(false);
+  const [isUserLoaded, setIsUserLoaded] = useState(false);
+
+  useEffect(() => {
+    console.log(currentUser);
+    if (currentUser != null && currentUser.achievementKeys != null) {
+      console.log(currentUser);
+      setIsUserLoaded(true);
+      convertAchievementData();
+    }
+  }, [currentUser]);
+
+  if(currentUser === null) {
+    return null;
+  }
+
+  const convertAchievementData = () => {
+    achievements.forEach((achievement) => {
+      if (achievement.statBase === "level") {
+        achievement.current = currentUser.level;
+      } else if (achievement.statBase === "factsViewed") {
+        achievement.current = currentUser.factsViewed;
+      } else if (achievement.statBase === "daysUsed") {
+        achievement.current = currentUser.daysUsed;
+      } else if (achievement.statBase === "factsPlaced") {
+        achievement.current = currentUser.factsPlaced;
+      }
+      achievement.completed = currentUser.achievementKeys[sanitizeColumnName(achievement.title)];
+    })
+  }
 
   const getPermissionString = (permLevel) => {
     switch (permLevel) {
       case 0: return 'student';
       case 1: return 'professor';
       case 2: return 'administrator';
+      case 3: return 'dev';
       default: return 'user';
     }
   };
 
   // Calculate level progress
-  const xpPerLevel = 1000;
-  const currentLevelXP = testUser.xp % xpPerLevel;
+  const xpPerLevel = Math.round(50 * Math.pow(1.15, currentUser.level));
+  const currentLevelXP = currentUser.xp % xpPerLevel;
   const levelProgress = (currentLevelXP / xpPerLevel) * 100;
 
-  // Test achievements data
-  const achievements = [
-    {
-      title: "First Steps",
-      description: "Complete your first login",
-      current: testUser.logins,
-      target: 1,
-      difficulty: 1
-    },
-    {
-      title: "Explorer",
-      description: "View facts around you",
-      current: testUser.factsViewed,
-      target: 10,
-      difficulty: 2
-    },
-    {
-      title: "Contributor",
-      description: "Place facts on the map",
-      current: testUser.factsPlaced,
-      target: 5,
-      difficulty: 3
-    },
-    {
-      title: "Regular User",
-      description: "Log in multiple times",
-      current: testUser.logins,
-      target: 7,
-      difficulty: 0
-    },
-    {
-      title: "Knowledge Seeker",
-      description: "Discover many facts",
-      current: testUser.factsViewed,
-      target: 50,
-      difficulty: 0
-    },
-    {
-      title: "Map Maker",
-      description: "Add facts to help others",
-      current: testUser.factsPlaced,
-      target: 25,
-      difficulty: 0
-    },
-    {
-      title: "Veteran",
-      description: "Reach level 5",
-      current: testUser.level,
-      target: 5,
-      difficulty: 0,
-      image: <CreateIcon/>
-    },
-    {
-      title: "Expert",
-      description: "Accumulate experience",
-      current: testUser.xp,
-      target: 5000,
-      difficulty: 0,
-      image: <DirectionsWalkIcon/>
-    }
-  ];
+  const handleNewUsername = (newName) => {
+    fetch(BACKEND_URL + "/change_username", {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
+          'Content-Type': 'application/json;charset=utf-8'
+        },
+        mode: 'cors',
+        body: JSON.stringify({id: currentUser.id, username: newName})
+    }).then(response => {
+        if (response.ok) {
+          reloadUser();
+        } else {
+          throw new Error("Request to change username failed!");
+        }
+    }).catch(error => {
+      console.error('Error: ', error);
+      return;
+    } );   
+
+    setShowUsernameModal(false);
+  }
 
   return (
     <div className="profile-container">
+      <InputModal
+        show={showUsernameModal}
+        title="Edit Your Username"
+        placeholder="Type here..."
+        warningLevel={2}
+        onClose={() => setShowUsernameModal(false)}
+        action={handleNewUsername}
+      />
+
       <div className="profile-header">
-        <h1 className="profile-username">
-          {testUser.username}
+        <h1 className="profile-username" onClick={() => setShowUsernameModal(true)}>
+          {currentUser.username}
+          <EditIcon/>
         </h1>
         
         <div>
           <div className="profile-level-section">
             <span className="profile-level-label">
-              Level {testUser.level} {getPermissionString(testUser.permLevel)}
+              Level {currentUser.level} {getPermissionString(currentUser.permLevel)}
             </span>
             <span className="profile-xp-label">
               {currentLevelXP}/{xpPerLevel} XP
@@ -133,6 +150,7 @@ const ProfilePage = ({
             current={achievement.current}
             target={achievement.target}
             difficulty={achievement.difficulty}
+            completed={achievement.completed}
           />
         ))}
       </div>

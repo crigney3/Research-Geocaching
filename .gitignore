@@ -24,6 +24,8 @@ yarn-error.log*
 
 # Secrets
 src/secrets.js
+src/androidSecrets.js
+backend/secrets.js
 
 # App builds
 /android

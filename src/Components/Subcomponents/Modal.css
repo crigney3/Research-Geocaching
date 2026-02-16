@@ -216,7 +216,7 @@
 
 /* Scrollable description for content longer than ~200 characters */
 .popup-description.long-content {
-    max-height: 120px;
+    max-height: 80%;
     overflow-y: auto;
     border-top: 1px solid rgba(76, 38, 131, 0.1);
     padding-top: 16px;
@@ -313,4 +313,109 @@
     z-index: 10000;
     padding: 22px;
     box-sizing: border-box;
+}
+
+/* Input field styling */
+.input-modal-field {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid rgba(76, 38, 131, 0.2);
+    border-radius: 12px;
+    font-size: 1rem;
+    margin-bottom: 25px;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+    color: var(--blue-accent);
+}
+
+.input-modal-field:focus {
+    outline: none;
+    border-color: var(--purple-main);
+    box-shadow: 0 0 0 3px rgba(76, 38, 131, 0.1);
+}
+
+.input-modal-field::placeholder {
+    color: var(--slate-accent);
+    opacity: 0.6;
+}
+
+/* Button container for side-by-side layout */
+.input-modal-buttons {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+}
+
+.input-modal-buttons .modal-button {
+    flex: 1;
+}
+
+/* Cancel button styling */
+.input-modal-btn-cancel {
+    background: linear-gradient(135deg, var(--slate-accent), #5a7a8a);
+}
+
+/* Disabled state for submit button */
+.input-modal-buttons .modal-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 480px) {
+    .input-modal-buttons {
+        flex-direction: column;
+    }
+
+    .input-modal-buttons .modal-button {
+        width: 100%;
+    }
+}
+
+.tutorial-modal-icon {
+    width: 96px;
+    height: 96px;
+    max-width: 96px;
+    max-height: 96px;
+    margin: 0 auto 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tutorial-modal-icon img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.tutorial-modal-icon svg {
+    width: 96px;
+    height: 96px;
+}
+
+/* Tutorial modal header - centered layout */
+.modal-container .modal-header {
+    text-align: center;
+    padding: 0;
+    border: none;
+}
+
+/* Tutorial modal title - larger and centered */
+.modal-container .modal-header .title {
+    font-size: 1.8rem;
+    text-align: center;
+    border: none;
+    padding: 0;
+    margin: 0 0 20px 0;
+}
+
+/* Green gradient button for next/final page */
+.modal-button.tutorial-next,
+.modal-button.tutorial-complete {
+    background: linear-gradient(135deg, var(--green-accent), var(--light-blue-accent));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }

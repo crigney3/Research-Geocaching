@@ -20,7 +20,7 @@ const Firework = ({ x, y, delay, color }) => {
   );
 };
 
-const Notification = ({ message, isVisible, onHide }) => {
+const Notification = ({ message, isVisible, onHide, index }) => {
   const [showFireworks, setShowFireworks] = useState(false);
   const [fireworkColors, setFireworkColors] = useState([]);
 
@@ -38,7 +38,7 @@ const Notification = ({ message, isVisible, onHide }) => {
 
       // Auto-hide notification
       const hideTimer = setTimeout(() => {
-        onHide();
+        onHide(index);
       }, 3500);
 
       return () => {
@@ -47,13 +47,13 @@ const Notification = ({ message, isVisible, onHide }) => {
         clearTimeout(hideTimer);
       };
     }
-  }, [isVisible, onHide]);
+  }, [isVisible, onHide, index]);
 
   useEffect(() => {
     let tempColors = [];
 
     for (let i = 0; i < 6; i++) {
-        tempColors.push(`hsl(${360*Math.random()}, ${20+80*Math.random()}, 50)`);
+        tempColors.push(`hsl(${360*Math.random()}deg, ${20+80*Math.random()}%, 50)`);
     }
 
     setFireworkColors(tempColors);
@@ -62,19 +62,26 @@ const Notification = ({ message, isVisible, onHide }) => {
   return (
     <>
       {isVisible && (
-        <div className='Notification'>
+        <div className='Notification' style={{top: `${20 + index * 80}px`}}>
           {message}
         </div>
       )}
 
       {showFireworks && isVisible && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 999 }}>
+        <div style={{           
+          position: 'fixed', 
+          top: `${20 + index * 80}px`, 
+          right: '20px',
+          width: '300px', 
+          height: '100px', 
+          pointerEvents: 'none', 
+          zIndex: 100001  }}>
           {/* Generate multiple fireworks */}
           {Array.from({ length: 12 }, (_, i) => (
             <Firework
               key={i}
-              x={20 + (i % 4) * 20} // Spread across screen
-              y={10 + Math.floor(i / 4) * 15} // Multiple rows
+              x={10 + (i % 4) * 25} // Spread across screen
+              y={20 + Math.floor(i / 4) * 25} // Multiple rows
               delay={i * 0.1}
               color={fireworkColors[i % fireworkColors.length]}
             />
@@ -86,8 +93,8 @@ const Notification = ({ message, isVisible, onHide }) => {
               key={`sparkle-${i}`}
               style={{
                 position: 'absolute',
-                left: `${30 + i * 10}%`,
-                top: `${15 + (i % 2) * 10}%`,
+                left: `${30 + i * 12}%`,
+                top: `${30 + (i % 2) * 15}%`,
                 width: '6px',
                 height: '6px',
                 backgroundColor: fireworkColors[i % fireworkColors.length],

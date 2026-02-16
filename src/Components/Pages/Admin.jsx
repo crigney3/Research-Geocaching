@@ -1,9 +1,11 @@
 import { useState, useEffect, useContext } from "react";
 import Select from "react-select";
-import ResearchContext from "../ResearchContext";
-import { BACKEND_URL } from "../../secrets";
+import { ResearchContext } from "../ResearchContext";
+import { BACKEND_URL, CLIENT_AUTH_SECRET } from "../../secrets";
 import CloseIcon from '@mui/icons-material/Close';
-import { Modal } from "../Subcomponents/Modal";
+import EditIcon from '@mui/icons-material/Edit';
+import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+import { Modal, InputModal, FactModal } from "../Subcomponents/Modal";
 import './Admin.css';
 
 const AdminPage = ({
@@ -13,15 +15,26 @@ const AdminPage = ({
     const [catValue, setCatValue] = useState(0);
     const [categoryOptions, setCategoryOptions] = useState([]);
     const [newCatName, setNewCatName] = useState("");
-    const [isLitterboxDirty, setIsLitterboxDirty] = useState(false);
+    const [newUserEmail, setNewUserEmail] = useState("");
+    const [showUsernameModal, setShowUsernameModal] = useState(false);
+    const [showFactModal, setShowFactModal] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [modalConfig, setModalConfig] = useState({ title: '', message: '', action: null });
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [publicCategory, setPublicCategory] = useState(false);
+    const [allUsersOfOwnedCategories, setAllUsersOfOwnedCategories] = useState([]);
+    const [selectedFact, setSelectedFact] = useState(null);
 
-    const allCategories = useContext(ResearchContext).allCategories;
-    const allFacts = useContext(ResearchContext).allFacts;
+    const context = useContext(ResearchContext);
+    const currentUser = context.currentUser;
+    const allCategories = currentUser.permLevel >= 2 ? context.allCategories : context.allOwnedCategories;
+    const allFacts = currentUser.permLevel >= 2 ? context.allFacts : context.allFactsOfOwnedCategories;
+    const allUsers = currentUser.permLevel >= 2 ? context.allUsers : context.allUsersOfOwnedCategories;
+    const reloadFacts = currentUser.permLevel >= 2 ? context.getAllFacts : context.getAllFactsOfOwnedCategories;
+    const reloadCategories = currentUser.permLevel >= 2 ? context.getAllCategories : context.getAllOwnedCategories;
+    const reloadUsers = currentUser.permLevel >= 2 ? context.getAllUsers : context.getAllUsersOfOwnedCategories;
     const getCatTitle = useContext(ResearchContext).getCategoryTitleFromID;
-    const reloadFacts = useContext(ResearchContext).getAllFacts;
-    const reloadCategories = useContext(ResearchContext).getAllCategories;
+    const reloadCurrentUser = useContext(ResearchContext).checkForExistingUser;
 
     const customSelectStyles = {
         control: (provided, state) => ({
@@ -81,12 +94,16 @@ const AdminPage = ({
     };
 
     useEffect(() => {
-        categoriesToOptions();
-    }, [allCategories]);
+        if (currentUser == null) {
+            return;
+        }
+
+        console.log(currentUser);
+    }, [currentUser]);
 
     useEffect(() => {
-        //console.log(allFacts);
-    }, [allFacts]);
+        categoriesToOptions();
+    }, [allCategories]);
 
     const categoriesToOptions = () => {
         let tempCat = [];
@@ -103,6 +120,7 @@ const AdminPage = ({
             await fetch(BACKEND_URL + "/remove_all_facts", {
                 method: 'POST',
                 headers: {
+                  'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
                   'Content-Type': 'application/json;charset=utf-8'
                 },
                 mode: 'cors'
@@ -134,6 +152,7 @@ const AdminPage = ({
             await fetch(BACKEND_URL + "/remove_fact_by_id", {
                 method: 'POST',
                 headers: {
+                  'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
                   'Content-Type': 'application/json;charset=utf-8'
                 },
                 mode: 'cors',
@@ -168,6 +187,7 @@ const AdminPage = ({
             await fetch(BACKEND_URL + "/remove_all_categories", {
                 method: 'POST',
                 headers: {
+                  'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
                   'Content-Type': 'application/json;charset=utf-8'
                 },
                 mode: 'cors'
@@ -197,10 +217,15 @@ const AdminPage = ({
 
     const handleCatChange = (option) => {
         setCatValue(option);
+        console.log(option);
     }
 
     const handleNewCatNameChange = (event) => {
         setNewCatName(event.target.value);
+    }
+
+    const handleCategoryVisibilityChange = (e) => {
+        setPublicCategory(e.target.checked);
     }
 
     const handleRemoveCat = async (event) => {
@@ -211,6 +236,7 @@ const AdminPage = ({
             await fetch(BACKEND_URL + "/remove_category_by_id", {
                 method: 'POST',
                 headers: {
+                'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
                 'Content-Type': 'application/json;charset=utf-8'
                 },
                 mode: 'cors',
@@ -222,6 +248,7 @@ const AdminPage = ({
             await fetch(BACKEND_URL + "/remove_all_facts_in_category", {
                 method: 'POST',
                 headers: {
+                'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
                 'Content-Type': 'application/json;charset=utf-8'
                 },
                 mode: 'cors',
@@ -237,11 +264,70 @@ const AdminPage = ({
         }
     }
 
+    const handleUsernameChange = async (newName) => {
+        fetch(BACKEND_URL + "/change_username", {
+            method: 'POST',
+            headers: {
+            'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
+            'Content-Type': 'application/json;charset=utf-8'
+            },
+            mode: 'cors',
+            body: JSON.stringify({id: selectedUser.id, username: newName})
+        }).then(response => {
+            if (response.ok) {
+                reloadUsers();
+            } else {
+                throw new Error("Request to change username failed!");
+            }
+        }).catch(error => {
+            console.error('Error: ', error);
+            return;
+        } );   
+
+        setShowUsernameModal(false);
+    }
+
+    const handleDeleteUser = (user) => {
+        setModalConfig({
+            title: 'Delete User',
+            message: `Are you sure you want to delete "${user.username}"? This action cannot be undone.`,
+            warningLevel: 1,
+            action: () => {
+                deleteUser(user);
+                setShowModal(false);
+            }
+        });
+        setShowModal(true);
+    }
+
+    const deleteUser =  async(user) => {
+        try {
+            await fetch(BACKEND_URL + "/remove_user_by_id", {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
+                  'Content-Type': 'application/json;charset=utf-8'
+                },
+                mode: 'cors',
+                body: JSON.stringify({id: user.id})
+            }).then(response => {
+                if (response.ok) {
+                    reloadUsers();
+                } else {
+                    console.log(response);
+                }
+            });
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
     const handleRemoveAllFactsOfCat = async (event) => {
         try {
             fetch(BACKEND_URL + "/remove_all_facts_in_category", {
                 method: 'POST',
                 headers: {
+                  'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
                   'Content-Type': 'application/json;charset=utf-8'
                 },
                 mode: 'cors',
@@ -263,14 +349,17 @@ const AdminPage = ({
             return;
         }
 
+        let jsonString = JSON.stringify({title: newCatName, ownerID: currentUser.id, privacy: !publicCategory});
+
         try {
             await fetch(BACKEND_URL + "/add_category", {
                 method: 'POST',
                 headers: {
+                  'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
                   'Content-Type': 'application/json;charset=utf-8'
                 },
                 mode: 'cors',
-                body: JSON.stringify({title: newCatName})
+                body: jsonString
             }).then(response => {
                 if (response.ok) {
                     reloadCategories();
@@ -282,15 +371,117 @@ const AdminPage = ({
         }
     }
 
-    // const handleModalConfirm = () => {
-    //     if (modalConfig.action) {
-    //         modalConfig.action();
-    //     }
-    // };
-
     const handleModalCancel = () => {
         setShowModal(false);
     };
+
+    const handleUserInputChange = (event) => {
+        setNewUserEmail(event.target.value);
+    }
+
+    const handleRemoveUserFromCategory = async () => {
+        if (currentUser == null ||
+            catValue == 0 ||
+            newUserEmail == ""
+        ) {
+            return;
+        }
+
+        let jsonString = JSON.stringify({catID: catValue.value, email: newUserEmail});
+
+        try {
+            await fetch(BACKEND_URL + "/remove_user_from_private_category", {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
+                  'Content-Type': 'application/json;charset=utf-8'
+                },
+                mode: 'cors',
+                body: jsonString
+            }).then(response => {
+                if (response.ok) {
+                    reloadUsers();
+                }
+            });
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+    const handleAddUserToCategory = async () => {
+        if (currentUser == null ||
+            catValue == 0 ||
+            newUserEmail == ""
+        ) {
+            return;
+        }
+
+        let jsonString = JSON.stringify({catID: catValue.value, email: newUserEmail});
+
+        try {
+            await fetch(BACKEND_URL + "/add_user_to_private_category", {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
+                  'Content-Type': 'application/json;charset=utf-8'
+                },
+                mode: 'cors',
+                body: jsonString
+            }).then(response => {
+                if (response.ok) {
+                    reloadUsers();
+                }
+            });
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+    const leaveCategory = (category) => {
+        setModalConfig({
+            title: 'Leaving category: ' + getCatTitle(category, allCategories),
+            message: 'Are you sure you want to leave this category? You would need to be re-invited to rejoin.',
+            warningLevel: 1,
+            action: () => {
+                handleLeaveCategory(category);
+                setShowModal(false);
+            }
+        });
+        setShowModal(true);
+    }
+
+    const handleLeaveCategory = async (category) => {
+        let jsonString = JSON.stringify({catID: category, userID: currentUser.id});
+
+        try {
+            await fetch(BACKEND_URL + "/remove_user_from_private_category", {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
+                  'Content-Type': 'application/json;charset=utf-8'
+                },
+                mode: 'cors',
+                body: jsonString
+            }).then(response => {
+                if (response.ok) {
+                    reloadCurrentUser();
+                    reloadCategories();
+                }
+            });
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+    const handleReadMoreFact = (fact) => {
+        setSelectedFact(fact);
+        setShowFactModal(true);
+    }
+
+    const toggleShowUsernameModal = (user) => {
+        setShowUsernameModal(!showUsernameModal);
+        setSelectedUser(user);
+    }
 
     const CustomSelect = ({ options, onChange }) => (
         <div className="react-select-container">
@@ -298,6 +489,7 @@ const AdminPage = ({
                 options={categoryOptions}
                 onChange={handleCatChange}
                 styles={customSelectStyles}
+                value={catValue}
                 className="react-select-container"
                 classNamePrefix="react-select"
                 maxMenuHeight={250}
@@ -307,8 +499,19 @@ const AdminPage = ({
 
     return (
         <div className='AdminPage'>
+            <InputModal
+                show={showUsernameModal}
+                title="Force Edit this User's name"
+                placeholder="Type here..."
+                warningLevel={2}
+                onClose={() => setShowUsernameModal(false)}
+                action={handleUsernameChange}
+            />
+
+            {(selectedFact != null) && <FactModal show={showFactModal} title={selectedFact.title} description={selectedFact.description} user={selectedFact.username} onClose={() => {setShowFactModal(false)}} />}
+
             <div className="AdminContent">
-                <div className="category-section">
+                {(currentUser != null) && (currentUser.permLevel >= 2) && <div className="category-section">
                     <h2 className="section-title">Category Management</h2>
                     <CustomSelect options={categoryOptions} onChange={handleCatChange}/>
                     <div className="category-buttons">
@@ -325,10 +528,32 @@ const AdminPage = ({
                             Remove All Facts In Selected Category
                         </button>
                     </div>
-                </div>
+                </div>}
+
+                {(currentUser != null) && (currentUser.privateCategoryAccess != null) && <div className="category-section">
+                    <h2 className="section-title">Private Category Membership</h2>
+                    {JSON.parse(currentUser.privateCategoryAccess).map((category) => (
+                        <div className="fact-card" key={category}>
+                            <button 
+                                className="fact-delete-btn"
+                                onClick={() => leaveCategory(category)}
+                                title="Leave category"
+                            >
+                                <ExitToAppIcon size={16} />
+                            </button>
+                            <h3 className="fact-title">{getCatTitle(category, allCategories)}</h3>
+                        </div>
+                    ))}
+                </div>}
 
                 <div className="input-section">
                     <h2 className="section-title">Add New Category</h2>
+                    <div className="category-input-container">
+                    {(currentUser != null) && (currentUser.permLevel >= 2) && <input 
+                        type="checkbox"
+                        className="category-checkbox"
+                        checked={publicCategory}
+                        onChange={handleCategoryVisibilityChange}/>}
                     <input 
                         type="text" 
                         className="category-input"
@@ -336,6 +561,7 @@ const AdminPage = ({
                         value={newCatName}
                         onChange={handleNewCatNameChange}
                     />
+                    </div>
                     <button 
                         className="add-btn" 
                         onClick={handleNewCategoryAdd}
@@ -344,8 +570,51 @@ const AdminPage = ({
                     </button>
                 </div>
 
-                <div className="all-facts">
-                    <h2 className="section-title">All Facts</h2>
+                {(currentUser != null) && (currentUser.ownedCategories != null) && <div className="category-section">
+                    <h2 className="section-title">Private Category Management</h2>
+                    <CustomSelect/>
+                    <div className="category-buttons">
+                        <button 
+                            className="category-btn remove-cat-btn" 
+                            onClick={handleRemoveCat}
+                        >
+                            Remove Selected Category
+                        </button>
+                        <button 
+                            className="category-btn remove-facts-cat-btn" 
+                            onClick={handleRemoveAllFactsOfCat}
+                        >
+                            Remove All Facts In Selected Category
+                        </button>
+                    </div>
+                    <div className="category-user-add">
+                        <input 
+                            type="text" 
+                            className="category-input-email"
+                            placeholder="Enter user's email..."
+                            value={newUserEmail}
+                            onChange={handleUserInputChange}
+                        />
+                        <div className="category-user-buttons">
+                            <button 
+                                className="category-user-btn remove-user-btn"
+                                onClick={handleRemoveUserFromCategory}
+                            >
+                                Remove User
+                            </button>
+
+                            <button 
+                                className="category-user-btn add-user-btn"
+                                onClick={handleAddUserToCategory}
+                            >
+                                Add User
+                            </button>
+                        </div>
+                    </div>
+                </div>}
+
+                {(currentUser != null) && (currentUser.ownedCategories != null) && <div className="all-facts">
+                    <h2 className="section-title">Private Categories - Facts</h2>
                     {allFacts.map((fact) => (
                         <div className="fact-card" key={fact.id}>
                             <button 
@@ -355,17 +624,75 @@ const AdminPage = ({
                             >
                                 <CloseIcon size={16} />
                             </button>
+                            <button 
+                                className="fact-read-more-btn"
+                                onClick={() => handleReadMoreFact(fact)}
+                                title="Read more"
+                            >
+                                Read More
+                            </button>
                             <h3 className="fact-title">{fact.title}</h3>
                             <p className="fact-description">{fact.description}</p>
                             <div className="fact-details">
                                 <span className="fact-detail">Lat: {fact.lat}, Lng: {fact.lng}</span>
-                                <span className="fact-detail">User: {fact.user}</span>
-                                <span className="fact-detail">Category: {getCatTitle(fact.category)}</span>
+                                <span className="fact-detail">User: {fact.username}</span>
+                                <span className="fact-detail">Category: {getCatTitle(fact.category, allCategories)}</span>
                             </div>
                         </div>
                     ))}
-                </div>
+                </div>}
 
+                {(currentUser != null) && (currentUser.ownedCategories != null) &&
+                <div className="user-section">
+                    <h2 className="section-title">User Management</h2>
+                    {allUsersOfOwnedCategories.map((user) => (
+                        <div className="fact-card" key={user.id}>
+                            <h3 className="user-title">{user.username}</h3>
+                            <div className="user-details">
+                                <span className="user-detail">Level: {user.level}</span>
+                                <span className="user-detail">XP: {user.xp}</span>
+                                <span className="user-detail">Permissions Level: {user.permLevel}</span>
+                                <span className="user-detail">Date Joined: {user.dateJoined}</span>
+                                <span className="user-detail">Last Login Date: {user.lastLogin}</span>
+                                <span className="user-detail">Facts Placed: {user.factsPlaced}</span>
+                            </div>
+                        </div>
+                    ))}
+                </div>}
+
+                {(currentUser != null) && (currentUser.permLevel >= 2) &&
+                <div className="user-section">
+                    <h2 className="section-title">User Management</h2>
+                    {allUsers.map((user) => (
+                        <div className="fact-card" key={user.id}>
+                            {(currentUser != null) && ((currentUser.permLevel > user.permLevel) || (currentUser.id === user.id)) && <button 
+                                className="fact-delete-btn"
+                                onClick={() => handleDeleteUser(user)}
+                                title="Delete User"
+                            >
+                                <CloseIcon size={16} />
+                            </button>}
+                            <h3 className="user-title">{user.username}</h3>
+                            <button
+                                className="user-namechange-btn"
+                                onClick={() => toggleShowUsernameModal(user)}
+                                title="Force change username"
+                            >
+                                <EditIcon size={16} />
+                            </button>
+                            <div className="user-details">
+                                <span className="user-detail">Level: {user.level}</span>
+                                <span className="user-detail">XP: {user.xp}</span>
+                                <span className="user-detail">Permissions Level: {user.permLevel}</span>
+                                <span className="user-detail">Date Joined: {user.dateJoined}</span>
+                                <span className="user-detail">Last Login Date: {user.lastLogin}</span>
+                                <span className="user-detail">Facts Placed: {user.factsPlaced}</span>
+                            </div>
+                        </div>
+                    ))}
+                </div>}
+
+                {(currentUser != null) && (currentUser.permLevel >= 2) &&
                 <div className="floating-buttons">
                     <button 
                         className="floating-btn remove-all-facts" 
@@ -379,7 +706,7 @@ const AdminPage = ({
                     >
                         Remove All Categories
                     </button>
-                </div>
+                </div>}
             </div>
 
             <Modal show={showModal} onClose={handleModalCancel} title={modalConfig.title} message={modalConfig.message} warningLevel={modalConfig.warningLevel} action={modalConfig.action}/>

@@ -1,7 +1,7 @@
 .MainMap {
     width: 100vw;
     height: 100vh;
-    position: relative;
+    position: absolute;
     z-index: 0;
 }
 
@@ -17,7 +17,7 @@
 
 .refresh-button {
     position: fixed;
-    top: 60px;
+    top: 9vh;
     left: 20px;
     width: 48px;
     height: 48px;
@@ -66,7 +66,7 @@
 }
 
 .RangeCircle {
-    position: fixed;
+    position: absolute;
     top: 50%;
     left: 50%;
     border-radius: 50%;
@@ -74,5 +74,204 @@
     background-color: rgba(92, 38, 136, 0.1);
     transform: translate(-50%, -50%);
     pointer-events: none;
-    z-index: 1000;
+    z-index: 1;
+}
+
+/* Category toggle button */
+.category-toggle-button {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 500;
+    transition: all 0.3s ease;
+}
+
+.category-toggle-button:active {
+    transform: translateX(-50%) scale(0.95);
+}
+
+/* Overlay */
+.category-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(128, 128, 128, 0.5);
+    z-index: 1500;
+}
+
+/* Sliding category window */
+.category-window {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 75.0vh;
+    background: white;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+    z-index: 2000;
+    transform: translateY(100%);
+    transition: transform 0.3s ease-in-out;
+    padding: 20px;
+}
+
+.category-window.open {
+    transform: translateY(0);
+}
+
+/* Close button inside window */
+.category-close-button {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: rgba(128, 128, 128, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.category-close-button:active {
+    transform: translateX(-50%) scale(0.95);
+}
+
+/* Category content */
+.category-content {
+    margin-top: 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.category-content label {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+.clear-filter-button {
+    color: white;
+    background-color: #4C2683;
+    border-radius: 15px;
+    font-size: 18px;
+    padding: 5px 10px;
+}
+
+.react-select-category-dropdown {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 16px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+}
+.react-select-category-dropdown:focus {
+    outline: none;
+    border-color: var(--purple-main, #4C2683);
+}
+.react-select__control {
+    border: 2px solid #4C2683 !important;
+    border-radius: 15px !important;
+    padding: 8px !important;
+    font-size: 1rem !important;
+    background: white !important;
+    box-shadow: none !important;
+}
+.react-select__control:hover {
+    border-color: #4C2683 !important;
+}
+.react-select__control--is-focused {
+    border-color: #F68B1F !important;
+    box-shadow: 0 0 0 3px rgba(246, 139, 31, 0.2) !important;
+}
+/* Value container */
+.react-select__value-container {
+    padding: 0 8px !important;
+}
+/* Single value (selected option text) */
+.react-select__single-value {
+    color: #4C2683 !important;
+    font-weight: 500 !important;
+}
+/* Placeholder */
+.react-select__placeholder {
+    color: #7A99AC !important;
+}
+/* Indicator separator */
+.react-select__indicator-separator {
+    background-color: #4C2683 !important;
+}
+/* Dropdown indicator */
+.react-select__dropdown-indicator {
+    color: #4C2683 !important;
+    pointer-events: auto !important; /* Ensure dropdown works on mobile */
+}
+/* Hide clear indicator (X button) */
+.react-select__clear-indicator {
+    display: none !important;
+}
+/* Menu (dropdown container) */
+.react-select__menu {
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid rgba(76, 38, 131, 0.2) !important;
+    z-index: 9999 !important;
+    margin-top: 4px !important;
+    margin-bottom: 4px !important;
+    width: 75% !important; /* 25% less wide than default */
+    left: 50% !important; /* Center the menu */
+    transform: translateX(-50%) !important; /* Center alignment */
+    position: absolute !important;
+}
+/* Menu list (scrollable container) */
+.react-select__menu-list {
+    max-height: 250px !important; /* Enable scrolling */
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important; /* Smooth scrolling on iOS */
+}
+/* Options - reduced height/padding */
+.react-select__option {
+    color: #4C2683 !important;
+    background-color: white !important;
+    padding: 8px 16px !important; /* Reduced from 12px to 8px */
+    cursor: pointer !important;
+    touch-action: manipulation !important; /* Improve mobile tap response */
+}
+.react-select__option--is-focused {
+    background-color: rgba(76, 38, 131, 0.1) !important;
+}
+.react-select__option--is-selected {
+    background-color: #F68B1F !important;
+}
+.react-select__option:hover {
+    background-color: rgba(246, 139, 31, 0.1) !important;
+    color: #4C2683 !important;
+}
+/* Ensure mobile-friendly interactions */
+.react-select__control,
+.react-select__option {
+    -webkit-tap-highlight-color: transparent !important; /* Remove tap highlight on mobile */
 }
