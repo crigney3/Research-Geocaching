@@ -251,7 +251,7 @@ app.post('/add_fact', authenticateToken, async (req, res) => {
     await pool.query("INSERT INTO facts (id, title, description, lat, lng, category, user, username) VALUES(UNHEX(REPLACE(?, '-', '')),?,?,?,?,UNHEX(?),?,?)", [newID, inTitle, inDescription, inLat, inLng, inCategory, inUserID, inUserName], 
         function(err, rows) {
             if (err) {
-                console.log("Error inserting into facts: %s", err);
+                console.error("Error inserting into facts: %s", err);
                 return res.status(400).json('Error inserting into facts, see backend console for details');
             } else {
                 return res.status(200).json('Fact successfully inserted');
@@ -288,7 +288,7 @@ app.post('/add_category', authenticateToken, async (req, res) => {
             return res.status(200).json('Added category');
         }
     } catch (err) {
-        console.log(err);
+        console.error(err);
         return res.status(500).json(err);
     }
 });
@@ -317,7 +317,7 @@ app.post('/add_user_to_private_category', authenticateToken, async (req, res) =>
 
         return res.status(200);
     } catch (err) {
-        console.log(err);
+        console.error(err);
         return res.status(500).json(err);
     }
 });
@@ -334,7 +334,7 @@ app.post('/remove_fact_by_id', authenticateToken, async (req, res) => {
     await pool.query("DELETE FROM facts WHERE id=UNHEX(?) ", [inID], 
         function(err, result) {
             if (err || result.affectedRows === 0) {
-                console.log("Error removing fact: %s", err);
+                console.error("Error removing fact: %s", err);
                 return res.status(400).json('Error removing fact, see backend console for details');
             } else {
                 return res.status(200).json('Fact successfully removed');
@@ -353,7 +353,7 @@ app.post('/remove_category_by_id', authenticateToken, async (req, res) => {
     await pool.query("DELETE FROM categories WHERE id=UNHEX(?) ", [inID], 
         async function(err, rows) {
             if (err) {
-                console.log("Error removing category: %s", err);
+                console.error("Error removing category: %s", err);
                 return res.status(400).json('Error removing category, see backend console for details');
             } else {
                 // Search through ALL users and remove this category from their array if it exists
@@ -374,7 +374,7 @@ app.post('/remove_user_by_id', authenticateToken, async (req, res) => {
     await pool.query("DELETE users, stats FROM users INNER JOIN stats WHERE users.id=? AND stats.id=?", [inID, inID], 
         function(err, rows) {
             if (err) {
-                console.log("Error removing user: %s", err);
+                console.error("Error removing user: %s", err);
                 return res.status(400).json('Error removing user, see backend console for details');
             } else {
                 return res.status(200).json('User successfully removed');
@@ -406,7 +406,7 @@ app.post('/remove_user_from_private_category', authenticateToken, async (req, re
         await promiseQuery(`UPDATE users SET private_access_array = JSON_REMOVE(private_access_array, JSON_UNQUOTE(JSON_SEARCH(private_access_array, 'one', ?))) WHERE id = ?`, [inCatID, inID]);
         return res.status(200);
     } catch (err) {
-        console.log(err);
+        console.error(err);
         return res.status(400).json(err);
     }
 });
@@ -421,7 +421,7 @@ app.post('/remove_all_facts_in_category', authenticateToken, async (req, res) =>
     await pool.query("DELETE FROM facts WHERE category=UNHEX(?) ", [inID], 
         function(err, rows) {
             if (err) {
-                console.log("Error removing facts: %s", err);
+                console.error("Error removing facts: %s", err);
                 return res.status(400).json('Error removing facts, see backend console for details');
             } else {
                 return res.status(200).json('Facts successfully removed');
@@ -434,7 +434,7 @@ app.post('/remove_all_categories', authenticateToken, async (req, res) => {
     await pool.query("TRUNCATE TABLE categories", 
         function(err, rows) {
             if (err) {
-                console.log("Error removing category: %s", err);
+                console.error("Error removing category: %s", err);
                 return res.status(400).json('Error removing category, see backend console for details');
             } else {
                 // Also remove all category keys from users
@@ -449,7 +449,7 @@ app.post('/remove_all_facts', authenticateToken, async (req, res) => {
     await pool.query("TRUNCATE TABLE facts",
         function(err, rows) {
             if (err) {
-                console.log("Error removing fact: %s", err);
+                console.error("Error removing fact: %s", err);
                 return res.status(400).json('Error removing fact, see backend console for details');
             } else {
                 return res.status(200).json('Fact successfully removed');
@@ -464,7 +464,7 @@ app.get('/get_all_facts', async (req, res) => {
     await pool.query("SELECT *, HEX(id) AS id, HEX(category) AS category FROM facts", 
         function(err, rows) {
             if (err) {
-                console.log("Error retrieving facts: %s", err);
+                console.error("Error retrieving facts: %s", err);
                 return res.status(400).json('Error retrieving facts, see backend console for details');
             } else {
                 return res.status(200).json(rows);
@@ -477,7 +477,7 @@ app.get('/get_all_categories', async (req, res) => {
     await pool.query("SELECT *, HEX(id) AS id FROM categories", 
         function(err, rows) {
             if (err) {
-                console.log("Error retrieving categories: %s", err);
+                console.error("Error retrieving categories: %s", err);
                 return res.status(400).json('Error retrieving categories, see backend console for details');
             } else {
                 return res.status(200).json(rows);
@@ -506,7 +506,7 @@ app.get('/get_all_user_allowed_categories', async (req, res) => {
 
         return res.status(200).json(categories);
     } catch (err) {
-        console.log(err);
+        console.error(err);
         return res.status(400).json(err);
     }
 });
@@ -515,7 +515,7 @@ app.get('/get_all_users', async (req, res) => {
     await pool.query("SELECT * FROM users", 
         function(err, rows) {
             if (err) {
-                console.log("Error retrieving users: %s", err);
+                console.error("Error retrieving users: %s", err);
                 return res.status(400).json('Error retrieving users, see backend console for details');
             } else {
                 return res.status(200).json(rows);
@@ -528,7 +528,7 @@ app.get('/get_all_users_with_stats', async (req, res) => {
     await pool.query("SELECT * FROM users JOIN stats USING (id)", 
         function(err, rows) {
             if (err) {
-                console.log("Error retrieving users: %s", err);
+                console.error("Error retrieving users: %s", err);
                 return res.status(400).json('Error retrieving users, see backend console for details');
             } else {
                 return res.status(200).json(rows);
@@ -541,7 +541,7 @@ app.get('/get_all_users_with_achievements', async (req, res) => {
     await pool.query("SELECT * FROM users JOIN achievements USING (id)", 
         function(err, rows) {
             if (err) {
-                console.log("Error retrieving users: %s", err);
+                console.error("Error retrieving users: %s", err);
                 return res.status(400).json('Error retrieving users, see backend console for details');
             } else {
                 return res.status(200).json(rows);
@@ -563,7 +563,7 @@ app.get('/get_fact_by_id', async (req, res) => {
         const rows = await promiseQuery("SELECT * FROM facts WHERE id=UNHEX(?)", [inID]);
         return res.status(200).json(rows);
     } catch (err) {
-        console.log("Error retrieving fact: %s", err);
+        console.error("Error retrieving fact: %s", err);
         return res.status(400).json('Error retrieving fact, see backend console for details');
     }
 });
@@ -578,7 +578,7 @@ app.get('/get_category_by_id', async (req, res) => {
         const rows = await promiseQuery("SELECT * FROM categories WHERE id=UNHEX(?)", [inID]);
         return res.status(200).json(rows);
     } catch (err) {
-        console.log("Error retrieving category: %s", err);
+        console.error("Error retrieving category: %s", err);
         return res.status(400).json('Error retrieving category, see backend console for details');
     }
 });
@@ -593,7 +593,7 @@ app.get('/get_all_facts_of_category', async (req, res) => {
         const rows = await promiseQuery("SELECT * FROM facts WHERE category=UNHEX(?)", [inID]);
         return res.status(200).json(rows);
     } catch (err) {
-        console.log("Error retrieving facts: %s", err);
+        console.error("Error retrieving facts: %s", err);
         return res.status(400).json('Error retrieving facts, see backend console for details');
     }
 });
@@ -608,7 +608,7 @@ app.get('/get_all_owned_categories', async (req, res) => {
         const rows = await promiseQuery("SELECT HEX(id) as id, title, owner, private FROM categories WHERE owner=?", [inID]);
         return res.status(200).json(rows);
     } catch (err) {
-        console.log("Error retrieving categories: %s", err);
+        console.error("Error retrieving categories: %s", err);
         return res.status(400).json('Error retrieving categories, see backend console for details');
     }
 });
@@ -623,7 +623,7 @@ app.get('/get_all_facts_of_owned_categories', async (req, res) => {
         const rows = await promiseQuery("SELECT HEX(f.id) as id, f.title, f.description, f.lat, f.lng, HEX(f.category) as category, f.username, f.user FROM facts f INNER JOIN categories c ON f.category=c.id WHERE c.owner=?", [inID]);
         return res.status(200).json(rows);
     } catch (err) {
-        console.log("Error retrieving facts: %s", err);
+        console.error("Error retrieving facts: %s", err);
         return res.status(400).json('Error retrieving facts, see backend console for details');
     }
 });
@@ -638,7 +638,7 @@ app.get('/get_all_users_of_owned_categories', async (req, res) => {
         const rows = await promiseQuery("SELECT DISTINCT u.* FROM users u INNER JOIN categories c ON JSON_CONTAINS(u.private_access_array, CAST(c.id AS JSON), '$') WHERE c.owner=?", [inID]);
         return res.status(200).json(rows);
     } catch (err) {
-        console.log("Error retrieving facts: %s", err);
+        console.error("Error retrieving facts: %s", err);
         return res.status(400).json('Error retrieving facts, see backend console for details');
     }
 });
@@ -653,7 +653,7 @@ app.get('/get_all_facts_of_access', async (req, res) => {
         const rows = await promiseQuery("SELECT DISTINCT f.* FROM facts f INNER JOIN categories c ON f.category = c.id WHERE (c.private = FALSE OR c.private IS NULL) OR c.owner = ? OR EXISTS (SELECT 1 FROM users u WHERE u.id = ? AND JSON_CONTAINS(u.private_access_array, CAST(c.id AS JSON), '$'))", [inID, inID]);
         return res.status(200).json(rows);
     } catch (err) {
-        console.log("Error retrieving facts: %s", err);
+        console.error("Error retrieving facts: %s", err);
         return res.status(400).json('Error retrieving facts, see backend console for details');
     }
 });
@@ -663,7 +663,7 @@ app.get('/get_all_public_facts', async (req, res) => {
         const rows = await promiseQuery("SELECT f.* FROM facts f INNER JOIN categories c ON f.category = c.id WHERE c.private = FALSE OR c.private IS NULL");
         return res.status(200).json(rows);
     } catch (err) {
-        console.log("Error retrieving facts: %s", err);
+        console.error("Error retrieving facts: %s", err);
         return res.status(400).json('Error retrieving facts, see backend console for details');
     }
 });
@@ -673,7 +673,7 @@ app.get('/get_all_public_categories', async (req, res) => {
         const rows = await promiseQuery("SELECT * FROM categories WHERE private = FALSE OR private IS NULL");
         return res.status(200).json(rows);
     } catch (err) {
-        console.log("Error retrieving facts: %s", err);
+        console.error("Error retrieving facts: %s", err);
         return res.status(400).json('Error retrieving facts, see backend console for details');
     }
 });
@@ -683,30 +683,22 @@ app.get('/get_all_public_categories', async (req, res) => {
 //#region user-management
 
 app.post('/google_login', authenticateToken, async (req, res) => {
-    let credential = req.body.credential;
     let client_id = req.body.client_id;
     let inUsername = req.body.inUsername;
     let inEmail = req.body.email;
 
     try {
-        // const ticket = await oauthClient.verifyIdToken({
-        //     idToken: credential,
-        //     audience: client_id,
-        // });
-
-        // const payload = ticket.getPayload();
-        // const userid = payload['sub'];
-        // console.log(userid);
         let msg = "";
         let user;
         let stats;
 
         const rows = await promiseQuery("SELECT * FROM users WHERE id=?", [client_id]);
-        console.log(rows);
+        const statsRows = await promiseQuery("SELECT * FROM stats WHERE id=?", [client_id]);
         
         // If the user already exists, just return that.
         if (rows && rows.length) {
             user = rows;
+            stats = statsRows;
             msg = "Authentication Successful for existing user";
         } else {
             // New user creation
@@ -735,7 +727,7 @@ app.post('/google_login', authenticateToken, async (req, res) => {
             msg = "Authentication Successful for new user";
             
             if (!user) {
-                console.log("Error: User was not created properly");
+                console.error("Error: User was not created properly");
                 return res.status(400).json('Error creating user');
             }
             
@@ -758,10 +750,9 @@ app.post('/google_login', authenticateToken, async (req, res) => {
             // We don't need to return achievements, they're all null
         }
         
-        console.log("Fetched user: " + user);
         return res.status(200).json({ message: msg, user, stats });
    } catch (err) {
-        console.log(err);
+        console.error(err);
         return res.status(400).json({ err });
    }
 });
@@ -777,7 +768,7 @@ app.post('/change_username', authenticateToken, async (req, res) => {
     await pool.query("UPDATE users SET username=? WHERE id=?", [newUsername, inID],
         async function(err, row) {
             if (err) {
-                console.log("Error getting user: %s", err);
+                console.error("Error getting user: %s", err);
                 return res.status(400).json('Error getting user, see backend console for details');
             } else {
                 return res.status(200).json({msg: 'Username updated', user: row});
@@ -797,7 +788,7 @@ app.post('/change_permissions', authenticateToken, async (req, res) => {
     await pool.query("UPDATE users SET permissions=? WHERE id=?", [newPermLevel, inID],
         async function(err, row) {
             if (err) {
-                console.log("Error getting user: %s", err);
+                console.error("Error getting user: %s", err);
                 return res.status(400).json('Error getting user, see backend console for details');
             } else {
                 return res.status(200).json({msg: 'Permissions updated', user: row});
@@ -817,7 +808,7 @@ app.post('/change_last_login_day', authenticateToken, async (req, res) => {
     await pool.query("UPDATE users SET lastLoginDay=? WHERE id=?", [newDay, inID],
         async function(err, row) {
             if (err) {
-                console.log("Error getting user: %s", err);
+                console.error("Error getting user: %s", err);
                 return res.status(400).json('Error getting user, see backend console for details');
             } else {
                 return res.status(200).json({msg: 'lastLoginDay updated', user: row});
@@ -846,7 +837,7 @@ app.post('/update_achievement', authenticateToken, async (req, res) => {
     await pool.query("UPDATE stats SET ?=? WHERE id=?", [inStat, inStatValue, inID],
         async function(err, row) {
             if (err) {
-                console.log("Error getting user: %s", err);
+                console.error("Error getting user: %s", err);
                 return res.status(400).json('Error getting user, see backend console for details');
             } else {
                 return res.status(200).json('User stats updated');
@@ -875,7 +866,7 @@ app.post('/add_to_achievement', authenticateToken, async (req, res) => {
     await pool.query(`UPDATE stats SET ${inStat}=${inStat}+? WHERE id=?`, [inStatValue, inID],
         async function(err) {
             if (err) {
-                console.log("Error updating achievement: %s", err);
+                console.error("Error updating achievement: %s", err);
                 return res.status(400).json('Error updating achievement, see backend console for details');
             } else {
                 // Gain appropriate xp, handle potential level + range up, and return the user
@@ -883,12 +874,12 @@ app.post('/add_to_achievement', authenticateToken, async (req, res) => {
                 await pool.query(`SELECT * FROM stats WHERE id=?`, [inID], 
                     async function(err, row) {
                         if (err) {
-                            console.log("Error getting user: %s", err);
+                            console.error("Error getting user: %s", err);
                             return res.status(400).json('Error getting user, see backend console for details');
                         } else {
                             // Hacky fix for not actually storing the old value
                             let userUpdated = await handleXPLevelAndRange(inID, inStat, inStatValue - 1, inStatValue, row[0].level, row[0].xp, row[0].userRange);
-                            console.log(userUpdated);
+                            console.error(userUpdated);
                             return res.status(200).json(userUpdated);
                         }
                     }
@@ -920,7 +911,7 @@ app.post('/set_achievement_complete', authenticateToken, async (req, res) => {
 
         return res.status(200).json({ message: msg, achievements });
    } catch (err) {
-        console.log(err);
+        console.error(err);
         return res.status(400).json({ err });
    }
 });
@@ -939,7 +930,7 @@ app.get('/get_user_by_id', async (req, res) => {
     await pool.query("SELECT * FROM users WHERE id=?", [inID], 
         function(err, rows) {
             if (err) {
-                console.log("Error retrieving user: %s", err);
+                console.error("Error retrieving user: %s", err);
                 return res.status(400).json('Error retrieving user, see backend console for details');
             } else {
                 return res.status(200).json(rows);
@@ -958,7 +949,7 @@ app.get('/get_username_by_id', async (req, res) => {
     await pool.query("SELECT username FROM users WHERE id=?", [inID], 
         function(err, rows) {
             if (err) {
-                console.log("Error retrieving user: %s", err);
+                console.error("Error retrieving user: %s", err);
                 return res.status(400).json('Error retrieving user, see backend console for details');
             } else {
                 return res.status(200).json(rows);
@@ -977,7 +968,7 @@ app.get('/get_user_perms_by_id', async (req, res) => {
     await pool.query("SELECT perms FROM users WHERE id=?", [inID], 
         function(err, rows) {
             if (err) {
-                console.log("Error retrieving user: %s", err);
+                console.error("Error retrieving user: %s", err);
                 return res.status(400).json('Error retrieving user, see backend console for details');
             } else {
                 return res.status(200).json(rows);
@@ -996,7 +987,7 @@ app.get('/get_user_level_by_id', async (req, res) => {
     await pool.query("SELECT level FROM stats WHERE id=?", [inID], 
         function(err, rows) {
             if (err) {
-                console.log("Error retrieving achievement: %s", err);
+                console.error("Error retrieving achievement: %s", err);
                 return res.status(400).json('Error retrieving achievement, see backend console for details');
             } else {
                 return res.status(200).json(rows);
@@ -1015,7 +1006,7 @@ app.get('/get_user_xp_by_id', async (req, res) => {
     await pool.query("SELECT xp FROM stats WHERE id=?", [inID], 
         function(err, rows) {
             if (err) {
-                console.log("Error retrieving achievement: %s", err);
+                console.error("Error retrieving achievement: %s", err);
                 return res.status(400).json('Error retrieving achievement, see backend console for details');
             } else {
                 return res.status(200).json(rows);
@@ -1034,7 +1025,7 @@ app.get('/get_user_days_by_id', async (req, res) => {
     await pool.query("SELECT daysUsed FROM stats WHERE id=?", [inID], 
         function(err, rows) {
             if (err) {
-                console.log("Error retrieving achievement: %s", err);
+                console.error("Error retrieving achievement: %s", err);
                 return res.status(400).json('Error retrieving achievement, see backend console for details');
             } else {
                 return res.status(200).json(rows);
@@ -1053,7 +1044,7 @@ app.get('/get_user_facts_viewed_by_id', async (req, res) => {
     await pool.query("SELECT factsViewed FROM stats WHERE id=?", [inID], 
         function(err, rows) {
             if (err) {
-                console.log("Error retrieving achievement: %s", err);
+                console.error("Error retrieving achievement: %s", err);
                 return res.status(400).json('Error retrieving achievement, see backend console for details');
             } else {
                 return res.status(200).json(rows);
@@ -1072,7 +1063,7 @@ app.get('/get_user_facts_placed_by_id', async (req, res) => {
     await pool.query("SELECT factsPlaced FROM stats WHERE id=?", [inID], 
         function(err, rows) {
             if (err) {
-                console.log("Error retrieving achievement: %s", err);
+                console.error("Error retrieving achievement: %s", err);
                 return res.status(400).json('Error retrieving achievement, see backend console for details');
             } else {
                 return res.status(200).json(rows);
@@ -1091,7 +1082,7 @@ app.get('/get_user_range_by_id', async (req, res) => {
     await pool.query("SELECT userRange FROM stats WHERE id=?", [inID], 
         function(err, rows) {
             if (err) {
-                console.log("Error retrieving achievement: %s", err);
+                console.error("Error retrieving achievement: %s", err);
                 return res.status(400).json('Error retrieving achievement, see backend console for details');
             } else {
                 return res.status(200).json(rows);
@@ -1110,7 +1101,7 @@ app.get('/get_user_all_stats_by_id', async (req, res) => {
     await pool.query("SELECT * FROM stats WHERE id=?", [inID], 
         function(err, rows) {
             if (err) {
-                console.log("Error retrieving achievement: %s", err);
+                console.error("Error retrieving achievement: %s", err);
                 return res.status(400).json('Error retrieving achievement, see backend console for details');
             } else {
                 return res.status(200).json(rows);
@@ -1129,7 +1120,7 @@ app.get('/get_user_all_achievements_by_id', async (req, res) => {
     await pool.query("SELECT * FROM achievements WHERE id=?", [inID], 
         function(err, rows) {
             if (err) {
-                console.log("Error retrieving achievement: %s", err);
+                console.error("Error retrieving achievement: %s", err);
                 return res.status(400).json('Error retrieving achievement, see backend console for details');
             } else {
                 return res.status(200).json(rows);
@@ -1153,7 +1144,7 @@ app.get('/get_user_specific_achievement', async (req, res) => {
     await pool.query(`SELECT ${sanitizeColumnName(achievement)} FROM stats WHERE id=?`, [inID], 
         function(err, rows) {
             if (err) {
-                console.log("Error retrieving achievement: %s", err);
+                console.error("Error retrieving achievement: %s", err);
                 return res.status(400).json('Error retrieving achievement, see backend console for details');
             } else {
                 return res.status(200).json(rows);
@@ -1176,7 +1167,7 @@ app.listen(appPort, () => {
             console.log(result);
         });
     } catch(err) {
-        console.log(err);
+        console.error(err);
     }
 });
 

@@ -430,6 +430,7 @@ function App() {
 
   const checkForExistingUser = useCallback(async () => {
     let userID = await getWithExpiry('user');
+    console.log(userID);
 
     if (userID != null) {
       // We already have a login session, fetch data based on that
@@ -459,8 +460,10 @@ function App() {
         console.error('Error: ', error);
         throw new Error(error);
       });
+      console.log(tempUser);
 
       tempUser.ownedCategories = await checkForUserOwnedCategories();
+      console.log(tempUser);
 
       await fetch(BACKEND_URL + "/get_user_all_stats_by_id?id=" + userID, {
           method: 'GET',
@@ -486,6 +489,7 @@ function App() {
         console.error('Error: ', error);
         throw new Error(error);
       });
+      console.log(tempUser);
 
       await fetch(BACKEND_URL + "/get_user_all_achievements_by_id?id=" + userID, {
           method: 'GET',
@@ -517,6 +521,7 @@ function App() {
         console.error('Error: ', error);
         throw new Error(error);
       });
+      console.log(tempUser);
 
       setCurrentUser(tempUser);
       setIsLoggedIn(true);
@@ -577,17 +582,25 @@ function App() {
 
       // Handle level up notification
       if (data.leveled) {
-          let tempUser = {
-              level: data.user.level,
-              xp: data.user.xp,
-              daysUsed: data.user.daysUsed,
-              factsPlaced: data.user.factsPlaced,
-              factsViewed: data.user.factsViewed,
-              range: data.user.userRange
-          };
-
-          fireNotifications(tempUser, true);
-          setCurrentUser(tempUser);
+        fireNotifications({
+            level: data.user.level,
+            xp: data.user.xp,
+            daysUsed: data.user.daysUsed,
+            factsPlaced: data.user.factsPlaced,
+            factsViewed: data.user.factsViewed,
+            range: data.user.userRange
+        }, true);
+        
+        // Preserve all existing user data and only update the stats
+        setCurrentUser(prevUser => ({
+            ...prevUser,
+            level: data.user.level,
+            xp: data.user.xp,
+            daysUsed: data.user.daysUsed,
+            factsPlaced: data.user.factsPlaced,
+            factsViewed: data.user.factsViewed,
+            range: data.user.userRange
+        }));
       }
     } catch(err) {
       console.error(err);

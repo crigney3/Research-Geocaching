@@ -71,7 +71,8 @@ const CoreMap = ({
 
     const loginState = useContext(ResearchContext).loginState;
     const setLoginState = useContext(ResearchContext).setLoginState;
-    const refreshFacts = useContext(ResearchContext).getAllFacts;
+    const refreshFacts = useContext(ResearchContext).getAllFactsOfAccess;
+    const refreshCategories = useContext(ResearchContext).getAllUserAllowedCategories;
     const currentUser = useContext(ResearchContext).currentUser;
     const setAddTutorialMode = useContext(ResearchContext).setAddTutorialMode;
 
@@ -144,6 +145,7 @@ const CoreMap = ({
 
     const handleRefresh = () => {
       refreshFacts();
+      refreshCategories();
       setRefreshClass("refresh-button spinning");
       const classClear = setTimeout(() => {
         setRefreshClass("refresh-button");
