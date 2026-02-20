@@ -371,7 +371,7 @@ app.post('/remove_user_by_id', authenticateToken, async (req, res) => {
         return res.status(400).json('Must submit an ID for valid deletion');
     }
 
-    await pool.query("DELETE users, stats FROM users INNER JOIN stats WHERE users.id=? AND stats.id=?", [inID, inID], 
+    await pool.query("DELETE users, stats, achievements FROM users INNER JOIN stats ON users.id = stats.id INNER JOIN achievements ON users.id = achievements.id WHERE users.id=?", [inID, inID], 
         function(err, rows) {
             if (err) {
                 console.error("Error removing user: %s", err);
