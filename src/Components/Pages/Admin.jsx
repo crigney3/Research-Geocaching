@@ -547,7 +547,7 @@ const AdminPage = ({
                 </div>}
 
                 <div className="input-section">
-                    <h2 className="section-title">Add New Category</h2>
+                    <h2 className="section-title">Add New Private Category</h2>
                     <div className="category-input-container">
                     {(currentUser != null) && (currentUser.permLevel >= 2) && <input 
                         type="checkbox"

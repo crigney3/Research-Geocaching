@@ -17,9 +17,9 @@ const InputPage = ({
     const [showModal, setShowModal] = useState(false);
     const [modalConfig, setModalConfig] = useState({ title: '', message: '', warningLevel: 0 });
 
-    const allCategories = useContext(ResearchContext).allCategories;
+    const allCategories = useContext(ResearchContext).allAccessibleCategories;
     const currentUser = useContext(ResearchContext).currentUser;
-    const reloadFacts = useContext(ResearchContext).getAllFacts;
+    const reloadFacts = useContext(ResearchContext).getAllFactsOfAccess;
     const userLevelUp = useContext(ResearchContext).checkForUserLevelup;
     const setCookie = useContext(ResearchContext).setWithExpiry;
     const getCookie = useContext(ResearchContext).getWithExpiry;

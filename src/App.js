@@ -556,7 +556,9 @@ function App() {
       const newStatValue = currentUser[statString] + valueToAdd;
       
       achievements.forEach(achievement => {
-        if (achievement.statBase === statString && !achievement.completed) {
+        const isAchievementCompleted = currentUser.achievementKeys?.[sanitizeColumnName(achievement.title)];
+
+        if (achievement.statBase === statString && !isAchievementCompleted) {
           if (newStatValue >= achievement.target) {
             let achievementJSON = JSON.stringify({id: currentUser.id, stat: achievement.title});
             
@@ -570,7 +572,15 @@ function App() {
                 body: achievementJSON
             }).then(response => {
                 if (response.ok) {
-                    fireNotifications(currentUser, false, true, achievement.title);
+                  setCurrentUser(prevUser => ({
+                    ...prevUser,
+                    achievementKeys: {
+                      ...prevUser.achievementKeys,
+                      [sanitizeColumnName(achievement.title)]: 1
+                    }
+                  }));
+
+                  fireNotifications(null, false, true, achievement.title);
                 } else {
                     console.error("Something went wrong updating achievements! " + response);
                 }
@@ -616,9 +626,9 @@ function App() {
     if (leveled) {
       notifCounter++;
       tempNotifArray.push({message: "Level up! You are now level " + newUserData.level, id: Date.now()});
-      console.log(tempNotifArray);
     } else if (achievement) {
-      tempNotifArray.push({message: "New Achievement: " + achievementName + "!"})
+      notifCounter++;
+      tempNotifArray.push({message: "New Achievement: " + achievementName + "!", id: Date.now()});
     }
     else {
       return;

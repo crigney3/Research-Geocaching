@@ -14,6 +14,7 @@ import InputPage from '../Pages/input.jsx';
 import { Geolocation } from '@capacitor/geolocation';
 import Select from "react-select";
 import { Preferences } from '@capacitor/preferences';
+import CloseIcon from '@mui/icons-material/Close';
 import './Map.css';
 
 const centerSeattle = {
@@ -282,8 +283,8 @@ const CoreMap = ({
             <RefreshIcon/>
           </button>
 
-          {(currentUser !== null) && <button className='add-button' onClick={handleAddButtonClicked}>
-            <AddLocationAltIcon/>
+          {(currentUser !== null) && <button className={`add-button ${inputMode ? 'input-mode-active' : ''}`} onClick={inputMode ? () => setInputMode(false) : handleAddButtonClicked}>
+            {inputMode ? <CloseIcon /> : <AddLocationAltIcon />}
           </button>}
 
           {(currentUser === null) && <button className='add-button' onClick={toggleLoginRequirement}>
