@@ -14,7 +14,7 @@ import { SocialLogin } from '@capgo/capacitor-social-login';
 import { Preferences } from '@capacitor/preferences';
 import Notification from './Components/Subcomponents/Notification';
 import achievements from './AchievementData';
-import { Modal, TutorialModal } from './Components/Subcomponents/Modal';
+import { EULAModal, Modal, TutorialModal } from './Components/Subcomponents/Modal';
 import BookIcon from '@mui/icons-material/Book';
 import StarRateIcon from '@mui/icons-material/StarRate';
 import CreateIcon from '@mui/icons-material/Create';
@@ -112,7 +112,8 @@ function App() {
         google: {
           webClientId: GOOGLE_LOGIN_CLIENT_ID,
           iOSClientId: GOOGLE_LOGIN_IOS_ID
-        }
+        },
+        apple: {}
       });
     }
     importClientID();
@@ -900,6 +901,14 @@ function App() {
     setAllAccessibleCategories(tempCategories);
   }
 
+  const acceptEULA = () => {
+
+  }
+
+  const declineEULA = () => {
+
+  }
+
   const researchValue = useMemo(() => ({
     allCategories,
     allAccessibleCategories,
@@ -969,6 +978,7 @@ function App() {
 
           <Modal show={showFailModal} onClose={() => setShowFailModal(false)} title={"GPS Error!"} message={"This app requires location permissions. Without them, you're stuck at the Space Needle forever."} warningLevel={0} action={checkPermissions} actionText={"Try Again"}/>
 
+          {/* <EULAModal show={showEULAModal} onClose={() => {setShowEULAModal(false)}} onAccept={acceptEULA} onDecline={declineEULA} /> */}
           <Navbar/>
           {(showNotifications) && notifications.map((notif, index) => (
             <Notification message={notif.message} isVisible={showNotifications} onHide={removeNotification} index={index} key={notif.id} />
