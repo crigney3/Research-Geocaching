@@ -757,6 +757,79 @@ app.post('/google_login', authenticateToken, async (req, res) => {
    }
 });
 
+app.post('/apple_login', authenticateToken, async (req, res) => {
+    let client_id = req.body.client_id;  // Apple's stable user identifier
+    let inUsername = req.body.inUsername;
+    let inEmail = req.body.email;        // Will be null on repeat logins
+
+    if (!client_id) {
+        return res.status(400).json('Must submit a valid Apple user ID');
+    }
+
+    try {
+        let msg = "";
+        let user;
+        let stats;
+
+        const rows = await promiseQuery("SELECT * FROM users WHERE id=?", [client_id]);
+        const statsRows = await promiseQuery("SELECT * FROM stats WHERE id=?", [client_id]);
+
+        if (rows && rows.length) {
+            // Existing user — update email if Apple finally provided it
+            if (inEmail) {
+                await promiseQuery("UPDATE users SET email=? WHERE id=? AND (email IS NULL OR email='')", [inEmail, client_id]);
+            }
+            user = rows;
+            stats = statsRows;
+            msg = "Authentication Successful for existing Apple user";
+        } else {
+            // New user — email is required for first-time creation
+            if (!inEmail) {
+                return res.status(400).json(
+                    'Apple did not provide an email. This appears to be a re-install or new device. ' +
+                    'Cannot create account without email on first login.'
+                );
+            }
+
+            if (!inUsername) {
+                return res.status(400).json('Must submit a username for new user setup');
+            }
+
+            const currentDate = new Date();
+            const currentDateString = currentDate.toISOString().split('T')[0];
+
+            await promiseQuery(
+                "INSERT INTO users (id, username, permissions, dateJoined, lastLoginDay, email) VALUES(?,?,?,?,?,?)",
+                [client_id, inUsername, 0, currentDateString, currentDateString, inEmail]
+            );
+
+            const newUserRows = await promiseQuery("SELECT * FROM users WHERE id=?", [client_id]);
+            user = newUserRows;
+
+            if (!user) {
+                return res.status(400).json('Error creating Apple user');
+            }
+
+            await promiseQuery(
+                "INSERT INTO stats (id, level, xp, daysUsed, factsViewed, factsPlaced, userRange) VALUES(?, ?, ?, ?, ?, ?, ?)",
+                [client_id, 0, 0, 1, 0, 0, 100]
+            );
+
+            const statsResult = await promiseQuery("SELECT * FROM stats WHERE id=?", [client_id]);
+            stats = statsResult;
+
+            await promiseQuery("INSERT INTO achievements (id) VALUES(?)", [client_id]);
+
+            msg = "Authentication Successful for new Apple user";
+        }
+
+        return res.status(200).json({ message: msg, user, stats });
+    } catch (err) {
+        console.error(err);
+        return res.status(400).json({ err });
+    }
+});
+
 app.post('/change_username', authenticateToken, async (req, res) => {
     let inID = req.body.id;
     let newUsername = req.body.username;
