@@ -248,7 +248,7 @@ app.post('/add_fact', authenticateToken, async (req, res) => {
     // Generate a uuid for this entry
     let newID = uuidv4();
 
-    await pool.query("INSERT INTO facts (id, title, description, lat, lng, category, user, username) VALUES(UNHEX(REPLACE(?, '-', '')),?,?,?,?,UNHEX(?),?,?)", [newID, inTitle, inDescription, inLat, inLng, inCategory, inUserID, inUserName], 
+    await pool.query("INSERT INTO facts (id, title, description, lat, lng, category, user, username, flags, totalFlags) VALUES(UNHEX(REPLACE(?, '-', '')),?,?,?,?,UNHEX(?),?,?,?,?)", [newID, inTitle, inDescription, inLat, inLng, inCategory, inUserID, inUserName, 0, 0], 
         function(err, rows) {
             if (err) {
                 console.error("Error inserting into facts: %s", err);
@@ -258,6 +258,30 @@ app.post('/add_fact', authenticateToken, async (req, res) => {
             }
         }
     );
+});
+
+app.post('/flag_fact', authenticateToken, async (req, res) => {
+    let inID = req.body.id;
+
+    if (!inID) {
+        return res.status(400).json('Must include id of fact to flag');
+    }
+
+    await promiseQuery('UPDATE facts SET flags = flags+1, totalFlags = totalFlags+1 WHERE id=?', [inID]);
+
+    return res.status(200).json('Flagged fact for review');
+});
+
+app.post('/unflag_fact', authenticateToken, async (req, res) => {
+    let inID = req.body.id;
+
+    if (!inID) {
+        return res.status(400).json('Must include id of fact to unflag');
+    }
+
+    await promiseQuery('UPDATE facts SET flags = 0 WHERE id=?', [inID]);
+
+    return res.status(200).json('Fact unflagged');
 });
 
 app.post('/add_category', authenticateToken, async (req, res) => {
@@ -461,7 +485,10 @@ app.post('/remove_all_facts', authenticateToken, async (req, res) => {
 
 //#region get-all
 app.get('/get_all_facts', async (req, res) => {
-    await pool.query("SELECT *, HEX(id) AS id, HEX(category) AS category FROM facts", 
+    const filter = req.query.filterObjectionable === 'true';
+    const filterClause = filter ? 'WHERE (flags IS NULL OR flags < 1)' : '';
+
+    await pool.query(`SELECT *, HEX(id) AS id, HEX(category) AS category FROM facts ${filterClause}`, 
         function(err, rows) {
             if (err) {
                 console.error("Error retrieving facts: %s", err);
@@ -584,13 +611,19 @@ app.get('/get_category_by_id', async (req, res) => {
 });
 
 app.get('/get_all_facts_of_category', async (req, res) => {
-    let inID = req.body.category;
+    let inID = req.query.category; // also fixed: was req.body on a GET route
+    const filter = req.query.filterObjectionable === 'true';
+
     if (!inID) {
-        return res.status(400).json('Must submit an Category for valid access');
+        return res.status(400).json('Must submit a Category for valid access');
     }
     
     try {
-        const rows = await promiseQuery("SELECT * FROM facts WHERE category=UNHEX(?)", [inID]);
+        const filterClause = filter ? 'AND (f.flags IS NULL OR f.flags < 1)' : '';
+        const rows = await promiseQuery(
+            `SELECT *, HEX(id) AS id, HEX(category) AS category FROM facts f WHERE f.category=UNHEX(?) ${filterClause}`,
+            [inID]
+        );
         return res.status(200).json(rows);
     } catch (err) {
         console.error("Error retrieving facts: %s", err);
@@ -615,12 +648,20 @@ app.get('/get_all_owned_categories', async (req, res) => {
 
 app.get('/get_all_facts_of_owned_categories', async (req, res) => {
     let inID = req.query.id;
+    const filter = req.query.filterObjectionable === 'true';
+
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid access');
     }
     
     try {
-        const rows = await promiseQuery("SELECT HEX(f.id) as id, f.title, f.description, f.lat, f.lng, HEX(f.category) as category, f.username, f.user FROM facts f INNER JOIN categories c ON f.category=c.id WHERE c.owner=?", [inID]);
+        const filterClause = filter ? 'AND (f.flags IS NULL OR f.flags < 1)' : '';
+        const rows = await promiseQuery(
+            `SELECT HEX(f.id) as id, f.title, f.description, f.lat, f.lng, HEX(f.category) as category, f.username, f.user, f.flags, f.totalFlags
+             FROM facts f INNER JOIN categories c ON f.category=c.id
+             WHERE c.owner=? ${filterClause}`,
+            [inID]
+        );
         return res.status(200).json(rows);
     } catch (err) {
         console.error("Error retrieving facts: %s", err);
@@ -645,12 +686,35 @@ app.get('/get_all_users_of_owned_categories', async (req, res) => {
 
 app.get('/get_all_facts_of_access', async (req, res) => {
     let inID = req.query.id;
+    const filter = req.query.filterObjectionable === 'true';
+
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid access');
     }
     
     try {
-        const rows = await promiseQuery("SELECT DISTINCT f.* FROM facts f INNER JOIN categories c ON f.category = c.id WHERE (c.private = FALSE OR c.private IS NULL) OR c.owner = ? OR EXISTS (SELECT 1 FROM users u WHERE u.id = ? AND JSON_CONTAINS(u.private_access_array, CAST(c.id AS JSON), '$'))", [inID, inID]);
+        const filterClause = filter ? 'AND (f.flags IS NULL OR f.flags < 1)' : '';
+        const rows = await promiseQuery(`
+            SELECT DISTINCT f.*, HEX(f.id) AS id, HEX(f.category) AS category
+            FROM facts f
+            INNER JOIN categories c ON f.category = c.id
+            WHERE (
+                (c.private = FALSE OR c.private IS NULL)
+                OR c.owner = ?
+                OR EXISTS (
+                    SELECT 1 FROM users u
+                    WHERE u.id = ?
+                    AND JSON_CONTAINS(u.private_access_array, CAST(c.id AS JSON), '$')
+                )
+            )
+            AND NOT EXISTS (
+                SELECT 1 FROM users u
+                WHERE u.id = ?
+                AND JSON_CONTAINS(COALESCE(u.blocked, JSON_ARRAY()), JSON_QUOTE(f.user), '$')
+            )
+            ${filterClause}
+        `, [inID, inID, inID]);
+
         return res.status(200).json(rows);
     } catch (err) {
         console.error("Error retrieving facts: %s", err);
@@ -659,8 +723,15 @@ app.get('/get_all_facts_of_access', async (req, res) => {
 });
 
 app.get('/get_all_public_facts', async (req, res) => {
+    const filter = req.query.filterObjectionable === 'true';
+    const filterClause = filter ? 'AND (f.flags IS NULL OR f.flags < 1)' : '';
+
     try {
-        const rows = await promiseQuery("SELECT f.* FROM facts f INNER JOIN categories c ON f.category = c.id WHERE c.private = FALSE OR c.private IS NULL");
+        const rows = await promiseQuery(
+            `SELECT f.*, HEX(f.id) AS id, HEX(f.category) AS category
+             FROM facts f INNER JOIN categories c ON f.category = c.id
+             WHERE (c.private = FALSE OR c.private IS NULL) ${filterClause}`
+        );
         return res.status(200).json(rows);
     } catch (err) {
         console.error("Error retrieving facts: %s", err);
@@ -987,6 +1058,88 @@ app.post('/set_achievement_complete', authenticateToken, async (req, res) => {
         console.error(err);
         return res.status(400).json({ err });
    }
+});
+
+app.post('/block_user', authenticateToken, async (req, res) => {
+    let inID = req.body.id;
+    let inBlockedID = req.body.blockedID;
+
+    if (!inID) {
+        return res.status(400).json('Must submit a user ID');
+    }
+    if (!inBlockedID) {
+        return res.status(400).json('Must submit a blocked user ID');
+    }
+    if (inID === inBlockedID) {
+        return res.status(400).json('Cannot block yourself');
+    }
+
+    try {
+        const rows = await promiseQuery(
+            `SELECT JSON_CONTAINS(COALESCE(blocked, JSON_ARRAY()), JSON_QUOTE(?)) AS already_blocked FROM users WHERE id=?`,
+            [inBlockedID, inID]
+        );
+
+        if (rows[0].already_blocked) {
+            return res.status(400).json('User is already blocked');
+        }
+
+        await promiseQuery(
+            `UPDATE users SET blocked = JSON_ARRAY_APPEND(COALESCE(blocked, JSON_ARRAY()), '$', ?) WHERE id=?`,
+            [inBlockedID, inID]
+        );
+
+        await promiseQuery(
+            `UPDATE users SET otherUsersBlockingThis = COALESCE(otherUsersBlockingThis, 0) + 1 WHERE id=?`,
+            [inBlockedID]
+        );
+
+        return res.status(200).json('User successfully blocked');
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json(err);
+    }
+});
+
+app.post('/unblock_user', authenticateToken, async (req, res) => {
+    let inID = req.body.id;
+    let inBlockedID = req.body.blockedID;
+
+    if (!inID) {
+        return res.status(400).json('Must submit a user ID');
+    }
+    if (!inBlockedID) {
+        return res.status(400).json('Must submit a blocked user ID');
+    }
+
+    try {
+        const alreadyBlocked = await promiseQuery(
+            `SELECT JSON_CONTAINS(COALESCE(blocked, JSON_ARRAY()), JSON_QUOTE(?)) AS is_blocked FROM users WHERE id=?`,
+            [inBlockedID, inID]
+        );
+
+        if (!alreadyBlocked[0].is_blocked) {
+            return res.status(400).json('User is not blocked');
+        }
+
+        await promiseQuery(
+            `UPDATE users SET blocked = JSON_REMOVE(
+                blocked,
+                JSON_UNQUOTE(JSON_SEARCH(blocked, 'one', ?))
+            ) WHERE id=?`,
+            [inBlockedID, inID]
+        );
+
+        await promiseQuery(
+            `UPDATE users SET otherUsersBlockingThis = GREATEST(COALESCE(otherUsersBlockingThis, 0) - 1, 0) WHERE id=?`,
+            [inBlockedID]
+        );
+
+        return res.status(200).json('User successfully unblocked');
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json(err);
+    }
 });
 
 //#endregion
