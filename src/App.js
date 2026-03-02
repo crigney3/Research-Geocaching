@@ -458,14 +458,14 @@ function App() {
         tempUser.dateJoined = data[0].dateJoined;
         tempUser.lastLogin = data[0].lastLoginDay;
         tempUser.privateCategoryAccess = data[0].private_access_array;
+        tempUser.blocked = data[0].blocked ? JSON.parse(data[0].blocked) : [];
+        tempUser.flaggedFacts = data[0].flaggedFacts ? JSON.parse(data[0].flaggedFacts) : [];
       }).catch(error => {
         console.error('Error: ', error);
         throw new Error(error);
       });
-      console.log(tempUser);
 
       tempUser.ownedCategories = await checkForUserOwnedCategories();
-      console.log(tempUser);
 
       await fetch(BACKEND_URL + "/get_user_all_stats_by_id?id=" + userID, {
           method: 'GET',
@@ -491,7 +491,6 @@ function App() {
         console.error('Error: ', error);
         throw new Error(error);
       });
-      console.log(tempUser);
 
       await fetch(BACKEND_URL + "/get_user_all_achievements_by_id?id=" + userID, {
           method: 'GET',
@@ -523,7 +522,6 @@ function App() {
         console.error('Error: ', error);
         throw new Error(error);
       });
-      console.log(tempUser);
 
       setCurrentUser(tempUser);
       setIsLoggedIn(true);
@@ -654,7 +652,7 @@ function App() {
     setIsLoggedIn(false);
   }
 
-  const getAllFactsOfAccess = async () => {
+  const getAllFactsOfAccess = async (filter = false) => {
     let tempFacts = null;
     let userID = await getWithExpiry('user');
 
@@ -662,68 +660,29 @@ function App() {
       if (currentUser.permLevel >= 2) {
         await fetch(BACKEND_URL + "/get_all_facts", {
             method: 'GET',
-            headers: {
-              'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
-              'Content-Type': 'application/json;charset=utf-8'
-            },
+            headers: { 'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`, 'Content-Type': 'application/json;charset=utf-8' },
             mode: 'cors'
-        }).then(response => response.json())
-          .then(data => {
-            tempFacts = data;
-            setAllFacts(data);
-        });
+        }).then(response => response.json()).then(data => { tempFacts = data; setAllFacts(data); });
       }
-      await fetch(BACKEND_URL + "/get_all_facts_of_access?id=" + userID, {
+      await fetch(BACKEND_URL + "/get_all_facts_of_access?id=" + userID + (filter ? "&filterObjectionable=true" : ""), {
           method: 'GET',
-          headers: {
-            'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
-            'Content-Type': 'application/json;charset=utf-8'
-          },
+          headers: { 'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`, 'Content-Type': 'application/json;charset=utf-8' },
           mode: 'cors'
       }).then(response => {
-        if(!response.ok) {
-          console.error('Getting facts with cookie ID failed');
-          return null;
-        }
-
+        if (!response.ok) { console.error('Getting facts with cookie ID failed'); return null; }
         return response.json();
-      }).then(data => {
-
-        if (data == null) {
-          return null;
-        }
-
-        tempFacts = data;
-      }).catch(error => {
-        console.error('Error: ', error);
-        return null;
-      });
+      }).then(data => { if (data == null) return null; tempFacts = data;})
+        .catch(error => { console.error('Error: ', error); return null; });
     } else {
-      await fetch(BACKEND_URL + "/get_all_public_facts", {
+      await fetch(BACKEND_URL + "/get_all_public_facts" + (filter ? "?filterObjectionable=true" : ""), {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
-          'Content-Type': 'application/json;charset=utf-8'
-        },
+        headers: { 'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`, 'Content-Type': 'application/json;charset=utf-8' },
         mode: 'cors'
       }).then(response => {
-        if(!response.ok) {
-          console.error('Getting public facts failed');
-          return null;
-        }
-
+        if (!response.ok) { console.error('Getting public facts failed'); return null; }
         return response.json();
-      }).then(data => {
-
-        if (data == null) {
-          return null;
-        }
-
-        tempFacts = data;
-      }).catch(error => {
-        console.error('Error: ', error);
-        return null;
-      });
+      }).then(data => { if (data == null) return null; tempFacts = data; })
+        .catch(error => { console.error('Error: ', error); return null; });
     }
 
     setAllAccessibleFacts(tempFacts);
@@ -902,6 +861,91 @@ function App() {
     setAllAccessibleCategories(tempCategories);
   }
 
+  const blockUser = useCallback(async (userIdToBlock) => {
+    if (!currentUser) return;
+    try {
+        const response = await fetch(BACKEND_URL + "/block_user", {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`, 'Content-Type': 'application/json;charset=utf-8' },
+            mode: 'cors',
+            body: JSON.stringify({ id: currentUser.id, blockedID: userIdToBlock })
+        });
+        if (response.ok) {
+            setCurrentUser(prev => ({
+                ...prev,
+                blocked: [...(prev.blocked || []), userIdToBlock]
+            }));
+            getAllFactsOfAccess();
+        }
+    } catch (err) { console.error(err); }
+  }, [currentUser]);
+
+  const unblockUser = useCallback(async (userIdToUnblock) => {
+      if (!currentUser) return;
+      try {
+          const response = await fetch(BACKEND_URL + "/unblock_user", {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`, 'Content-Type': 'application/json;charset=utf-8' },
+              mode: 'cors',
+              body: JSON.stringify({ id: currentUser.id, blockedID: userIdToUnblock })
+          });
+          if (response.ok) {
+              setCurrentUser(prev => ({
+                  ...prev,
+                  blocked: (prev.blocked || []).filter(id => id !== userIdToUnblock)
+              }));
+          }
+      } catch (err) { console.error(err); }
+  }, [currentUser]);
+
+  const flagFact = useCallback(async (factId) => {
+    if (!currentUser) return;
+    try {
+        const response = await fetch(BACKEND_URL + "/flag_fact", {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`, 'Content-Type': 'application/json;charset=utf-8' },
+            mode: 'cors',
+            body: JSON.stringify({ id: factId, userID: currentUser.id })
+        });
+        if (response.ok) {
+            setCurrentUser(prev => ({
+                ...prev,
+                flaggedFacts: [...(prev.flaggedFacts || []), factId]
+            }));
+            setAllAccessibleFacts(prev => prev.map(f =>
+                f.id === factId ? { ...f, flags: (f.flags || 0) + 1, totalFlags: (f.totalFlags || 0) + 1 } : f
+            ));
+            setAllFacts(prev => prev.map(f =>
+                f.id === factId ? { ...f, flags: (f.flags || 0) + 1, totalFlags: (f.totalFlags || 0) + 1 } : f
+            ));
+        }
+    } catch (err) { console.error(err); }
+  }, [currentUser]);
+
+  const unflagFact = useCallback(async (factId) => {
+    if (!currentUser) return;
+    try {
+        const response = await fetch(BACKEND_URL + "/unflag_fact", {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`, 'Content-Type': 'application/json;charset=utf-8' },
+            mode: 'cors',
+            body: JSON.stringify({ id: factId, userID: currentUser.id })
+        });
+        if (response.ok) {
+            setCurrentUser(prev => ({
+                ...prev,
+                flaggedFacts: (prev.flaggedFacts || []).filter(id => id !== factId)
+            }));
+            setAllAccessibleFacts(prev => prev.map(f =>
+                f.id === factId ? { ...f, flags: Math.max((f.flags || 0) - 1, 0) } : f
+            ));
+            setAllFacts(prev => prev.map(f =>
+                f.id === factId ? { ...f, flags: Math.max((f.flags || 0) - 1, 0) } : f
+            ));
+        }
+    } catch (err) { console.error(err); }
+  }, [currentUser]);
+
   const acceptEULA = async () => {
     await Preferences.set({
       key: "eula",
@@ -949,7 +993,11 @@ function App() {
     getAllUserAllowedCategories,
     getAllOwnedCategories,
     hasLocationPermissions,
-    setShowEULAModal
+    setShowEULAModal,
+    blockUser,
+    unblockUser,
+    flagFact,
+    unflagFact
   }), [
     allCategories, 
     allAccessibleCategories,
@@ -972,7 +1020,11 @@ function App() {
     getAllFactsOfAccess,
     getAllUserAllowedCategories,
     getAllOwnedCategories,
-    hasLocationPermissions
+    hasLocationPermissions,
+    blockUser,
+    unblockUser,
+    flagFact,
+    unflagFact
   ]);
 
   return (

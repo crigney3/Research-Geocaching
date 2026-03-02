@@ -8,6 +8,7 @@ import { ResearchContext } from './ResearchContext';
 import { LoginModal, Modal } from "./Subcomponents/Modal";
 import { useNavigate } from 'react-router-dom';
 import { Preferences } from "@capacitor/preferences";
+import CloseIcon from '@mui/icons-material/Close';
 
 const Navbar = ({
 
@@ -94,8 +95,18 @@ const Navbar = ({
                 </div>
             </div>
 
-            <button className="toggle-button" id="toggleButton" onClick={toggleNavbarState}>
-                <MenuIcon id="navbarHamburger"></MenuIcon>
+            <button
+                className={`toggle-button ${!navbarOpen ? 'navbar-open' : ''}`}
+                id="toggleButton"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    toggleNavbarState(e);
+                }}
+            >
+                {!navbarOpen
+                    ? <CloseIcon id="navbarHamburger" />
+                    : <MenuIcon id="navbarHamburger" />
+                }
             </button>
 
             <LoginModal show={showLogin} onClose={toggleLoginPopup} loginState={loginState} setLoginState={setLoginState}/>

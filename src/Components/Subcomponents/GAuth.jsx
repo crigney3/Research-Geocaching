@@ -165,7 +165,7 @@ const AppleAuth = ({
         action={refreshComponent}
         warningLevel={0}
         actionText="Refresh"/>}>
-          <div className="google-auth-container">
+          <div className="apple-auth-container">
             <button onClick={handleLoginApple}>
               <AppleIcon className="google-icon" />
               Login with Apple (iOS only)

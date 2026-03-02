@@ -121,3 +121,52 @@
         max-height: 90px;
     }
 }
+
+.popup-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 4px 8px 4px;
+    gap: 8px;
+}
+
+.FactPopup .ReadMore {
+    flex: 1;
+    /* keep existing styles, just remove the width: 90% since footer handles layout now */
+    width: auto;
+}
+
+.popup-action-buttons {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.popup-action-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(76, 38, 131, 0.08);
+    color: var(--slate-accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.popup-action-btn:active {
+    transform: scale(0.92);
+}
+
+.popup-action-btn.flagged {
+    background: rgba(246, 139, 31, 0.15);
+    color: var(--orange-main);
+}
+
+.popup-action-btn.blocked {
+    background: rgba(224, 78, 57, 0.15);
+    color: var(--red-accent);
+}

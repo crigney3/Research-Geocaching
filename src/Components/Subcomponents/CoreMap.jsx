@@ -61,6 +61,7 @@ const CoreMap = ({
     const [showLoginRequirement, setShowLoginRequirement] = useState(false);
     const [showRangeError, setShowRangeError] = useState(false);
     const [showLogin, setShowLogin] = useState(false);
+    const [filterObjectionable, setFilterObjectionable] = useState(false);
 
     const [selectedCoords, setSelectedCoords] = useState({lat: 0, lng: 0});
 
@@ -112,7 +113,22 @@ const CoreMap = ({
         let tempMarkers = [];
 
         factsToShow.forEach((fact) => {
-            tempMarkers.push(<MapMarker key={fact.id} id={fact.id} title={fact.title} description={fact.description} lat={fact.lat} lng={fact.lng} category={fact.category} user={fact.username} rangeRef={rangeRef} getCurrentLocation={getCurrentLocation}/>);
+          tempMarkers.push(
+            <MapMarker
+                key={fact.id}
+                id={fact.id}
+                factId={fact.id}
+                title={fact.title}
+                description={fact.description}
+                lat={fact.lat}
+                lng={fact.lng}
+                category={fact.category}
+                user={fact.username}
+                userId={fact.user}
+                rangeRef={rangeRef}
+                getCurrentLocation={getCurrentLocation}
+            />
+          );
         })
 
         setMapMarkers(tempMarkers);
@@ -146,14 +162,20 @@ const CoreMap = ({
     }
 
     const handleRefresh = () => {
-      refreshFacts();
+      refreshFacts(filterObjectionable);
       refreshCategories();
       setRefreshClass("refresh-button spinning");
       const classClear = setTimeout(() => {
-        setRefreshClass("refresh-button");
-        clearTimeout(classClear);
+          setRefreshClass("refresh-button");
+          clearTimeout(classClear);
       }, 601);
-    }
+    };
+
+    const handleFilterObjectionableChange = (e) => {
+      const newValue = e.target.checked;
+      setFilterObjectionable(newValue);
+      refreshFacts(newValue);
+    };
 
     const toggleInputWindow = () => {
       setAddWindowOpen(!addWindowOpen);
@@ -300,6 +322,7 @@ const CoreMap = ({
 
           <button className='category-toggle-button' onClick={toggleCategoryWindow}>
             <KeyboardDoubleArrowUpIcon />
+            Categories
           </button>
 
           {/* Overlay */}
@@ -316,6 +339,16 @@ const CoreMap = ({
             <div className='category-content'>
               <label>Select Category:</label>
               <CategorySelect options={categoryOptions} onChange={handleCatChange}/>
+            </div>
+
+            <div className='filter-flagged-container'>
+              <input
+                  type="checkbox"
+                  id="filter-flagged"
+                  checked={filterObjectionable}
+                  onChange={handleFilterObjectionableChange}
+              />
+              <label htmlFor="filter-flagged">Filter Flagged Content</label>
             </div>
 
             <button className='clear-filter-button' onClick={handleFilterClear}>Clear</button>

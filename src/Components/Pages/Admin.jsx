@@ -93,6 +93,12 @@ const AdminPage = ({
         })
     };
 
+    const getFlagBackground = (flags) => {
+        if (!flags || flags === 0) return 'rgba(76, 38, 131, 0.05)';
+        const intensity = Math.min(flags / 8, 1);
+        return `rgba(224, 78, 57, ${intensity * 0.55})`;
+    };
+
     useEffect(() => {
         if (currentUser == null) {
             return;
@@ -508,7 +514,7 @@ const AdminPage = ({
                 action={handleUsernameChange}
             />
 
-            {(selectedFact != null) && <FactModal show={showFactModal} title={selectedFact.title} description={selectedFact.description} user={selectedFact.username} onClose={() => {setShowFactModal(false)}} />}
+            {(selectedFact != null) && <FactModal show={showFactModal} title={selectedFact.title} description={selectedFact.description} user={selectedFact.username} onClose={() => {setShowFactModal(false)}} userId={selectedFact.user} factId={selectedFact.id}/>}
 
             <div className="AdminContent">
                 {(currentUser != null) && (currentUser.permLevel >= 2) && <div className="category-section">
@@ -616,19 +622,15 @@ const AdminPage = ({
                 {(currentUser != null) && (currentUser.ownedCategories != null) && <div className="all-facts">
                     <h2 className="section-title">Private Categories - Facts</h2>
                     {allFacts.map((fact) => (
-                        <div className="fact-card" key={fact.id}>
-                            <button 
-                                className="fact-delete-btn"
-                                onClick={() => handleDeleteFact(fact)}
-                                title="Delete fact"
-                            >
+                        <div
+                            className="fact-card"
+                            key={fact.id}
+                            style={{ background: getFlagBackground(fact.flags) }}
+                        >
+                            <button className="fact-delete-btn" onClick={() => handleDeleteFact(fact)} title="Delete fact">
                                 <CloseIcon size={16} />
                             </button>
-                            <button 
-                                className="fact-read-more-btn"
-                                onClick={() => handleReadMoreFact(fact)}
-                                title="Read more"
-                            >
+                            <button className="fact-read-more-btn" onClick={() => handleReadMoreFact(fact)} title="Read more">
                                 Read More
                             </button>
                             <h3 className="fact-title">{fact.title}</h3>
@@ -637,6 +639,8 @@ const AdminPage = ({
                                 <span className="fact-detail">Lat: {fact.lat}, Lng: {fact.lng}</span>
                                 <span className="fact-detail">User: {fact.username}</span>
                                 <span className="fact-detail">Category: {getCatTitle(fact.category, allCategories)}</span>
+                                <span className="fact-detail">Active Flags: {fact.flags ?? 0}</span>
+                                <span className="fact-detail">Total Flags: {fact.totalFlags ?? 0}</span>
                             </div>
                         </div>
                     ))}

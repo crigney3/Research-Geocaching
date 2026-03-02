@@ -1,6 +1,10 @@
 import { GoogleAuth, AppleAuth } from './GAuth';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import { ResearchContext } from '../ResearchContext';
+import FlagIcon from '@mui/icons-material/Flag';
+import OutlinedFlagIcon from '@mui/icons-material/OutlinedFlag';
+import BlockIcon from '@mui/icons-material/Block';
 import './Modal.css'
 
 const Modal = ({ 
@@ -87,41 +91,81 @@ const Modal = ({
 };
 
 const FactModal = ({
-    show, 
-    title, 
+    show,
+    title,
     description,
-    user,
+    user,       // username (display)
+    userId,     // user ID (for blocking)
+    factId,
     onClose
 }) => {
+    const { currentUser, blockUser, unblockUser, flagFact, unflagFact } = useContext(ResearchContext);
+
+    const isBlocked = currentUser?.blocked?.includes(userId) ?? false;
+    const isFlagged = currentUser?.flaggedFacts?.includes(factId) ?? false;
+
     if (!show) return null;
 
     const isLongContent = description && description.length > 200;
+    const showActions = currentUser && userId && userId !== currentUser.id;
+
+    const handleBlock = async () => {
+        if (isBlocked) {
+            await unblockUser(userId);
+        } else {
+            await blockUser(userId);
+            onClose();
+        }
+    };
+
+    const handleFlag = async () => {
+        if (isFlagged) {
+            await unflagFact(factId);
+        } else {
+            await flagFact(factId);
+        }
+    };
 
     return (
-        <>
-            <div className="modal-backdrop" onClick={onClose}>
-                <div className="fact-popup" onClick={(e) => e.stopPropagation()}>
-                    <div className="modal-header">
-                        <h2 className="title">{title}</h2>
-                        <button 
-                            className="modal-close-button"
-                            onClick={onClose}
-                            aria-label="Close modal"
+        <div className="modal-backdrop" onClick={onClose}>
+            <div className="fact-popup" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                    <h2 className="title">{title}</h2>
+                    <button className="modal-close-button" onClick={onClose} aria-label="Close modal">×</button>
+                </div>
+
+                <p className="author">Submitted by {user}</p>
+
+                <p className={`popup-description ${isLongContent ? 'long-content' : ''}`}>
+                    {description}
+                </p>
+
+                {showActions && (
+                    <div className="fact-modal-actions">
+                        <button
+                            className={`fact-modal-action-btn ${isFlagged ? 'flagged' : ''}`}
+                            onClick={handleFlag}
+                            title={isFlagged ? 'Remove flag' : 'Flag content'}
                         >
-                            ×
+                            {isFlagged
+                                ? <FlagIcon fontSize="small" />
+                                : <OutlinedFlagIcon fontSize="small" />}
+                            {isFlagged ? 'Flagged' : 'Flag'}
+                        </button>
+                        <button
+                            className={`fact-modal-action-btn ${isBlocked ? 'blocked' : ''}`}
+                            onClick={handleBlock}
+                            title={isBlocked ? 'Unblock user' : 'Block user'}
+                        >
+                            <BlockIcon fontSize="small" />
+                            {isBlocked ? 'Unblock' : 'Block'}
                         </button>
                     </div>
-                    
-                    <p className="author">Submitted by {user}</p>
-                    
-                    <p className={`popup-description ${isLongContent ? 'long-content' : ''}`}>
-                        {description}
-                    </p>
-                </div>
+                )}
             </div>
-        </>
+        </div>
     );
-}
+};
 
 const ComponentModal = ({
     show,
