@@ -7,6 +7,7 @@ import LoginButton from "./Subcomponents/LoginButton";
 import { ResearchContext } from './ResearchContext';
 import { LoginModal, Modal } from "./Subcomponents/Modal";
 import { useNavigate } from 'react-router-dom';
+import { Preferences } from "@capacitor/preferences";
 
 const Navbar = ({
 
@@ -23,6 +24,7 @@ const Navbar = ({
     const logoutCurrentUser = useContext(ResearchContext).logoutCurrentUser;
     const loginState = useContext(ResearchContext).loginState;
     const setLoginState = useContext(ResearchContext).setLoginState;
+    const setEulaModal = useContext(ResearchContext).setShowEULAModal;
 
     const navigate = useNavigate();
 
@@ -30,9 +32,15 @@ const Navbar = ({
         setNavbarOpen(!navbarOpen);
     }
 
-    const toggleLoginPopup = (e) => {
-        setShowLoginRequirement(false);
-        setShowLogin(!showLogin);
+    const toggleLoginPopup = async (e) => {
+        const { value } = await Preferences.get({ key: "eula" });
+
+        if (value == null || value == "false") {
+            setEulaModal(true);
+        } else if (value === "true") {
+            setShowLoginRequirement(false);
+            setShowLogin(!showLogin);
+        }
     }
 
     const toggleLogoutPopup = (e) => {

@@ -98,6 +98,7 @@ function App() {
   const [tutorialMode, setTutorialMode] = useState(false);
   const [addTutorialMode, setAddTutorialMode] = useState(false);
   const [showFailModal, setShowFailModal] = useState(false);
+  const [showEULAModal, setShowEULAModal] = useState(false);
 
   // -1: not attempted/logged out
   // 0: login failed
@@ -901,12 +902,18 @@ function App() {
     setAllAccessibleCategories(tempCategories);
   }
 
-  const acceptEULA = () => {
-
+  const acceptEULA = async () => {
+    await Preferences.set({
+      key: "eula",
+      value: "true"
+    });
   }
 
-  const declineEULA = () => {
-
+  const declineEULA = async () => {
+    await Preferences.set({
+      key: "eula",
+      value: "false"
+    });
   }
 
   const researchValue = useMemo(() => ({
@@ -941,7 +948,8 @@ function App() {
     getAllFactsOfAccess,
     getAllUserAllowedCategories,
     getAllOwnedCategories,
-    hasLocationPermissions
+    hasLocationPermissions,
+    setShowEULAModal
   }), [
     allCategories, 
     allAccessibleCategories,
@@ -978,7 +986,8 @@ function App() {
 
           <Modal show={showFailModal} onClose={() => setShowFailModal(false)} title={"GPS Error!"} message={"This app requires location permissions. Without them, you're stuck at the Space Needle forever."} warningLevel={0} action={checkPermissions} actionText={"Try Again"}/>
 
-          {/* <EULAModal show={showEULAModal} onClose={() => {setShowEULAModal(false)}} onAccept={acceptEULA} onDecline={declineEULA} /> */}
+          <EULAModal show={showEULAModal} onClose={() => {setShowEULAModal(false)}} onAccept={acceptEULA} onDecline={declineEULA} />
+
           <Navbar/>
           {(showNotifications) && notifications.map((notif, index) => (
             <Notification message={notif.message} isVisible={showNotifications} onHide={removeNotification} index={index} key={notif.id} />

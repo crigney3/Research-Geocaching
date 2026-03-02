@@ -76,6 +76,7 @@ const CoreMap = ({
     const refreshCategories = useContext(ResearchContext).getAllUserAllowedCategories;
     const currentUser = useContext(ResearchContext).currentUser;
     const setAddTutorialMode = useContext(ResearchContext).setAddTutorialMode;
+    const setEulaModal = useContext(ResearchContext).setShowEULAModal;
 
     useEffect(() => {
         createMapMarkers();
@@ -181,8 +182,14 @@ const CoreMap = ({
         setShowLogin(!showLogin);
     }
 
-    const toggleLoginRequirement = (e) => {
+    const toggleLoginRequirement = async (e) => {
+      const { value } = await Preferences.get({ key: "eula" });
+
+      if (value == null || value == "false") {
+          setEulaModal(true);
+      } else if (value === "true") {
         setShowLoginRequirement(!showLoginRequirement);
+      }
     }
 
     const memoMapProps = useMemo(() => ({
