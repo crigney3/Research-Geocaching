@@ -262,26 +262,51 @@ app.post('/add_fact', authenticateToken, async (req, res) => {
 
 app.post('/flag_fact', authenticateToken, async (req, res) => {
     let inID = req.body.id;
+    let inUserID = req.body.userID;
 
-    if (!inID) {
-        return res.status(400).json('Must include id of fact to flag');
+    if (!inID) return res.status(400).json('Must include id of fact to flag');
+    if (!inUserID) return res.status(400).json('Must include user id');
+
+    try {
+        await promiseQuery('UPDATE facts SET flags = flags+1, totalFlags = totalFlags+1 WHERE id=UNHEX(?)', [inID]);
+
+        if (inUserID) {
+            await promiseQuery(
+                `UPDATE users SET flaggedFacts = JSON_ARRAY_APPEND(COALESCE(flaggedFacts, JSON_ARRAY()), '$', ?) WHERE id=?`,
+                [inID, inUserID]
+            );
+        }
+
+        return res.status(200).json('Flagged fact for review');
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json(err);
     }
-
-    await promiseQuery('UPDATE facts SET flags = flags+1, totalFlags = totalFlags+1 WHERE id=?', [inID]);
-
-    return res.status(200).json('Flagged fact for review');
 });
 
 app.post('/unflag_fact', authenticateToken, async (req, res) => {
     let inID = req.body.id;
+    let inUserID = req.body.userID;
 
-    if (!inID) {
-        return res.status(400).json('Must include id of fact to unflag');
+    if (!inID) return res.status(400).json('Must include id of fact to unflag');
+    if (!inUserID) return res.status(400).json('Must include user id');
+
+    try {
+        await promiseQuery('UPDATE facts SET flags = GREATEST(flags - 1, 0) WHERE id=UNHEX(?)', [inID]);
+
+        await promiseQuery(
+            `UPDATE users SET flaggedFacts = JSON_REMOVE(
+                flaggedFacts,
+                JSON_UNQUOTE(JSON_SEARCH(flaggedFacts, 'one', ?))
+            ) WHERE id=?`,
+            [inID, inUserID]
+        );
+
+        return res.status(200).json('Fact unflagged');
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json(err);
     }
-
-    await promiseQuery('UPDATE facts SET flags = 0 WHERE id=?', [inID]);
-
-    return res.status(200).json('Fact unflagged');
 });
 
 app.post('/add_category', authenticateToken, async (req, res) => {
