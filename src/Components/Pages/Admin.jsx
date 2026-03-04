@@ -294,15 +294,28 @@ const AdminPage = ({
     }
 
     const handleDeleteUser = (user) => {
-        setModalConfig({
-            title: 'Delete User',
-            message: `Are you sure you want to delete "${user.username}"? This action cannot be undone.`,
-            warningLevel: 1,
-            action: () => {
-                deleteUser(user);
-                setShowModal(false);
-            }
-        });
+        if (user === currentUser) {
+            setModalConfig({
+                title: 'Delete User',
+                message: `Are you sure you want to delete your account? This action cannot be undone.`,
+                warningLevel: 1,
+                action: () => {
+                    deleteUser(user);
+                    setShowModal(false);
+                }
+            });
+        } else {
+            setModalConfig({
+                title: 'Delete User',
+                message: `Are you sure you want to delete "${user.username}"? This action cannot be undone.`,
+                warningLevel: 1,
+                action: () => {
+                    deleteUser(user);
+                    setShowModal(false);
+                }
+            });
+        }
+
         setShowModal(true);
     }
 
@@ -317,7 +330,7 @@ const AdminPage = ({
                 mode: 'cors',
                 body: JSON.stringify({id: user.id})
             }).then(response => {
-                if (response.ok) {
+                if (response.ok) {            
                     reloadUsers();
                 } else {
                     console.log(response);
@@ -696,8 +709,10 @@ const AdminPage = ({
                     ))}
                 </div>}
 
-                {(currentUser != null) && (currentUser.permLevel >= 2) &&
+                
                 <div className="floating-buttons">
+                    {(currentUser != null) && (currentUser.permLevel >= 2) &&
+                    <div>
                     <button 
                         className="floating-btn remove-all-facts" 
                         onClick={handleAllFactRemoval}
@@ -709,8 +724,14 @@ const AdminPage = ({
                         onClick={handleAllCatRemoval}
                     >
                         Remove All Categories
+                    </button></div>}
+                    <button
+                        className="floating-btn remove-all-facts"
+                        onClick={() => handleDeleteUser(currentUser)}
+                    >
+                        Delete Your Account
                     </button>
-                </div>}
+                </div>
             </div>
 
             <Modal show={showModal} onClose={handleModalCancel} title={modalConfig.title} message={modalConfig.message} warningLevel={modalConfig.warningLevel} action={modalConfig.action}/>
