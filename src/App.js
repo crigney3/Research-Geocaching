@@ -1,5 +1,6 @@
 import './App.css';
 import { useCallback, useEffect, useState, useMemo } from "react";
+import { Capacitor } from '@capacitor/core';
 import MapPage from './Components/Pages/map';
 import InputPage from './Components/Pages/input';
 import ProfilePage from './Components/Pages/profile';
@@ -107,29 +108,35 @@ function App() {
 
   useEffect(() => {
     async function importClientID() {
-      const { GOOGLE_LOGIN_CLIENT_ID } = await import(`./${secretPath}`);
+      try {
+        const { GOOGLE_LOGIN_CLIENT_ID } = await import(`./${secretPath}`);
+        const loginConfig = {};
+        const googleConfig = { webClientId: GOOGLE_LOGIN_CLIENT_ID };
 
-      await SocialLogin.initialize({
-        google: {
-          webClientId: GOOGLE_LOGIN_CLIENT_ID,
-          iOSClientId: GOOGLE_LOGIN_IOS_ID
-        },
-        apple: {}
-      });
+        if (Capacitor.getPlatform() === 'ios') {
+          loginConfig.apple = {};
+          googleConfig.iOSClientId = GOOGLE_LOGIN_IOS_ID;
+        }
+
+        loginConfig.google = googleConfig;
+        await SocialLogin.initialize(loginConfig);
+      } catch (err) {
+        console.error('SocialLogin init failed, ', err);
+      }
+
+      checkPermissions();
+
+      checkForFirstRun();
+
+      getAllCategories();
+      getAllUserAllowedCategories();
+      getAllFacts();
+      getAllFactsOfAccess();
+      getAllUsers();
+      
+      checkForExistingUser();
     }
     importClientID();
-
-    checkPermissions();
-
-    checkForFirstRun();
-
-    getAllCategories();
-    getAllUserAllowedCategories();
-    getAllFacts();
-    getAllFactsOfAccess();
-    getAllUsers();
-    
-    checkForExistingUser();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
