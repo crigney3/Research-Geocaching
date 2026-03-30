@@ -14,6 +14,18 @@ const { useJsApiLoader } = require('@react-google-maps/api');
 
 //#endregion
 
+//#region process-level guards
+
+process.on('uncaughtException', (err) => {
+    console.error('[uncaughtException] Process-level error caught — server will NOT exit:', err);
+});
+ 
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('[unhandledRejection] Unhandled promise rejection — server will NOT exit:', reason);
+});
+
+//#endregion
+
 //#region initializers
 
 const initFetch = async () => {
@@ -116,6 +128,8 @@ function sanitizeColumnName(title) {
   
   return sanitized;
 }
+
+const ALLOWED_STAT_COLUMNS = new Set(['daysUsed', 'factsViewed', 'factsPlaced', 'userRange']);
 
 function calculateXPForLevel(level) {
     if (level <= 1) return 0;
@@ -248,16 +262,16 @@ app.post('/add_fact', authenticateToken, async (req, res) => {
     // Generate a uuid for this entry
     let newID = uuidv4();
 
-    await pool.query("INSERT INTO facts (id, title, description, lat, lng, category, user, username, flags, totalFlags) VALUES(UNHEX(REPLACE(?, '-', '')),?,?,?,?,UNHEX(?),?,?,?,?)", [newID, inTitle, inDescription, inLat, inLng, inCategory, inUserID, inUserName, 0, 0], 
-        function(err, rows) {
-            if (err) {
-                console.error("Error inserting into facts: %s", err);
-                return res.status(400).json('Error inserting into facts, see backend console for details');
-            } else {
-                return res.status(200).json('Fact successfully inserted');
-            }
-        }
-    );
+    try {
+        await promiseQuery(
+            "INSERT INTO facts (id, title, description, lat, lng, category, user, username, flags, totalFlags) VALUES(UNHEX(REPLACE(?, '-', '')),?,?,?,?,UNHEX(?),?,?,?,?)",
+            [newID, inTitle, inDescription, inLat, inLng, inCategory, inUserID, inUserName, 0, 0]
+        );
+        return res.status(200).json('Fact successfully inserted');
+    } catch (err) {
+        console.error("Error inserting into facts: %s", err);
+        return res.status(500).json('Error inserting into facts, see backend console for details');
+    }
 });
 
 app.post('/flag_fact', authenticateToken, async (req, res) => {
@@ -355,19 +369,23 @@ app.post('/add_user_to_private_category', authenticateToken, async (req, res) =>
         return res.status(400).json('Must submit a category ID for valid user addition');
     }
 
-    // If we don't have an id, get it from users with the email
-    if (!inID) {
-        const rows = await promiseQuery(`SELECT id FROM users WHERE email=?`, [inEmail]);
-        inID = rows[0].id;
-    }
-
+    
     try {
+        // If we don't have an id, get it from users with the email
+        if (!inID) {
+            const rows = await promiseQuery(`SELECT id FROM users WHERE email=?`, [inEmail]);
+            if (!rows || rows.length === 0) {
+                return res.status(404).json(`No user found with email: ${inEmail}`);
+            }
+            inID = rows[0].id;
+        }
+ 
         await promiseQuery(`UPDATE users SET private_access_array = JSON_ARRAY_APPEND(COALESCE(private_access_array, JSON_ARRAY()), '$', ?) WHERE id = ?`, [inCatID, inID]);
-
-        return res.status(200);
+ 
+        return res.status(200).json('User added to private category');
     } catch (err) {
         console.error(err);
-        return res.status(500).json(err);
+        return res.status(500).json('Error adding user to private category');
     }
 });
 //#endregion
@@ -380,16 +398,16 @@ app.post('/remove_fact_by_id', authenticateToken, async (req, res) => {
         return res.status(400).json('Must submit an ID for valid deletion');
     }
 
-    await pool.query("DELETE FROM facts WHERE id=UNHEX(?) ", [inID], 
-        function(err, result) {
-            if (err || result.affectedRows === 0) {
-                console.error("Error removing fact: %s", err);
-                return res.status(400).json('Error removing fact, see backend console for details');
-            } else {
-                return res.status(200).json('Fact successfully removed');
-            }
+    try {
+        const result = await promiseQuery("DELETE FROM facts WHERE id=UNHEX(?)", [inID]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json('No fact found with that ID');
         }
-    );
+        return res.status(200).json('Fact successfully removed');
+    } catch (err) {
+        console.error("Error removing fact: %s", err);
+        return res.status(500).json('Error removing fact');
+    }
 });
 
 app.post('/remove_category_by_id', authenticateToken, async (req, res) => {
@@ -399,18 +417,20 @@ app.post('/remove_category_by_id', authenticateToken, async (req, res) => {
         return res.status(400).json('Must submit an ID for valid deletion');
     }
 
-    await pool.query("DELETE FROM categories WHERE id=UNHEX(?) ", [inID], 
-        async function(err, rows) {
-            if (err) {
-                console.error("Error removing category: %s", err);
-                return res.status(400).json('Error removing category, see backend console for details');
-            } else {
-                // Search through ALL users and remove this category from their array if it exists
-                await promiseQuery(`UPDATE users SET private_access_array = JSON_REMOVE(private_access_array, JSON_UNQUOTE(JSON_SEARCH(private_access_array, 'one', ?)))`, [inID]);
-                return res.status(200).json('Category successfully removed');
-            }
+    try {
+        const result = await promiseQuery("DELETE FROM categories WHERE id=UNHEX(?)", [inID]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json('No category found with that ID');
         }
-    );
+        await promiseQuery(
+            `UPDATE users SET private_access_array = JSON_REMOVE(private_access_array, JSON_UNQUOTE(JSON_SEARCH(private_access_array, 'one', ?)))`,
+            [inID]
+        );
+        return res.status(200).json('Category successfully removed');
+    } catch (err) {
+        console.error("Error removing category: %s", err);
+        return res.status(500).json('Error removing category');
+    }
 });
 
 app.post('/remove_user_by_id', authenticateToken, async (req, res) => {
@@ -420,43 +440,48 @@ app.post('/remove_user_by_id', authenticateToken, async (req, res) => {
         return res.status(400).json('Must submit an ID for valid deletion');
     }
 
-    await pool.query("DELETE users, stats, achievements FROM users INNER JOIN stats ON users.id = stats.id INNER JOIN achievements ON users.id = achievements.id WHERE users.id=?", [inID, inID], 
-        function(err, rows) {
-            if (err) {
-                console.error("Error removing user: %s", err);
-                return res.status(400).json('Error removing user, see backend console for details');
-            } else {
-                return res.status(200).json('User successfully removed');
-            }
-        }
-    );
+    try {
+        await promiseQuery(
+            "DELETE users, stats, achievements FROM users INNER JOIN stats ON users.id = stats.id INNER JOIN achievements ON users.id = achievements.id WHERE users.id=?",
+            [inID]
+        );
+        return res.status(200).json('User successfully removed');
+    } catch (err) {
+        console.error("Error removing user: %s", err);
+        return res.status(500).json('Error removing user');
+    }
 });
 
 app.post('/remove_user_from_private_category', authenticateToken, async (req, res) => {
     let inID = req.body.userID;
     let inCatID = req.body.catID;
     let inEmail = req.body.email;
-
+ 
     if (!inID && !inEmail) {
-        return res.status(400).json('Must submit an ID or an email for valid user addition');
+        return res.status(400).json('Must submit an ID or an email for valid user removal');
     }
-
+ 
     if (!inCatID) {
-        return res.status(400).json('Must submit a category ID for valid user addition');
+        return res.status(400).json('Must submit a category ID for valid user removal');
     }
-
-    // If we don't have an id, get it from users with the email
-    if (!inID) {
-        const rows = await promiseQuery(`SELECT id FROM users WHERE email=?`, [inEmail]);
-        inID = rows[0].id;
-    }
-
+ 
     try {
-        await promiseQuery(`UPDATE users SET private_access_array = JSON_REMOVE(private_access_array, JSON_UNQUOTE(JSON_SEARCH(private_access_array, 'one', ?))) WHERE id = ?`, [inCatID, inID]);
-        return res.status(200);
+        if (!inID) {
+            const rows = await promiseQuery(`SELECT id FROM users WHERE email=?`, [inEmail]);
+            if (!rows || rows.length === 0) {
+                return res.status(404).json(`No user found with email: ${inEmail}`);
+            }
+            inID = rows[0].id;
+        }
+ 
+        await promiseQuery(
+            `UPDATE users SET private_access_array = JSON_REMOVE(private_access_array, JSON_UNQUOTE(JSON_SEARCH(private_access_array, 'one', ?))) WHERE id = ?`,
+            [inCatID, inID]
+        );
+        return res.status(200).json('User removed from private category');
     } catch (err) {
         console.error(err);
-        return res.status(400).json(err);
+        return res.status(500).json('Error removing user from private category');
     }
 });
 
@@ -467,78 +492,62 @@ app.post('/remove_all_facts_in_category', authenticateToken, async (req, res) =>
         return res.status(400).json('Must submit a category for valid deletion');
     }
 
-    await pool.query("DELETE FROM facts WHERE category=UNHEX(?) ", [inID], 
-        function(err, rows) {
-            if (err) {
-                console.error("Error removing facts: %s", err);
-                return res.status(400).json('Error removing facts, see backend console for details');
-            } else {
-                return res.status(200).json('Facts successfully removed');
-            }
-        }
-    );
+    try {
+        await promiseQuery("DELETE FROM facts WHERE category=UNHEX(?)", [inID]);
+        return res.status(200).json('Facts successfully removed');
+    } catch (err) {
+        console.error("Error removing facts: %s", err);
+        return res.status(500).json('Error removing facts');
+    }
 });
 
 app.post('/remove_all_categories', authenticateToken, async (req, res) => {
-    await pool.query("TRUNCATE TABLE categories", 
-        function(err, rows) {
-            if (err) {
-                console.error("Error removing category: %s", err);
-                return res.status(400).json('Error removing category, see backend console for details');
-            } else {
-                // Also remove all category keys from users
-                promiseQuery("UPDATE users SET private_access_array=NULL");
-                return res.status(200).json('Category successfully removed');
-            }
-        }
-    );
+    try {
+        await promiseQuery("TRUNCATE TABLE categories");
+        await promiseQuery("UPDATE users SET private_access_array=NULL");
+        return res.status(200).json('All categories successfully removed');
+    } catch (err) {
+        console.error("Error removing categories: %s", err);
+        return res.status(500).json('Error removing categories');
+    }
 });
 
 app.post('/remove_all_facts', authenticateToken, async (req, res) => {
-    await pool.query("TRUNCATE TABLE facts",
-        function(err, rows) {
-            if (err) {
-                console.error("Error removing fact: %s", err);
-                return res.status(400).json('Error removing fact, see backend console for details');
-            } else {
-                return res.status(200).json('Fact successfully removed');
-            }
-        }
-    );
+    try {
+        await promiseQuery("TRUNCATE TABLE facts");
+        return res.status(200).json('All facts successfully removed');
+    } catch (err) {
+        console.error("Error removing facts: %s", err);
+        return res.status(500).json('Error removing facts');
+    }
 });
 //#endregion
 
 //#region get-all
-app.get('/get_all_facts', async (req, res) => {
+app.get('/get_all_facts', authenticateToken, async (req, res) => {
     const filter = req.query.filterObjectionable === 'true';
     const filterClause = filter ? 'WHERE (flags IS NULL OR flags < 1)' : '';
-
-    await pool.query(`SELECT *, HEX(id) AS id, HEX(category) AS category FROM facts ${filterClause}`, 
-        function(err, rows) {
-            if (err) {
-                console.error("Error retrieving facts: %s", err);
-                return res.status(400).json('Error retrieving facts, see backend console for details');
-            } else {
-                return res.status(200).json(rows);
-            }
-        }
-    );
+ 
+    try {
+        const rows = await promiseQuery(`SELECT *, HEX(id) AS id, HEX(category) AS category FROM facts ${filterClause}`);
+        return res.status(200).json(rows);
+    } catch (err) {
+        console.error("Error retrieving facts: %s", err);
+        return res.status(500).json('Error retrieving facts');
+    }
 });
 
-app.get('/get_all_categories', async (req, res) => {
-    await pool.query("SELECT *, HEX(id) AS id FROM categories", 
-        function(err, rows) {
-            if (err) {
-                console.error("Error retrieving categories: %s", err);
-                return res.status(400).json('Error retrieving categories, see backend console for details');
-            } else {
-                return res.status(200).json(rows);
-            }
-        }
-    );
+app.get('/get_all_categories', authenticateToken, async (req, res) => {
+    try {
+        const rows = await promiseQuery("SELECT *, HEX(id) AS id FROM categories");
+        return res.status(200).json(rows);
+    } catch (err) {
+        console.error("Error retrieving categories: %s", err);
+        return res.status(500).json('Error retrieving categories');
+    }
 });
 
-app.get('/get_all_user_allowed_categories', async (req, res) => {
+app.get('/get_all_user_allowed_categories', authenticateToken, async (req, res) => {
     let userID = req.query.id;
 
     if (!userID) {
@@ -559,53 +568,44 @@ app.get('/get_all_user_allowed_categories', async (req, res) => {
         return res.status(200).json(categories);
     } catch (err) {
         console.error(err);
-        return res.status(400).json(err);
+        return res.status(500).json(err);
     }
 });
 
-app.get('/get_all_users', async (req, res) => {
-    await pool.query("SELECT * FROM users", 
-        function(err, rows) {
-            if (err) {
-                console.error("Error retrieving users: %s", err);
-                return res.status(400).json('Error retrieving users, see backend console for details');
-            } else {
-                return res.status(200).json(rows);
-            }
-        }
-    );
+app.get('/get_all_users', authenticateToken, async (req, res) => {
+    try {
+        const rows = await promiseQuery("SELECT * FROM users");
+        return res.status(200).json(rows);
+    } catch (err) {
+        console.error("Error retrieving users: %s", err);
+        return res.status(500).json('Error retrieving users');
+    }
 });
-
-app.get('/get_all_users_with_stats', async (req, res) => {
-    await pool.query("SELECT * FROM users JOIN stats USING (id)", 
-        function(err, rows) {
-            if (err) {
-                console.error("Error retrieving users: %s", err);
-                return res.status(400).json('Error retrieving users, see backend console for details');
-            } else {
-                return res.status(200).json(rows);
-            }
-        }
-    );
+ 
+app.get('/get_all_users_with_stats', authenticateToken, async (req, res) => {
+    try {
+        const rows = await promiseQuery("SELECT * FROM users JOIN stats USING (id)");
+        return res.status(200).json(rows);
+    } catch (err) {
+        console.error("Error retrieving users: %s", err);
+        return res.status(500).json('Error retrieving users');
+    }
 });
-
-app.get('/get_all_users_with_achievements', async (req, res) => {
-    await pool.query("SELECT * FROM users JOIN achievements USING (id)", 
-        function(err, rows) {
-            if (err) {
-                console.error("Error retrieving users: %s", err);
-                return res.status(400).json('Error retrieving users, see backend console for details');
-            } else {
-                return res.status(200).json(rows);
-            }
-        }
-    );
+ 
+app.get('/get_all_users_with_achievements', authenticateToken, async (req, res) => {
+    try {
+        const rows = await promiseQuery("SELECT * FROM users JOIN achievements USING (id)");
+        return res.status(200).json(rows);
+    } catch (err) {
+        console.error("Error retrieving users: %s", err);
+        return res.status(500).json('Error retrieving users');
+    }
 });
 //#endregion
 
 //#region get-specific
 
-app.get('/get_fact_by_id', async (req, res) => {
+app.get('/get_fact_by_id', authenticateToken, async (req, res) => {
     let inID = req.query.id;
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid access');
@@ -616,11 +616,11 @@ app.get('/get_fact_by_id', async (req, res) => {
         return res.status(200).json(rows);
     } catch (err) {
         console.error("Error retrieving fact: %s", err);
-        return res.status(400).json('Error retrieving fact, see backend console for details');
+        return res.status(500).json('Error retrieving fact, see backend console for details');
     }
 });
 
-app.get('/get_category_by_id', async (req, res) => {
+app.get('/get_category_by_id', authenticateToken, async (req, res) => {
     let inID = req.query.id;
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid access');
@@ -631,11 +631,11 @@ app.get('/get_category_by_id', async (req, res) => {
         return res.status(200).json(rows);
     } catch (err) {
         console.error("Error retrieving category: %s", err);
-        return res.status(400).json('Error retrieving category, see backend console for details');
+        return res.status(500).json('Error retrieving category, see backend console for details');
     }
 });
 
-app.get('/get_all_facts_of_category', async (req, res) => {
+app.get('/get_all_facts_of_category', authenticateToken, async (req, res) => {
     let inID = req.query.category; // also fixed: was req.body on a GET route
     const filter = req.query.filterObjectionable === 'true';
 
@@ -652,11 +652,11 @@ app.get('/get_all_facts_of_category', async (req, res) => {
         return res.status(200).json(rows);
     } catch (err) {
         console.error("Error retrieving facts: %s", err);
-        return res.status(400).json('Error retrieving facts, see backend console for details');
+        return res.status(500).json('Error retrieving facts, see backend console for details');
     }
 });
 
-app.get('/get_all_owned_categories', async (req, res) => {
+app.get('/get_all_owned_categories', authenticateToken, async (req, res) => {
     let inID = req.query.id;
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid access');
@@ -667,11 +667,11 @@ app.get('/get_all_owned_categories', async (req, res) => {
         return res.status(200).json(rows);
     } catch (err) {
         console.error("Error retrieving categories: %s", err);
-        return res.status(400).json('Error retrieving categories, see backend console for details');
+        return res.status(500).json('Error retrieving categories, see backend console for details');
     }
 });
 
-app.get('/get_all_facts_of_owned_categories', async (req, res) => {
+app.get('/get_all_facts_of_owned_categories', authenticateToken, async (req, res) => {
     let inID = req.query.id;
     const filter = req.query.filterObjectionable === 'true';
 
@@ -690,11 +690,11 @@ app.get('/get_all_facts_of_owned_categories', async (req, res) => {
         return res.status(200).json(rows);
     } catch (err) {
         console.error("Error retrieving facts: %s", err);
-        return res.status(400).json('Error retrieving facts, see backend console for details');
+        return res.status(500).json('Error retrieving facts, see backend console for details');
     }
 });
 
-app.get('/get_all_users_of_owned_categories', async (req, res) => {
+app.get('/get_all_users_of_owned_categories', authenticateToken, async (req, res) => {
     let inID = req.query.id;
     if (!inID) {
         return res.status(400).json('Must submit an ID for valid access');
@@ -705,11 +705,11 @@ app.get('/get_all_users_of_owned_categories', async (req, res) => {
         return res.status(200).json(rows);
     } catch (err) {
         console.error("Error retrieving facts: %s", err);
-        return res.status(400).json('Error retrieving facts, see backend console for details');
+        return res.status(500).json('Error retrieving facts, see backend console for details');
     }
 });
 
-app.get('/get_all_facts_of_access', async (req, res) => {
+app.get('/get_all_facts_of_access', authenticateToken, async (req, res) => {
     let inID = req.query.id;
     const filter = req.query.filterObjectionable === 'true';
 
@@ -743,7 +743,7 @@ app.get('/get_all_facts_of_access', async (req, res) => {
         return res.status(200).json(rows);
     } catch (err) {
         console.error("Error retrieving facts: %s", err);
-        return res.status(400).json('Error retrieving facts, see backend console for details');
+        return res.status(500).json('Error retrieving facts, see backend console for details');
     }
 });
 
@@ -760,7 +760,7 @@ app.get('/get_all_public_facts', async (req, res) => {
         return res.status(200).json(rows);
     } catch (err) {
         console.error("Error retrieving facts: %s", err);
-        return res.status(400).json('Error retrieving facts, see backend console for details');
+        return res.status(500).json('Error retrieving facts, see backend console for details');
     }
 });
 
@@ -770,7 +770,7 @@ app.get('/get_all_public_categories', async (req, res) => {
         return res.status(200).json(rows);
     } catch (err) {
         console.error("Error retrieving facts: %s", err);
-        return res.status(400).json('Error retrieving facts, see backend console for details');
+        return res.status(500).json('Error retrieving facts, see backend console for details');
     }
 });
 
@@ -849,7 +849,7 @@ app.post('/google_login', authenticateToken, async (req, res) => {
         return res.status(200).json({ message: msg, user, stats });
    } catch (err) {
         console.error(err);
-        return res.status(400).json({ err });
+        return res.status(500).json({ err });
    }
 });
 
@@ -922,7 +922,7 @@ app.post('/apple_login', authenticateToken, async (req, res) => {
         return res.status(200).json({ message: msg, user, stats });
     } catch (err) {
         console.error(err);
-        return res.status(400).json({ err });
+        return res.status(500).json({ err });
     }
 });
 
@@ -934,16 +934,13 @@ app.post('/change_username', authenticateToken, async (req, res) => {
         return res.status(400).json('Must submit a user ID for valid access');
     }
 
-    await pool.query("UPDATE users SET username=? WHERE id=?", [newUsername, inID],
-        async function(err, row) {
-            if (err) {
-                console.error("Error getting user: %s", err);
-                return res.status(400).json('Error getting user, see backend console for details');
-            } else {
-                return res.status(200).json({msg: 'Username updated', user: row});
-            }
-        }
-    );
+    try {
+        const result = await promiseQuery("UPDATE users SET username=? WHERE id=?", [newUsername, inID]);
+        return res.status(200).json({msg: 'Username updated'});
+    } catch (err) {
+        console.error("Error updating username: %s", err);
+        return res.status(500).json('Error updating username');
+    }
 });
 
 app.post('/change_permissions', authenticateToken, async (req, res) => {
@@ -954,16 +951,13 @@ app.post('/change_permissions', authenticateToken, async (req, res) => {
         return res.status(400).json('Must submit a user ID for valid access');
     }
 
-    await pool.query("UPDATE users SET permissions=? WHERE id=?", [newPermLevel, inID],
-        async function(err, row) {
-            if (err) {
-                console.error("Error getting user: %s", err);
-                return res.status(400).json('Error getting user, see backend console for details');
-            } else {
-                return res.status(200).json({msg: 'Permissions updated', user: row});
-            }
-        }
-    );
+    try {
+        await promiseQuery("UPDATE users SET permissions=? WHERE id=?", [newPermLevel, inID]);
+        return res.status(200).json({msg: 'Permissions updated'});
+    } catch (err) {
+        console.error("Error updating permissions: %s", err);
+        return res.status(500).json('Error updating permissions');
+    }
 });
 
 app.post('/change_last_login_day', authenticateToken, async (req, res) => {
@@ -974,114 +968,79 @@ app.post('/change_last_login_day', authenticateToken, async (req, res) => {
         return res.status(400).json('Must submit a user ID for valid access');
     }
 
-    await pool.query("UPDATE users SET lastLoginDay=? WHERE id=?", [newDay, inID],
-        async function(err, row) {
-            if (err) {
-                console.error("Error getting user: %s", err);
-                return res.status(400).json('Error getting user, see backend console for details');
-            } else {
-                return res.status(200).json({msg: 'lastLoginDay updated', user: row});
-            }
-        }
-    );
+    try {
+        await promiseQuery("UPDATE users SET lastLoginDay=? WHERE id=?", [newDay, inID]);
+        return res.status(200).json({msg: 'lastLoginDay updated'});
+    } catch (err) {
+        console.error("Error updating lastLoginDay: %s", err);
+        return res.status(500).json('Error updating lastLoginDay');
+    }
 });
 
 app.post('/update_achievement', authenticateToken, async (req, res) => {
     let inID = req.body.id;
     let inStat = req.body.stat;
     let inStatValue = req.body.statValue;
-
-    if (!inID) {
-        return res.status(400).json('Must submit a user ID for valid access');
+ 
+    if (!inID) return res.status(400).json('Must submit a user ID for valid access');
+    if (!inStat) return res.status(400).json('Must submit a stat to update');
+    if (inStatValue === undefined || inStatValue === null) return res.status(400).json("Must submit a new value for the stat");
+ 
+    if (!ALLOWED_STAT_COLUMNS.has(inStat)) {
+        return res.status(400).json(`Invalid stat column: ${inStat}`);
     }
-
-    if (!inStat) {
-        return res.status(400).json('Must submit a stat to update');
+ 
+    try {
+        await promiseQuery(`UPDATE stats SET \`${inStat}\`=? WHERE id=?`, [inStatValue, inID]);
+        return res.status(200).json('User stats updated');
+    } catch (err) {
+        console.error("Error updating stat: %s", err);
+        return res.status(500).json('Error updating stat');
     }
-
-    if (!inStatValue) {
-        return res.status(400).json("Must submit a new value for the stat");
-    }
-
-    await pool.query("UPDATE stats SET ?=? WHERE id=?", [inStat, inStatValue, inID],
-        async function(err, row) {
-            if (err) {
-                console.error("Error getting user: %s", err);
-                return res.status(400).json('Error getting user, see backend console for details');
-            } else {
-                return res.status(200).json('User stats updated');
-            }
-        }
-    );
 });
 
 app.post('/add_to_achievement', authenticateToken, async (req, res) => {
     let inID = req.body.id;
     let inStat = req.body.stat;
     let inStatValue = req.body.statValue;
-
-    if (!inID) {
-        return res.status(400).json('Must submit a user ID for valid access');
+ 
+    if (!inID) return res.status(400).json('Must submit a user ID for valid access');
+    if (!inStat) return res.status(400).json('Must submit a stat to update');
+    if (!inStatValue) return res.status(400).json("Must submit a new value for the stat");
+ 
+    if (!ALLOWED_STAT_COLUMNS.has(inStat)) {
+        return res.status(400).json(`Invalid stat column: ${inStat}`);
     }
-
-    if (!inStat) {
-        return res.status(400).json('Must submit a stat to update');
-    }
-
-    if (!inStatValue) {
-        return res.status(400).json("Must submit a new value for the stat");
-    }
-
-    await pool.query(`UPDATE stats SET ${inStat}=${inStat}+? WHERE id=?`, [inStatValue, inID],
-        async function(err) {
-            if (err) {
-                console.error("Error updating achievement: %s", err);
-                return res.status(400).json('Error updating achievement, see backend console for details');
-            } else {
-                // Gain appropriate xp, handle potential level + range up, and return the user
-                // UPDATE doesn't return the modified row, so get that
-                await pool.query(`SELECT * FROM stats WHERE id=?`, [inID], 
-                    async function(err, row) {
-                        if (err) {
-                            console.error("Error getting user: %s", err);
-                            return res.status(400).json('Error getting user, see backend console for details');
-                        } else {
-                            // Hacky fix for not actually storing the old value
-                            let userUpdated = await handleXPLevelAndRange(inID, inStat, inStatValue - 1, inStatValue, row[0].level, row[0].xp, row[0].userRange);
-                            console.error(userUpdated);
-                            return res.status(200).json(userUpdated);
-                        }
-                    }
-                )
-            }
+ 
+    try {
+        await promiseQuery(`UPDATE stats SET \`${inStat}\`=\`${inStat}\`+? WHERE id=?`, [inStatValue, inID]);
+ 
+        const rows = await promiseQuery(`SELECT * FROM stats WHERE id=?`, [inID]);
+        if (!rows || rows.length === 0) {
+            return res.status(404).json('User stats not found');
         }
-    );
+ 
+        let userUpdated = await handleXPLevelAndRange(inID, inStat, inStatValue - 1, inStatValue, rows[0].level, rows[0].xp, rows[0].userRange);
+        return res.status(200).json(userUpdated);
+    } catch (err) {
+        console.error("Error updating achievement: %s", err);
+        return res.status(500).json('Error updating achievement');
+    }
 });
 
 app.post('/set_achievement_complete', authenticateToken, async (req, res) => {
     let inID = req.body.id;
     let inStat = req.body.stat;
-
-    if (!inID) {
-        return res.status(400).json('Must submit a user ID for valid access');
-    }
-
-    if (!inStat) {
-        return res.status(400).json('Must submit a stat to update');
-    }
-
+ 
+    if (!inID) return res.status(400).json('Must submit a user ID for valid access');
+    if (!inStat) return res.status(400).json('Must submit a stat to update');
+ 
     try {
-        let msg = "";
-        let user;
-        let achievements;
-
-        const rows = await promiseQuery(`UPDATE achievements SET ${sanitizeColumnName(inStat)}=1 WHERE id=?`, [inID]);
-        achievements = rows[0];
-
-        return res.status(200).json({ message: msg, achievements });
+        await promiseQuery(`UPDATE achievements SET \`${sanitizeColumnName(inStat)}\`=1 WHERE id=?`, [inID]);
+        return res.status(200).json({ message: 'Achievement marked complete' });
    } catch (err) {
         console.error(err);
-        return res.status(400).json({ err });
+        return res.status(500).json('Error setting achievement');
    }
 });
 
@@ -1122,7 +1081,7 @@ app.post('/block_user', authenticateToken, async (req, res) => {
         return res.status(200).json('User successfully blocked');
     } catch (err) {
         console.error(err);
-        return res.status(500).json(err);
+        return res.status(500).json('Error blocking user');
     }
 });
 
@@ -1163,7 +1122,7 @@ app.post('/unblock_user', authenticateToken, async (req, res) => {
         return res.status(200).json('User successfully unblocked');
     } catch (err) {
         console.error(err);
-        return res.status(500).json(err);
+        return res.status(500).json('Error unblocking user');
     }
 });
 
@@ -1171,237 +1130,175 @@ app.post('/unblock_user', authenticateToken, async (req, res) => {
 
 //#region get-user-info
 
-app.get('/get_user_by_id', async (req, res) => {
+app.get('/get_user_by_id', authenticateToken, async (req, res) => {
     let inID = req.query.id;
-
-    if (!inID) {
-        return res.status(400).json('Must submit an ID for valid access');
-    }
+    if (!inID) return res.status(400).json('Must submit an ID for valid access');
     
-    await pool.query("SELECT * FROM users WHERE id=?", [inID], 
-        function(err, rows) {
-            if (err) {
-                console.error("Error retrieving user: %s", err);
-                return res.status(400).json('Error retrieving user, see backend console for details');
-            } else {
-                return res.status(200).json(rows);
-            }
-        }
-    );
+    try {
+        const rows = await promiseQuery("SELECT * FROM users WHERE id=?", [inID]);
+        return res.status(200).json(rows);
+    } catch (err) {
+        console.error("Error retrieving user: %s", err);
+        return res.status(500).json('Error retrieving user');
+    }
 });
-
+ 
 app.get('/get_username_by_id', async (req, res) => {
+    // Intentionally public — usernames are display names shown to other users.
     let inID = req.query.id;
-
-    if (!inID) {
-        return res.status(400).json('Must submit an ID for valid access');
-    }
+    if (!inID) return res.status(400).json('Must submit an ID for valid access');
     
-    await pool.query("SELECT username FROM users WHERE id=?", [inID], 
-        function(err, rows) {
-            if (err) {
-                console.error("Error retrieving user: %s", err);
-                return res.status(400).json('Error retrieving user, see backend console for details');
-            } else {
-                return res.status(200).json(rows);
-            }
-        }
-    );
+    try {
+        const rows = await promiseQuery("SELECT username FROM users WHERE id=?", [inID]);
+        return res.status(200).json(rows);
+    } catch (err) {
+        console.error("Error retrieving username: %s", err);
+        return res.status(500).json('Error retrieving username');
+    }
 });
-
-app.get('/get_user_perms_by_id', async (req, res) => {
+ 
+app.get('/get_user_perms_by_id', authenticateToken, async (req, res) => {
     let inID = req.query.id;
-
-    if (!inID) {
-        return res.status(400).json('Must submit an ID for valid access');
-    }
+    if (!inID) return res.status(400).json('Must submit an ID for valid access');
     
-    await pool.query("SELECT perms FROM users WHERE id=?", [inID], 
-        function(err, rows) {
-            if (err) {
-                console.error("Error retrieving user: %s", err);
-                return res.status(400).json('Error retrieving user, see backend console for details');
-            } else {
-                return res.status(200).json(rows);
-            }
-        }
-    );
+    try {
+        const rows = await promiseQuery("SELECT permissions FROM users WHERE id=?", [inID]);
+        return res.status(200).json(rows);
+    } catch (err) {
+        console.error("Error retrieving perms: %s", err);
+        return res.status(500).json('Error retrieving perms');
+    }
 });
-
-app.get('/get_user_level_by_id', async (req, res) => {
+ 
+app.get('/get_user_level_by_id', authenticateToken, async (req, res) => {
     let inID = req.query.id;
-
-    if (!inID) {
-        return res.status(400).json('Must submit an ID for valid access');
-    }
+    if (!inID) return res.status(400).json('Must submit an ID for valid access');
     
-    await pool.query("SELECT level FROM stats WHERE id=?", [inID], 
-        function(err, rows) {
-            if (err) {
-                console.error("Error retrieving achievement: %s", err);
-                return res.status(400).json('Error retrieving achievement, see backend console for details');
-            } else {
-                return res.status(200).json(rows);
-            }
-        }
-    );
+    try {
+        const rows = await promiseQuery("SELECT level FROM stats WHERE id=?", [inID]);
+        return res.status(200).json(rows);
+    } catch (err) {
+        console.error("Error retrieving level: %s", err);
+        return res.status(500).json('Error retrieving level');
+    }
 });
-
-app.get('/get_user_xp_by_id', async (req, res) => {
+ 
+app.get('/get_user_xp_by_id', authenticateToken, async (req, res) => {
     let inID = req.query.id;
-
-    if (!inID) {
-        return res.status(400).json('Must submit an ID for valid access');
-    }
+    if (!inID) return res.status(400).json('Must submit an ID for valid access');
     
-    await pool.query("SELECT xp FROM stats WHERE id=?", [inID], 
-        function(err, rows) {
-            if (err) {
-                console.error("Error retrieving achievement: %s", err);
-                return res.status(400).json('Error retrieving achievement, see backend console for details');
-            } else {
-                return res.status(200).json(rows);
-            }
-        }
-    );
+    try {
+        const rows = await promiseQuery("SELECT xp FROM stats WHERE id=?", [inID]);
+        return res.status(200).json(rows);
+    } catch (err) {
+        console.error("Error retrieving xp: %s", err);
+        return res.status(500).json('Error retrieving xp');
+    }
 });
-
-app.get('/get_user_days_by_id', async (req, res) => {
+ 
+app.get('/get_user_days_by_id', authenticateToken, async (req, res) => {
     let inID = req.query.id;
-
-    if (!inID) {
-        return res.status(400).json('Must submit an ID for valid access');
-    }
+    if (!inID) return res.status(400).json('Must submit an ID for valid access');
     
-    await pool.query("SELECT daysUsed FROM stats WHERE id=?", [inID], 
-        function(err, rows) {
-            if (err) {
-                console.error("Error retrieving achievement: %s", err);
-                return res.status(400).json('Error retrieving achievement, see backend console for details');
-            } else {
-                return res.status(200).json(rows);
-            }
-        }
-    );
+    try {
+        const rows = await promiseQuery("SELECT daysUsed FROM stats WHERE id=?", [inID]);
+        return res.status(200).json(rows);
+    } catch (err) {
+        console.error("Error retrieving daysUsed: %s", err);
+        return res.status(500).json('Error retrieving daysUsed');
+    }
 });
-
-app.get('/get_user_facts_viewed_by_id', async (req, res) => {
+ 
+app.get('/get_user_facts_viewed_by_id', authenticateToken, async (req, res) => {
     let inID = req.query.id;
-
-    if (!inID) {
-        return res.status(400).json('Must submit an ID for valid access');
-    }
+    if (!inID) return res.status(400).json('Must submit an ID for valid access');
     
-    await pool.query("SELECT factsViewed FROM stats WHERE id=?", [inID], 
-        function(err, rows) {
-            if (err) {
-                console.error("Error retrieving achievement: %s", err);
-                return res.status(400).json('Error retrieving achievement, see backend console for details');
-            } else {
-                return res.status(200).json(rows);
-            }
-        }
-    );
+    try {
+        const rows = await promiseQuery("SELECT factsViewed FROM stats WHERE id=?", [inID]);
+        return res.status(200).json(rows);
+    } catch (err) {
+        console.error("Error retrieving factsViewed: %s", err);
+        return res.status(500).json('Error retrieving factsViewed');
+    }
 });
-
-app.get('/get_user_facts_placed_by_id', async (req, res) => {
+ 
+app.get('/get_user_facts_placed_by_id', authenticateToken, async (req, res) => {
     let inID = req.query.id;
-
-    if (!inID) {
-        return res.status(400).json('Must submit an ID for valid access');
-    }
+    if (!inID) return res.status(400).json('Must submit an ID for valid access');
     
-    await pool.query("SELECT factsPlaced FROM stats WHERE id=?", [inID], 
-        function(err, rows) {
-            if (err) {
-                console.error("Error retrieving achievement: %s", err);
-                return res.status(400).json('Error retrieving achievement, see backend console for details');
-            } else {
-                return res.status(200).json(rows);
-            }
-        }
-    );
+    try {
+        const rows = await promiseQuery("SELECT factsPlaced FROM stats WHERE id=?", [inID]);
+        return res.status(200).json(rows);
+    } catch (err) {
+        console.error("Error retrieving factsPlaced: %s", err);
+        return res.status(500).json('Error retrieving factsPlaced');
+    }
 });
-
-app.get('/get_user_range_by_id', async (req, res) => {
+ 
+app.get('/get_user_range_by_id', authenticateToken, async (req, res) => {
     let inID = req.query.id;
-
-    if (!inID) {
-        return res.status(400).json('Must submit an ID for valid access');
-    }
+    if (!inID) return res.status(400).json('Must submit an ID for valid access');
     
-    await pool.query("SELECT userRange FROM stats WHERE id=?", [inID], 
-        function(err, rows) {
-            if (err) {
-                console.error("Error retrieving achievement: %s", err);
-                return res.status(400).json('Error retrieving achievement, see backend console for details');
-            } else {
-                return res.status(200).json(rows);
-            }
-        }
-    );
+    try {
+        const rows = await promiseQuery("SELECT userRange FROM stats WHERE id=?", [inID]);
+        return res.status(200).json(rows);
+    } catch (err) {
+        console.error("Error retrieving userRange: %s", err);
+        return res.status(500).json('Error retrieving userRange');
+    }
 });
-
-app.get('/get_user_all_stats_by_id', async (req, res) => {
+ 
+app.get('/get_user_all_stats_by_id', authenticateToken, async (req, res) => {
     let inID = req.query.id;
-
-    if (!inID) {
-        return res.status(400).json('Must submit an ID for valid access');
-    }
+    if (!inID) return res.status(400).json('Must submit an ID for valid access');
     
-    await pool.query("SELECT * FROM stats WHERE id=?", [inID], 
-        function(err, rows) {
-            if (err) {
-                console.error("Error retrieving achievement: %s", err);
-                return res.status(400).json('Error retrieving achievement, see backend console for details');
-            } else {
-                return res.status(200).json(rows);
-            }
-        }
-    );
+    try {
+        const rows = await promiseQuery("SELECT * FROM stats WHERE id=?", [inID]);
+        return res.status(200).json(rows);
+    } catch (err) {
+        console.error("Error retrieving stats: %s", err);
+        return res.status(500).json('Error retrieving stats');
+    }
 });
-
-app.get('/get_user_all_achievements_by_id', async (req, res) => {
+ 
+app.get('/get_user_all_achievements_by_id', authenticateToken, async (req, res) => {
     let inID = req.query.id;
-
-    if (!inID) {
-        return res.status(400).json('Must submit an ID for valid access');
-    }
+    if (!inID) return res.status(400).json('Must submit an ID for valid access');
     
-    await pool.query("SELECT * FROM achievements WHERE id=?", [inID], 
-        function(err, rows) {
-            if (err) {
-                console.error("Error retrieving achievement: %s", err);
-                return res.status(400).json('Error retrieving achievement, see backend console for details');
-            } else {
-                return res.status(200).json(rows);
-            }
-        }
-    );
+    try {
+        const rows = await promiseQuery("SELECT * FROM achievements WHERE id=?", [inID]);
+        return res.status(200).json(rows);
+    } catch (err) {
+        console.error("Error retrieving achievements: %s", err);
+        return res.status(500).json('Error retrieving achievements');
+    }
 });
-
-app.get('/get_user_specific_achievement', async (req, res) => {
+ 
+app.get('/get_user_specific_achievement', authenticateToken, async (req, res) => {
     let inID = req.query.id;
     let achievement = req.query.achievement;
-
-    if (!inID) {
-        return res.status(400).json('Must submit an ID for valid access');
-    }
-
-    if (!achievement) {
-        return res.status(400).json('Must submit an achievement to get for valid access');
-    }
+ 
+    if (!inID) return res.status(400).json('Must submit an ID for valid access');
+    if (!achievement) return res.status(400).json('Must submit an achievement to get for valid access');
     
-    await pool.query(`SELECT ${sanitizeColumnName(achievement)} FROM stats WHERE id=?`, [inID], 
-        function(err, rows) {
-            if (err) {
-                console.error("Error retrieving achievement: %s", err);
-                return res.status(400).json('Error retrieving achievement, see backend console for details');
-            } else {
-                return res.status(200).json(rows);
-            }
-        }
-    );
+    try {
+        const rows = await promiseQuery(`SELECT \`${sanitizeColumnName(achievement)}\` FROM stats WHERE id=?`, [inID]);
+        return res.status(200).json(rows);
+    } catch (err) {
+        console.error("Error retrieving achievement: %s", err);
+        return res.status(500).json('Error retrieving achievement');
+    }
+});
+
+//#endregion
+
+//#region global Express error handler
+
+// Causes any unexpected flow to return 500 instead of crashing.
+app.use((err, req, res, next) => {
+    console.error('[Express error handler]', err);
+    if (res.headersSent) return next(err);
+    return res.status(500).json({ error: 'Internal server error' });
 });
 
 //#endregion
