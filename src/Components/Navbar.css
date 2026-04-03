@@ -64,7 +64,11 @@
 }
 
 .AdminButton a {
-    background-color: var(--red-accent);
+    background-color: var(--purple-main);
+}
+
+.PrivateCategoriesButton a {
+    background-color: var(--orange-main);
 }
 
 .LoginButton a {
@@ -97,7 +101,8 @@
 .toggle-button {
     position: fixed;
     top: 9vh;
-    right: 20px;
+    left: calc(100vw - 70px);
+    right: auto;
     width: 50px;
     height: 50px;
     background: linear-gradient(135deg, var(--orange-main), var(--orange-accent));
@@ -109,7 +114,8 @@
     align-items: center;
     justify-content: center;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    transition: all 0.3s ease;
+    transform: translate(0, 0);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 1, 1);
 }
 
 .toggle-button:active {
@@ -143,6 +149,14 @@
 
     .content {
         margin-top: 100px;
+    }
+
+    .toggle-button.navbar-open {
+        transform: translate(calc(-50vw + 45px), calc(-1vh + 220px));
+    }
+
+    .toggle-button.navbar-open:active {
+        transform: translate(calc(-50vw + 45px), calc(-1vh + 220px)) scale(0.95);
     }
 }
 

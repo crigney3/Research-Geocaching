@@ -14,6 +14,7 @@ import InputPage from '../Pages/input.jsx';
 import { Geolocation } from '@capacitor/geolocation';
 import Select from "react-select";
 import { Preferences } from '@capacitor/preferences';
+import CloseIcon from '@mui/icons-material/Close';
 import './Map.css';
 
 const centerSeattle = {
@@ -60,6 +61,7 @@ const CoreMap = ({
     const [showLoginRequirement, setShowLoginRequirement] = useState(false);
     const [showRangeError, setShowRangeError] = useState(false);
     const [showLogin, setShowLogin] = useState(false);
+    const [filterObjectionable, setFilterObjectionable] = useState(false);
 
     const [selectedCoords, setSelectedCoords] = useState({lat: 0, lng: 0});
 
@@ -75,6 +77,7 @@ const CoreMap = ({
     const refreshCategories = useContext(ResearchContext).getAllUserAllowedCategories;
     const currentUser = useContext(ResearchContext).currentUser;
     const setAddTutorialMode = useContext(ResearchContext).setAddTutorialMode;
+    const setEulaModal = useContext(ResearchContext).setShowEULAModal;
 
     useEffect(() => {
         createMapMarkers();
@@ -110,7 +113,22 @@ const CoreMap = ({
         let tempMarkers = [];
 
         factsToShow.forEach((fact) => {
-            tempMarkers.push(<MapMarker key={fact.id} id={fact.id} title={fact.title} description={fact.description} lat={fact.lat} lng={fact.lng} category={fact.category} user={fact.username} rangeRef={rangeRef} getCurrentLocation={getCurrentLocation}/>);
+          tempMarkers.push(
+            <MapMarker
+                key={fact.id}
+                id={fact.id}
+                factId={fact.id}
+                title={fact.title}
+                description={fact.description}
+                lat={fact.lat}
+                lng={fact.lng}
+                category={fact.category}
+                user={fact.username}
+                userId={fact.user}
+                rangeRef={rangeRef}
+                getCurrentLocation={getCurrentLocation}
+            />
+          );
         })
 
         setMapMarkers(tempMarkers);
@@ -144,14 +162,20 @@ const CoreMap = ({
     }
 
     const handleRefresh = () => {
-      refreshFacts();
+      refreshFacts(filterObjectionable);
       refreshCategories();
       setRefreshClass("refresh-button spinning");
       const classClear = setTimeout(() => {
-        setRefreshClass("refresh-button");
-        clearTimeout(classClear);
+          setRefreshClass("refresh-button");
+          clearTimeout(classClear);
       }, 601);
-    }
+    };
+
+    const handleFilterObjectionableChange = (e) => {
+      const newValue = e.target.checked;
+      setFilterObjectionable(newValue);
+      refreshFacts(newValue);
+    };
 
     const toggleInputWindow = () => {
       setAddWindowOpen(!addWindowOpen);
@@ -180,8 +204,14 @@ const CoreMap = ({
         setShowLogin(!showLogin);
     }
 
-    const toggleLoginRequirement = (e) => {
+    const toggleLoginRequirement = async (e) => {
+      const { value } = await Preferences.get({ key: "eula" });
+
+      if (value == null || value == "false") {
+          setEulaModal(true);
+      } else if (value === "true") {
         setShowLoginRequirement(!showLoginRequirement);
+      }
     }
 
     const memoMapProps = useMemo(() => ({
@@ -282,8 +312,8 @@ const CoreMap = ({
             <RefreshIcon/>
           </button>
 
-          {(currentUser !== null) && <button className='add-button' onClick={handleAddButtonClicked}>
-            <AddLocationAltIcon/>
+          {(currentUser !== null) && <button className={`add-button ${inputMode ? 'input-mode-active' : ''}`} onClick={inputMode ? () => setInputMode(false) : handleAddButtonClicked}>
+            {inputMode ? <CloseIcon /> : <AddLocationAltIcon />}
           </button>}
 
           {(currentUser === null) && <button className='add-button' onClick={toggleLoginRequirement}>
@@ -292,6 +322,7 @@ const CoreMap = ({
 
           <button className='category-toggle-button' onClick={toggleCategoryWindow}>
             <KeyboardDoubleArrowUpIcon />
+            Categories
           </button>
 
           {/* Overlay */}
@@ -308,6 +339,16 @@ const CoreMap = ({
             <div className='category-content'>
               <label>Select Category:</label>
               <CategorySelect options={categoryOptions} onChange={handleCatChange}/>
+            </div>
+
+            <div className='filter-flagged-container'>
+              <input
+                  type="checkbox"
+                  id="filter-flagged"
+                  checked={filterObjectionable}
+                  onChange={handleFilterObjectionableChange}
+              />
+              <label htmlFor="filter-flagged">Filter Flagged Content</label>
             </div>
 
             <button className='clear-filter-button' onClick={handleFilterClear}>Clear</button>

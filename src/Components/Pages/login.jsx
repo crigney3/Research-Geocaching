@@ -1,4 +1,4 @@
-import GoogleAuth from "../Subcomponents/GAuth";
+import { GoogleAuth } from "../Subcomponents/GAuth";
 
 const LoginPage = ({
 

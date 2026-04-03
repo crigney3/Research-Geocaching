@@ -33,7 +33,8 @@ const MapMarker = ({
     category,
     user,
     rangeRef,
-    getCurrentLocation
+    getCurrentLocation,
+    userId
 }) => {
     
     const [popupEnabled, setPopupEnabled] = useState(false);
@@ -98,9 +99,9 @@ const MapMarker = ({
             <AdvancedMarker ref={markerRef} position={{lat, lng}} title={title} onClick={handleFactPopup}>
                 <Pin background='var(--purple-main)' borderColor='var(--orange-main)' glyphColor='var(--white)'/>
             </AdvancedMarker>
-            {(popupEnabled) && <FactPopup anchor={marker} title={title} description={description} username={user} closeFact={handleFactPopup} fullscreenFact={toggleFullscreenFact}/>}
+            {(popupEnabled) && <FactPopup anchor={marker} title={title} description={description} username={user} closeFact={handleFactPopup} fullscreenFact={toggleFullscreenFact} userId={userId} factId={id}/>}
         </div>
-        {(showFullFact) && <FactModal show={showFullFact} title={title} description={description} user={user} onClose={toggleFullscreenFact} />}
+        {(showFullFact) && <FactModal show={showFullFact} title={title} description={description} user={user} onClose={toggleFullscreenFact} userId={userId} factId={id}/>}
         {(showOutOfRange) && <Modal show={showOutOfRange} title={"Out of Range!"} message={"Get within range to view more about " + title} onClose={handleRangeClose} warningLevel={1}/>}
         </>
     )

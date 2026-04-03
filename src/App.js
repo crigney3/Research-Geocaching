@@ -1,10 +1,11 @@
 import './App.css';
 import { useCallback, useEffect, useState, useMemo } from "react";
+import { Capacitor } from '@capacitor/core';
 import MapPage from './Components/Pages/map';
 import InputPage from './Components/Pages/input';
 import ProfilePage from './Components/Pages/profile';
 import LoginPage from './Components/Pages/login';
-import AdminPage from './Components/Pages/Admin';
+import { AdminPage, PrivateCategoriesPage } from './Components/Pages/Admin';
 import Navbar from './Components/Navbar';
 import { BrowserRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { ResearchContext, LocationContext } from './Components/ResearchContext';
@@ -14,7 +15,7 @@ import { SocialLogin } from '@capgo/capacitor-social-login';
 import { Preferences } from '@capacitor/preferences';
 import Notification from './Components/Subcomponents/Notification';
 import achievements from './AchievementData';
-import { Modal, TutorialModal } from './Components/Subcomponents/Modal';
+import { EULAModal, Modal, TutorialModal } from './Components/Subcomponents/Modal';
 import BookIcon from '@mui/icons-material/Book';
 import StarRateIcon from '@mui/icons-material/StarRate';
 import CreateIcon from '@mui/icons-material/Create';
@@ -98,6 +99,7 @@ function App() {
   const [tutorialMode, setTutorialMode] = useState(false);
   const [addTutorialMode, setAddTutorialMode] = useState(false);
   const [showFailModal, setShowFailModal] = useState(false);
+  const [showEULAModal, setShowEULAModal] = useState(false);
 
   // -1: not attempted/logged out
   // 0: login failed
@@ -106,28 +108,35 @@ function App() {
 
   useEffect(() => {
     async function importClientID() {
-      const { GOOGLE_LOGIN_CLIENT_ID } = await import(`./${secretPath}`);
+      try {
+        const { GOOGLE_LOGIN_CLIENT_ID } = await import(`./${secretPath}`);
+        const loginConfig = {};
+        const googleConfig = { webClientId: GOOGLE_LOGIN_CLIENT_ID };
 
-      await SocialLogin.initialize({
-        google: {
-          webClientId: GOOGLE_LOGIN_CLIENT_ID,
-          iOSClientId: GOOGLE_LOGIN_IOS_ID
+        if (Capacitor.getPlatform() === 'ios') {
+          loginConfig.apple = {};
+          googleConfig.iOSClientId = GOOGLE_LOGIN_IOS_ID;
         }
-      });
+
+        loginConfig.google = googleConfig;
+        await SocialLogin.initialize(loginConfig);
+      } catch (err) {
+        console.error('SocialLogin init failed, ', err);
+      }
+
+      checkPermissions();
+
+      checkForFirstRun();
+
+      getAllCategories();
+      getAllUserAllowedCategories();
+      getAllFacts();
+      getAllFactsOfAccess();
+      getAllUsers();
+      
+      checkForExistingUser();
     }
     importClientID();
-
-    checkPermissions();
-
-    checkForFirstRun();
-
-    getAllCategories();
-    getAllUserAllowedCategories();
-    getAllFacts();
-    getAllFactsOfAccess();
-    getAllUsers();
-    
-    checkForExistingUser();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -303,7 +312,7 @@ function App() {
 
   const getAllUsers = useCallback(async () => {
     try {
-      await fetch(BACKEND_URL + "/get_all_users_with_achievements", {
+      await fetch(BACKEND_URL + "/get_all_users_with_stats", {
           method: 'GET',
           headers: {
             'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
@@ -456,14 +465,14 @@ function App() {
         tempUser.dateJoined = data[0].dateJoined;
         tempUser.lastLogin = data[0].lastLoginDay;
         tempUser.privateCategoryAccess = data[0].private_access_array;
+        tempUser.blocked = data[0].blocked ? JSON.parse(data[0].blocked) : [];
+        tempUser.flaggedFacts = data[0].flaggedFacts ? JSON.parse(data[0].flaggedFacts) : [];
       }).catch(error => {
         console.error('Error: ', error);
         throw new Error(error);
       });
-      console.log(tempUser);
 
       tempUser.ownedCategories = await checkForUserOwnedCategories();
-      console.log(tempUser);
 
       await fetch(BACKEND_URL + "/get_user_all_stats_by_id?id=" + userID, {
           method: 'GET',
@@ -489,7 +498,6 @@ function App() {
         console.error('Error: ', error);
         throw new Error(error);
       });
-      console.log(tempUser);
 
       await fetch(BACKEND_URL + "/get_user_all_achievements_by_id?id=" + userID, {
           method: 'GET',
@@ -512,8 +520,9 @@ function App() {
         for (let i = 0; i < keys.length; i++) {
           if (values[i] === null || values[i] == 0) {
             tempAchievementKeys[keys[i]] = false;
+          } else {
+            tempAchievementKeys[keys[i]] = values[i];
           }
-          tempAchievementKeys[keys[i]] = values[i];
         }
 
         tempUser.achievementKeys = tempAchievementKeys;
@@ -521,7 +530,6 @@ function App() {
         console.error('Error: ', error);
         throw new Error(error);
       });
-      console.log(tempUser);
 
       setCurrentUser(tempUser);
       setIsLoggedIn(true);
@@ -556,7 +564,9 @@ function App() {
       const newStatValue = currentUser[statString] + valueToAdd;
       
       achievements.forEach(achievement => {
-        if (achievement.statBase === statString && !achievement.completed) {
+        const isAchievementCompleted = currentUser.achievementKeys?.[sanitizeColumnName(achievement.title)];
+
+        if (achievement.statBase === statString && !isAchievementCompleted) {
           if (newStatValue >= achievement.target) {
             let achievementJSON = JSON.stringify({id: currentUser.id, stat: achievement.title});
             
@@ -570,7 +580,15 @@ function App() {
                 body: achievementJSON
             }).then(response => {
                 if (response.ok) {
-                    fireNotifications(currentUser, false, true, achievement.title);
+                  setCurrentUser(prevUser => ({
+                    ...prevUser,
+                    achievementKeys: {
+                      ...prevUser.achievementKeys,
+                      [sanitizeColumnName(achievement.title)]: 1
+                    }
+                  }));
+
+                  fireNotifications(null, false, true, achievement.title);
                 } else {
                     console.error("Something went wrong updating achievements! " + response);
                 }
@@ -616,9 +634,9 @@ function App() {
     if (leveled) {
       notifCounter++;
       tempNotifArray.push({message: "Level up! You are now level " + newUserData.level, id: Date.now()});
-      console.log(tempNotifArray);
     } else if (achievement) {
-      tempNotifArray.push({message: "New Achievement: " + achievementName + "!"})
+      notifCounter++;
+      tempNotifArray.push({message: "New Achievement: " + achievementName + "!", id: Date.now()});
     }
     else {
       return;
@@ -642,7 +660,7 @@ function App() {
     setIsLoggedIn(false);
   }
 
-  const getAllFactsOfAccess = async () => {
+  const getAllFactsOfAccess = async (filter = false) => {
     let tempFacts = null;
     let userID = await getWithExpiry('user');
 
@@ -650,68 +668,29 @@ function App() {
       if (currentUser.permLevel >= 2) {
         await fetch(BACKEND_URL + "/get_all_facts", {
             method: 'GET',
-            headers: {
-              'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
-              'Content-Type': 'application/json;charset=utf-8'
-            },
+            headers: { 'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`, 'Content-Type': 'application/json;charset=utf-8' },
             mode: 'cors'
-        }).then(response => response.json())
-          .then(data => {
-            tempFacts = data;
-            setAllFacts(data);
-        });
+        }).then(response => response.json()).then(data => { tempFacts = data; setAllFacts(data); });
       }
-      await fetch(BACKEND_URL + "/get_all_facts_of_access?id=" + userID, {
+      await fetch(BACKEND_URL + "/get_all_facts_of_access?id=" + userID + (filter ? "&filterObjectionable=true" : ""), {
           method: 'GET',
-          headers: {
-            'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
-            'Content-Type': 'application/json;charset=utf-8'
-          },
+          headers: { 'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`, 'Content-Type': 'application/json;charset=utf-8' },
           mode: 'cors'
       }).then(response => {
-        if(!response.ok) {
-          console.error('Getting facts with cookie ID failed');
-          return null;
-        }
-
+        if (!response.ok) { console.error('Getting facts with cookie ID failed'); return null; }
         return response.json();
-      }).then(data => {
-
-        if (data == null) {
-          return null;
-        }
-
-        tempFacts = data;
-      }).catch(error => {
-        console.error('Error: ', error);
-        return null;
-      });
+      }).then(data => { if (data == null) return null; tempFacts = data;})
+        .catch(error => { console.error('Error: ', error); return null; });
     } else {
-      await fetch(BACKEND_URL + "/get_all_public_facts", {
+      await fetch(BACKEND_URL + "/get_all_public_facts" + (filter ? "?filterObjectionable=true" : ""), {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
-          'Content-Type': 'application/json;charset=utf-8'
-        },
+        headers: { 'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`, 'Content-Type': 'application/json;charset=utf-8' },
         mode: 'cors'
       }).then(response => {
-        if(!response.ok) {
-          console.error('Getting public facts failed');
-          return null;
-        }
-
+        if (!response.ok) { console.error('Getting public facts failed'); return null; }
         return response.json();
-      }).then(data => {
-
-        if (data == null) {
-          return null;
-        }
-
-        tempFacts = data;
-      }).catch(error => {
-        console.error('Error: ', error);
-        return null;
-      });
+      }).then(data => { if (data == null) return null; tempFacts = data; })
+        .catch(error => { console.error('Error: ', error); return null; });
     }
 
     setAllAccessibleFacts(tempFacts);
@@ -890,6 +869,105 @@ function App() {
     setAllAccessibleCategories(tempCategories);
   }
 
+  const blockUser = useCallback(async (userIdToBlock) => {
+    if (!currentUser) return;
+    try {
+        const response = await fetch(BACKEND_URL + "/block_user", {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`, 'Content-Type': 'application/json;charset=utf-8' },
+            mode: 'cors',
+            body: JSON.stringify({ id: currentUser.id, blockedID: userIdToBlock })
+        });
+        if (response.ok) {
+            setCurrentUser(prev => ({
+                ...prev,
+                blocked: [...(prev.blocked || []), userIdToBlock]
+            }));
+            getAllFactsOfAccess();
+        }
+    } catch (err) { console.error(err); }
+  }, [currentUser]);
+
+  const unblockUser = useCallback(async (userIdToUnblock) => {
+      if (!currentUser) return;
+      try {
+          const response = await fetch(BACKEND_URL + "/unblock_user", {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`, 'Content-Type': 'application/json;charset=utf-8' },
+              mode: 'cors',
+              body: JSON.stringify({ id: currentUser.id, blockedID: userIdToUnblock })
+          });
+          if (response.ok) {
+              setCurrentUser(prev => ({
+                  ...prev,
+                  blocked: (prev.blocked || []).filter(id => id !== userIdToUnblock)
+              }));
+          }
+      } catch (err) { console.error(err); }
+  }, [currentUser]);
+
+  const flagFact = useCallback(async (factId) => {
+    if (!currentUser) return;
+    try {
+        const response = await fetch(BACKEND_URL + "/flag_fact", {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`, 'Content-Type': 'application/json;charset=utf-8' },
+            mode: 'cors',
+            body: JSON.stringify({ id: factId, userID: currentUser.id })
+        });
+        if (response.ok) {
+            setCurrentUser(prev => ({
+                ...prev,
+                flaggedFacts: [...(prev.flaggedFacts || []), factId]
+            }));
+            setAllAccessibleFacts(prev => prev.map(f =>
+                f.id === factId ? { ...f, flags: (f.flags || 0) + 1, totalFlags: (f.totalFlags || 0) + 1 } : f
+            ));
+            setAllFacts(prev => prev.map(f =>
+                f.id === factId ? { ...f, flags: (f.flags || 0) + 1, totalFlags: (f.totalFlags || 0) + 1 } : f
+            ));
+        }
+    } catch (err) { console.error(err); }
+  }, [currentUser]);
+
+  const unflagFact = useCallback(async (factId) => {
+    if (!currentUser) return;
+    try {
+        const response = await fetch(BACKEND_URL + "/unflag_fact", {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`, 'Content-Type': 'application/json;charset=utf-8' },
+            mode: 'cors',
+            body: JSON.stringify({ id: factId, userID: currentUser.id })
+        });
+        if (response.ok) {
+            setCurrentUser(prev => ({
+                ...prev,
+                flaggedFacts: (prev.flaggedFacts || []).filter(id => id !== factId)
+            }));
+            setAllAccessibleFacts(prev => prev.map(f =>
+                f.id === factId ? { ...f, flags: Math.max((f.flags || 0) - 1, 0) } : f
+            ));
+            setAllFacts(prev => prev.map(f =>
+                f.id === factId ? { ...f, flags: Math.max((f.flags || 0) - 1, 0) } : f
+            ));
+        }
+    } catch (err) { console.error(err); }
+  }, [currentUser]);
+
+  const acceptEULA = async () => {
+    await Preferences.set({
+      key: "eula",
+      value: "true"
+    });
+  }
+
+  const declineEULA = async () => {
+    await Preferences.set({
+      key: "eula",
+      value: "false"
+    });
+  }
+
   const researchValue = useMemo(() => ({
     allCategories,
     allAccessibleCategories,
@@ -922,7 +1000,12 @@ function App() {
     getAllFactsOfAccess,
     getAllUserAllowedCategories,
     getAllOwnedCategories,
-    hasLocationPermissions
+    hasLocationPermissions,
+    setShowEULAModal,
+    blockUser,
+    unblockUser,
+    flagFact,
+    unflagFact
   }), [
     allCategories, 
     allAccessibleCategories,
@@ -945,7 +1028,11 @@ function App() {
     getAllFactsOfAccess,
     getAllUserAllowedCategories,
     getAllOwnedCategories,
-    hasLocationPermissions
+    hasLocationPermissions,
+    blockUser,
+    unblockUser,
+    flagFact,
+    unflagFact
   ]);
 
   return (
@@ -958,6 +1045,8 @@ function App() {
           <TutorialModal show={addTutorialMode} onClose={() => setAddTutorialMode(false)} pageCount={1} titles={addTutorialTitles} descriptions={addTutorialMessages} Icons={addTutorialIcons}/>
 
           <Modal show={showFailModal} onClose={() => setShowFailModal(false)} title={"GPS Error!"} message={"This app requires location permissions. Without them, you're stuck at the Space Needle forever."} warningLevel={0} action={checkPermissions} actionText={"Try Again"}/>
+
+          <EULAModal show={showEULAModal} onClose={() => {setShowEULAModal(false)}} onAccept={acceptEULA} onDecline={declineEULA} />
 
           <Navbar/>
           {(showNotifications) && notifications.map((notif, index) => (
@@ -977,6 +1066,9 @@ function App() {
 
             </Route>
             <Route path='/admin' element={<AdminPage/>}>
+
+            </Route>
+            <Route path='/private-categories' element={<PrivateCategoriesPage/>}>
 
             </Route>
           </Routes>

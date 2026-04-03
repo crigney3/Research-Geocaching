@@ -7,6 +7,8 @@ import LoginButton from "./Subcomponents/LoginButton";
 import { ResearchContext } from './ResearchContext';
 import { LoginModal, Modal } from "./Subcomponents/Modal";
 import { useNavigate } from 'react-router-dom';
+import { Preferences } from "@capacitor/preferences";
+import CloseIcon from '@mui/icons-material/Close';
 
 const Navbar = ({
 
@@ -23,6 +25,7 @@ const Navbar = ({
     const logoutCurrentUser = useContext(ResearchContext).logoutCurrentUser;
     const loginState = useContext(ResearchContext).loginState;
     const setLoginState = useContext(ResearchContext).setLoginState;
+    const setEulaModal = useContext(ResearchContext).setShowEULAModal;
 
     const navigate = useNavigate();
 
@@ -30,9 +33,15 @@ const Navbar = ({
         setNavbarOpen(!navbarOpen);
     }
 
-    const toggleLoginPopup = (e) => {
-        setShowLoginRequirement(false);
-        setShowLogin(!showLogin);
+    const toggleLoginPopup = async (e) => {
+        const { value } = await Preferences.get({ key: "eula" });
+
+        if (value == null || value == "false") {
+            setEulaModal(true);
+        } else if (value === "true") {
+            setShowLoginRequirement(false);
+            setShowLogin(!showLogin);
+        }
     }
 
     const toggleLogoutPopup = (e) => {
@@ -65,10 +74,16 @@ const Navbar = ({
 
             <div className="Navbar-Container">
                 <div className={navbarClass} id="navbar">
-                    {(currentUser != null) &&
+                    {(currentUser != null) && (currentUser.permLevel >= 2) &&
                     <div className="AdminButton">
                         <Link to="/admin" onClick={toggleNavbarState}>Admin</Link>
                     </div>}
+
+                    {(currentUser != null) && (
+                        <div className="PrivateCategoriesButton">
+                            <Link to="/private-categories" onClick={toggleNavbarState}>Private Categories</Link>
+                        </div>
+                    )}
 
                     <div className="LoginButton">
                         {(currentUser == null) && <a onClick={toggleLoginPopup}>Login</a>}
@@ -86,8 +101,18 @@ const Navbar = ({
                 </div>
             </div>
 
-            <button className="toggle-button" id="toggleButton" onClick={toggleNavbarState}>
-                <MenuIcon id="navbarHamburger"></MenuIcon>
+            <button
+                className={`toggle-button ${!navbarOpen ? 'navbar-open' : ''}`}
+                id="toggleButton"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    toggleNavbarState(e);
+                }}
+            >
+                {!navbarOpen
+                    ? <CloseIcon id="navbarHamburger" />
+                    : <MenuIcon id="navbarHamburger" />
+                }
             </button>
 
             <LoginModal show={showLogin} onClose={toggleLoginPopup} loginState={loginState} setLoginState={setLoginState}/>
