@@ -5,7 +5,7 @@ import MapPage from './Components/Pages/map';
 import InputPage from './Components/Pages/input';
 import ProfilePage from './Components/Pages/profile';
 import LoginPage from './Components/Pages/login';
-import AdminPage from './Components/Pages/Admin';
+import { AdminPage, PrivateCategoriesPage } from './Components/Pages/Admin';
 import Navbar from './Components/Navbar';
 import { BrowserRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { ResearchContext, LocationContext } from './Components/ResearchContext';
@@ -312,7 +312,7 @@ function App() {
 
   const getAllUsers = useCallback(async () => {
     try {
-      await fetch(BACKEND_URL + "/get_all_users_with_achievements", {
+      await fetch(BACKEND_URL + "/get_all_users_with_stats", {
           method: 'GET',
           headers: {
             'Authorization': `Bearer: ${CLIENT_AUTH_SECRET}`,
@@ -520,8 +520,9 @@ function App() {
         for (let i = 0; i < keys.length; i++) {
           if (values[i] === null || values[i] == 0) {
             tempAchievementKeys[keys[i]] = false;
+          } else {
+            tempAchievementKeys[keys[i]] = values[i];
           }
-          tempAchievementKeys[keys[i]] = values[i];
         }
 
         tempUser.achievementKeys = tempAchievementKeys;
@@ -1065,6 +1066,9 @@ function App() {
 
             </Route>
             <Route path='/admin' element={<AdminPage/>}>
+
+            </Route>
+            <Route path='/private-categories' element={<PrivateCategoriesPage/>}>
 
             </Route>
           </Routes>

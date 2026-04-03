@@ -64,7 +64,11 @@
 }
 
 .AdminButton a {
-    background-color: var(--red-accent);
+    background-color: var(--purple-main);
+}
+
+.PrivateCategoriesButton a {
+    background-color: var(--orange-main);
 }
 
 .LoginButton a {

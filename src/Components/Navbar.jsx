@@ -74,10 +74,16 @@ const Navbar = ({
 
             <div className="Navbar-Container">
                 <div className={navbarClass} id="navbar">
-                    {(currentUser != null) &&
+                    {(currentUser != null) && (currentUser.permLevel >= 2) &&
                     <div className="AdminButton">
                         <Link to="/admin" onClick={toggleNavbarState}>Admin</Link>
                     </div>}
+
+                    {(currentUser != null) && (
+                        <div className="PrivateCategoriesButton">
+                            <Link to="/private-categories" onClick={toggleNavbarState}>Private Categories</Link>
+                        </div>
+                    )}
 
                     <div className="LoginButton">
                         {(currentUser == null) && <a onClick={toggleLoginPopup}>Login</a>}
